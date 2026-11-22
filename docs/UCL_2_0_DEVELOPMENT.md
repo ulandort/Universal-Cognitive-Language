@@ -102,3 +102,18 @@ python tools/semantic_audit.py example-ucl2.txt --output example-audit.json
 ```
 
 The November 22, 2026 first paid test of fully self-contained SAP-1 Portable (run 45074316207) returned **8/8 delivered valid packets, 6/8 first-attempt valid, two repaired, 4/7 complete private-intent receipt matches**, estimated $0.803166. One first-attempt rejection was output-token exhaustion and one was syntax validation. This satisfies stage-one feasibility but not proof of semantic understanding, truth, novelty or language superiority. The SVP-1 addition follows that run and has not yet undergone a new paid model test.
+
+
+## Optional Formula Roles FR-1 — matched-packet experiment (experimental)
+
+FR-1 is a **non-normative, optional** outer envelope field `formula_roles`, NOT a new UCL 1.0 glyph or a mandatory change to the symbolic inner packet. An entry has three fields: `{"act":"t9","index":0,"role":"counterexample"}` and refers to an existing act's exact expressions array index (zero-based integer). Allowed provisional author-declared roles: `hypothesis`, `example`, `counterexample`, `quotation`, `question`. Roles are not truth claims, proofs, or central audit decisions. A missing annotation is **unannotated**, never silently treated as assertion.
+
+The envelope checksum covers each annotation; the original inner UCL packet and its hash are unchanged. Invalid or duplicate references, noninteger indices, unknown roles, and tampering are rejected by the optional-profile validator. Annotating a novel hypothesis cannot automatically reject, edit or normalize it. Existing unannotated envelopes continue to pass unchanged.
+
+The paired experiment in `benchmarks/formula_roles_experiment.py` creates five constructed UCL packets with two formal expressions each and author-declared intentions. Clarke and Hal can read each identical source packet twice, once plain and once with the role array; the receiver reports which expression is an original hypothesis, example, counterexample, quotation or question, and whether both are jointly proposed. The benchmark compares field accuracy and byte overhead; roles are supplied as a synthetic author-label oracle, so higher scores **cannot independently prove improved reasoning, factual discovery or semantic truth**. Alternate case order partially mitigates arm-order effects. Repeated blinded trials and genuine model-authored annotations are needed before FR-1 could become normative.
+
+Free regression tests reject altered entries, guarantee unchanged inner UCL packet identity, verify the option costs fewer than 180 extra canonical UTF-8 bytes for two roles in each fixture, and retain the same unknown-hypothesis protections. The manual GitHub workflow defaults to `paid_run=no`, and uses a bounded shared estimated budget only if the user explicitly selects yes.
+
+Manual workflow: https://github.com/ulandort/Universal-Cognitive-Language/actions/workflows/uclbench-formula-roles.yml
+
+Do not confuse a role's communicative function (`counterexample`) with empirical truth or with an assertion that the counterexample actually occurred. This experiment does not yet modify the main UCL-only conversation's authoring behavior or require FR-1 tags on any message.
