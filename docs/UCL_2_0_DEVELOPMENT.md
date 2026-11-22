@@ -5,7 +5,7 @@ UCL 1.0 remains the stable public specification on `main`. Features below are *e
 ## Guide profiles
 
 - **Portable (default):** complete guide, all active session definitions, full needed conversation history, acts and acknowledgements are in the message. No network or external tools required to interpret the rules.
-- **Compact (opt-in):** only the guide is omitted; a version identifier and canonical SHA-256 fingerprint of the **full guide object** are carried in a wrapper. Every receiver must possess and verify the exact guide locally. If it does not, it must request portable mode. A GitHub URL, when present, is merely a discovery hint and **not** a required central authority.
+- **Compact (retired experimental profile):** historical proof-of-concept only; not developed or included in new active cross-model benchmarks. Its code and offline conformance vectors remain for reproducibility. Previous token savings were modest once the full local guide context was counted. This is **not** a breaking deletion of an existing wire profile; a future revival would require demonstrated gains with a legitimately pre-cached guide.
 - The current Python `tools/guide_profiles.py` represents a *prototype wrapper around a verified UCL/1.0 packet*, not final UCL/2.0 wire syntax. It preserves and reconstructs the entire original 1.0 packet exactly. Changing the 2.0 wire schema requires its own versioned specification and cross-language review.
 - The experimental compact format carries its own wrapper checksum; a successful decode also validates the reconstructed original UCL 1.0 message and its original integrity record.
 
@@ -35,7 +35,10 @@ This **does not** test any LLM's comprehension, English-vs-UCL performance, auth
 
 1. Produce a complete normative 2.0 specification, with unambiguous wire format and explicit guide fingerprint derivation.
 2. Test Python and independently written JavaScript reference implementations using shared canonical vectors.
-3. Ensure portable cold-start reading without web access, and compact fallback when a local guide is unavailable.
+3. Ensure portable cold-start reading without web access, and, only for any archival Compact compatibility checks, explicit fallback when a local guide is unavailable.
 4. Require strict reconstruction of all active context and history, with no lossy condensation in 2.0.
 5. Run UCLBench offline conformance suite and publish real outputs, then live English/structured-English/UCL comparative benchmarks.
 6. Retain optional AES-256-GCM encrypted transport as a distinct experimental, unaudited feature.
+## Active 2.0 AI dialogue research
+
+New paid research prioritizes **UCL Portable, ordinary English, and structured English**, with generated multi-turn exchanges, self-declared private author intentions, independent recipient interpretation, exact claim/stance target scoring, validation and cost reporting. See [live autonomous relay](../benchmarks/LIVE_DIALOGUE.md). **No UCL superiority has been established**: an encoder provides explicit intent metadata to the structured variants and the English author's self-report still needs independent evaluation against actual prose.
