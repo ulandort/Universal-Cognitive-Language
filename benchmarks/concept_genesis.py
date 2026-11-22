@@ -149,7 +149,8 @@ def synthetic(turn,speaker,state):
             'gloss':('A speculative conceptual property of a cognitive system describing '
                     'the explicit tracking of interpretive changes across successive '
                     'dialogue states without claiming objective measurement or causation. '
-                    'This is distinct from P and B because it concerns dialogue continuity.')}}
+                    'This is distinct from P and B because it concerns dialogue continuity, '+
+                    'with independently invented perspective '+str(turn)+'.')}}
     g=next(iter(c['new_definitions']),state['last_concept']['glyph'] if state['last_concept'] else 'C')
     form='~['+g+'][A]'
     c['act']['expressions']=[form]
