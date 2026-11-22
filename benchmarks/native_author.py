@@ -58,16 +58,16 @@ def task_text(case):
             'Use the word "signal" meaning '+sense+'. Offer '+evidence+'. '
             'Make clear that neither claim is proven. '+case['challenge'])
 
-def contrib_template(sender):
+def contrib_template(sender,act_id='t9',ack_id='x5',prior_act='t8'):
     # The writer must fill every semantic field itself; no target/stance
     # is prepopulated with the correct expected answer.
     return {
-      'act':{'id':'t9','kind':'response','speaker':sender,'references':['t1'],
+      'act':{'id':act_id,'kind':'response','speaker':sender,'references':['t1'],
              'text':'WRITE YOUR OWN SUBSTANTIVE UCL ACT NOTE',
              'expressions':['WRITE TYPED UCL PREDICATE e.g. ~[P][A]'],
-             'details':{'responds_to':'t8','stance':'mixed'}},
+             'details':{'responds_to':prior_act,'stance':'mixed'}},
       'orientation':'L','explanation':'WRITE UCL EXPRESSION','conclusion':'WRITE UCL EXPRESSION',
-      'acknowledgements':[{'id':'x5','by':'t9','target':{'claim':'theory','path':['CHOOSE 0 OR 1']},
+      'acknowledgements':[{'id':ack_id,'by':act_id,'target':{'claim':'theory','path':['CHOOSE 0 OR 1']},
                            'action':'CHOOSE VALID ACK ACTION','qualification':None,
                            'replacement':None,'note':'WRITE A PRECISE EXPLANATION'}],
       'history_summary':'All eight original acts retained; native UCL contribution t9 appended.'
@@ -93,7 +93,7 @@ def sender_messages(fmt,case,sender,baseline):
                  +json.dumps(contrib_template(sender),ensure_ascii=True))
     return [{'role':'system','content':SYSTEM},{'role':'user','content':prompt}]
 
-def normalise_sender(fmt,text,baseline,sender):
+def normalise_sender(fmt,text,baseline,sender,act_id='t9',ack_id='x5'):
     """Never infer intent from prose or repair a generated semantic object."""
     if fmt=='english':
         if not isinstance(text,str) or not 40<=len(text.strip())<=2200:
@@ -117,7 +117,7 @@ def normalise_sender(fmt,text,baseline,sender):
     act=obj['act']
     if not isinstance(act,dict) or set(act)!={'id','kind','speaker','references','text','expressions','details'}:
         raise ValueError('Native act fields invalid')
-    if act['id']!='t9' or act['speaker']!=sender or act['kind']!='response':
+    if act['id']!=act_id or act['speaker']!=sender or act['kind']!='response':
         raise ValueError('Wrong identity or act kind')
     if not isinstance(act['text'],str) or not 20<=len(act['text'])<=1200:
         raise ValueError('Bad native act text')
@@ -126,7 +126,7 @@ def normalise_sender(fmt,text,baseline,sender):
     acks=obj['acknowledgements']
     if not isinstance(acks,list) or len(acks)!=1:raise ValueError('One scoped ACK required')
     ack=acks[0]
-    if not isinstance(ack,dict) or ack.get('by')!='t9' or ack.get('id')!='x5':
+    if not isinstance(ack,dict) or ack.get('by')!=act_id or ack.get('id')!=ack_id:
         raise ValueError('Missing native ACK')
     target=ack.get('target')
     if not isinstance(target,dict) or target.get('claim')!='theory' or type(target.get('path')) is not list or len(target['path'])!=1 or type(target['path'][0]) is not int or target['path'][0] not in (0,1):
