@@ -1,0 +1,67 @@
+name: UCLBench live (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      paid_run:
+        description: 'Send live, paid API requests? Select no for zero-cost dry-run.'
+        required: true
+        type: choice
+        options: ['no', 'yes']
+        default: 'no'
+      trials:
+        description: 'Trials (1-4) per format, start with 1'
+        required: true
+        default: '1'
+        type: choice
+        options: ['1', '2', '4']
+      cap_usd:
+        description: 'Estimated maximum API cost for this run (USD)'
+        required: true
+        default: '0.50'
+        type: choice
+        options: ['0.25', '0.50', '1.00', '2.00']
+
+permissions:
+  contents: read
+concurrency:
+  group: uclbench-live-manual
+  cancel-in-progress: false
+
+jobs:
+  live-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout UCL 2.0 development only
+        uses: actions/checkout@v4
+        with:
+          ref: develop/2.0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate local harness (no API cost)
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_live_radium.py' -v
+          python benchmarks/live_radium.py --dry-run --trials 4 --output dry-run.json
+      - name: Install Radium-compatible SDK (only for paid run)
+        if: inputs.paid_run == 'yes'
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Paid UCLBench live run
+        if: inputs.paid_run == 'yes'
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+          TRIALS: ${{ inputs.trials }}
+          CAP: ${{ inputs.cap_usd }}
+        run: python benchmarks/live_radium.py --trials "$TRIALS" --cap-usd "$CAP" --output live-results.json
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uclbench-live-report
+          path: |
+            dry-run.json
+            live-results.json
+          if-no-files-found: warn
+          retention-days: 14
