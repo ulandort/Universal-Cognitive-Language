@@ -1,0 +1,88 @@
+name: UCLBench Autonomous 50-Turn Stress (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      paid_run:
+        description: 'Real paid Clarke/Hal conversation? no = offline checks only'
+        type: choice
+        required: true
+        default: 'no'
+        options: ['no','yes']
+      max_repairs:
+        description: 'Additional MODEL-AUTHORED correction attempts per turn'
+        type: choice
+        required: true
+        default: '2'
+        options: ['0','1','2']
+      cap_usd:
+        description: 'Estimated overall spending guard, NOT a hard provider billing cap'
+        type: choice
+        required: true
+        default: '20.00'
+        options: ['10.00','15.00','20.00','30.00','40.00']
+
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: uclbench-autonomous-50-manual
+  cancel-in-progress: false
+
+jobs:
+  autonomous_50:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop/2.0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve genuine final 25-turn continuation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "/repos/ulandort/Universal-Cognitive-Language/actions/artifacts/14777333599/zip" > l25-artifact.zip
+          python - <<'PY'
+          import json,zipfile
+          with zipfile.ZipFile('l25-artifact.zip') as z:
+              report=json.loads(z.read('l25-live.json'))
+          assert report['status']=='complete' and report['delivered']==23
+          last=next(x for x in reversed(report['cases']) if x.get('valid'))
+          assert last['turn']==24 and last['act_id']=='t43'
+          wire=json.loads(last['handoff'])
+          assert wire['packet']['integrity']['sha256']=='KSyyxhhzqja2Kp-K7DGReJfx99l1vcy5wDn-ErwSDm8'
+          with open('l50-seed.json','w') as out:
+              json.dump(wire,out,sort_keys=True,separators=(',',':'))
+          print('Pinned authentic 43-act self-contained L25 seed')
+          PY
+      - name: Free 50-turn full-history regressions and protocol oracle
+        env:
+          L50_SEED: l50-seed.json
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_autonomous_50.py' -v
+          python benchmarks/autonomous_50.py --seed l50-seed.json --dry-run --turns 50 --output l50-dry.json
+      - name: Install provider SDK only when explicitly approved
+        if: inputs.paid_run == 'yes'
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Paid 50-turn independent Clarke-Hal conversation
+        if: inputs.paid_run == 'yes'
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+          REPAIRS: ${{ inputs.max_repairs }}
+          CAP: ${{ inputs.cap_usd }}
+        run: |
+          python benchmarks/autonomous_50.py --seed l50-seed.json --turns 50 --max-repairs "$REPAIRS" --cap-usd "$CAP" --output l50-live.json
+      - name: Preserve authentic seed, every attempt and every validated handoff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uclbench-autonomous-50-results
+          path: |
+            l50-seed.json
+            l50-dry.json
+            l50-live.json
+          retention-days: 14
