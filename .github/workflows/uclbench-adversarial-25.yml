@@ -9,12 +9,18 @@ on:
         type: choice
         default: 'no'
         options: ['no', 'yes']
+      repetitions:
+        description: 'Repeat all model/checkpoint/format blocks, rotating format order'
+        required: true
+        type: choice
+        default: '2'
+        options: ['1', '2', '4']
       cap_usd:
         description: 'Estimated per-run API budget (provider spending cap separate)'
         required: true
         type: choice
-        default: '1.00'
-        options: ['0.50', '1.00', '2.00']
+        default: '2.00'
+        options: ['1.00', '2.00', '4.00']
 
 permissions:
   contents: read
@@ -36,16 +42,17 @@ jobs:
       - name: Validate adversarial benchmark offline at zero API cost
         run: |
           python -m unittest discover -s benchmarks -p 'test_adversarial_25.py' -v
-          python benchmarks/adversarial_25.py --dry-run --output adversarial-dry.json
+          python benchmarks/adversarial_25.py --dry-run --repetitions 2 --output adversarial-dry.json
       - name: Install OpenAI-compatible Radium SDK only on paid run
         if: inputs.paid_run == 'yes'
         run: python -m pip install 'openai>=1.0,<3.0'
-      - name: Paid adversarial comparison (16 calls, budget limited)
+      - name: Paid adversarial comparison (16 calls per repetition, budget limited)
         if: inputs.paid_run == 'yes'
         env:
           RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
           BUDGET: ${{ inputs.cap_usd }}
-        run: python benchmarks/adversarial_25.py --cap-usd "$BUDGET" --output adversarial-results.json
+          REPS: ${{ inputs.repetitions }}
+        run: python benchmarks/adversarial_25.py --cap-usd "$BUDGET" --repetitions "$REPS" --output adversarial-results.json
       - name: Upload result artifacts
         if: always()
         uses: actions/upload-artifact@v4
