@@ -1,0 +1,57 @@
+name: UCLBench 25-turn adversarial (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      paid_run:
+        description: 'Send paid Radium API requests? No runs offline tests only.'
+        required: true
+        type: choice
+        default: 'no'
+        options: ['no', 'yes']
+      cap_usd:
+        description: 'Estimated per-run API budget (provider spending cap separate)'
+        required: true
+        type: choice
+        default: '1.00'
+        options: ['0.50', '1.00', '2.00']
+
+permissions:
+  contents: read
+concurrency:
+  group: uclbench-adversarial-25
+  cancel-in-progress: false
+jobs:
+  adversarial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop/2.0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate adversarial benchmark offline at zero API cost
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_adversarial_25.py' -v
+          python benchmarks/adversarial_25.py --dry-run --output adversarial-dry.json
+      - name: Install OpenAI-compatible Radium SDK only on paid run
+        if: inputs.paid_run == 'yes'
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Paid adversarial comparison (16 calls, budget limited)
+        if: inputs.paid_run == 'yes'
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+          BUDGET: ${{ inputs.cap_usd }}
+        run: python benchmarks/adversarial_25.py --cap-usd "$BUDGET" --output adversarial-results.json
+      - name: Upload result artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uclbench-adversarial-25-results
+          path: |
+            adversarial-dry.json
+            adversarial-results.json
+          retention-days: 14
