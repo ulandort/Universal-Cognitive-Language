@@ -1,0 +1,72 @@
+name: UCLBench exploratory native conversation (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      paid_run:
+        description: 'Real paid Radium calls? no = free offline simulation'
+        type: choice
+        required: true
+        default: 'no'
+        options: ['no', 'yes']
+      turns:
+        description: 'Turns per conversation, each format and model direction'
+        type: choice
+        required: true
+        default: '4'
+        options: ['2', '4']
+      directions:
+        description: 'Use both Clarke/Hal starting-speaker orders'
+        type: choice
+        required: true
+        default: '2'
+        options: ['1', '2']
+      cap_usd:
+        description: 'Estimated spending guard, not a provider billing guarantee'
+        type: choice
+        required: true
+        default: '4.00'
+        options: ['2.00', '4.00', '5.00']
+
+permissions:
+  contents: read
+concurrency:
+  group: uclbench-native-exploration-manual
+  cancel-in-progress: false
+
+jobs:
+  exploratory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop/2.0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline native exploratory regression and synthetic conversation
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_native_exploration.py' -v
+          python benchmarks/native_exploration.py --dry-run --turns 4 --directions 2 --output exploratory-dry.json
+      - name: Install provider client only when explicitly selected
+        if: inputs.paid_run == 'yes'
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Model-chosen hypothesis exploration (paid, bounded)
+        if: inputs.paid_run == 'yes'
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+          TURNS: ${{ inputs.turns }}
+          DIRECTIONS: ${{ inputs.directions }}
+          CAP: ${{ inputs.cap_usd }}
+        run: python benchmarks/native_exploration.py --turns "$TURNS" --directions "$DIRECTIONS" --cap-usd "$CAP" --output exploratory-live.json
+      - name: Preserve qualitative transcripts without inventing correctness scores
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uclbench-native-exploration-results
+          path: |
+            exploratory-dry.json
+            exploratory-live.json
+          retention-days: 14
