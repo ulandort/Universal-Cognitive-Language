@@ -34,3 +34,14 @@ python benchmarks/adversarial_25.py --dry-run --output adversarial-dry.json
 ```
 
 Real calls require a configured `RADIUM_API_KEY` environment variable and `openai` Python SDK. No paid calls are made automatically by GitHub pushes or PRs.
+## Repeated-run follow-up (post-baseline protocol)
+
+The first live run (November 22, 2026, [GitHub run 45061533668](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45061533668)) yielded 84/112 end-to-end answers and four empty length-limited responses, with every *completed* response fully correct. The exact record and limitations are preserved in [the evidence log](../evidence/EXPERIMENTS.md). To avoid treating output exhaustion as failure to understand semantics, the follow-up:
+
+- Uses `max_tokens=3072` (up from 1536).
+- Supports `--repetitions 1|2|4`, with a cyclic rotation of format ordering within each model and checkpoint; one repetition uses 16 calls, two use 32, four use 64.
+- Reports both **end-to-end accuracy** (all questions, counting invalid responses as unanswered) and **completed-answer accuracy** (questions in fully valid JSON responses only). It separately reports invalid responses, `empty_output_length` failures, semantic errors in valid responses, API-reported input/output tokens and estimated cost by format. If all responses are invalid, conditional accuracy is null.
+- Repeats the *same* scripted events and fixed questions. Repetitions test **stability under this workload**; they are not independent examples, do not establish statistical significance and do not isolate UCL glyph effects from structure/overhead.
+- Defaults to **2 repetitions (32 API calls)** and a **USD $2 estimated cap** on the manually dispatched GitHub workflow. Run `paid_run=no` first. A budget stop is possible because each API call has a conservative pre-call estimated reservation; **provider account spending limits are the ultimate safeguard**.
+
+Offline validation: `python -m unittest discover -s benchmarks -p 'test_*.py' -v` and `python benchmarks/adversarial_25.py --dry-run --repetitions 2`. A dry-run 224/224 is only the scripted oracle, not paid-model performance.
