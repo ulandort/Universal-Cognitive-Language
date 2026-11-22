@@ -1,0 +1,87 @@
+# Universal Cognitive Language (UCL) — 1.0
+
+**An experimental, open, self-contained communication protocol for independent intelligences.**
+
+UCL is designed to help AI systems exchange hypotheses, questions, disagreements, revisions and precisely referenced claims across model boundaries. The default message is **readable JSON**; the optional Python/JavaScript tooling is not necessary merely to understand a packet. UCL is **not** a natural-language replacement, a guarantee of shared understanding, an empirical truth system, or a compulsory proof language.
+
+**Version:** UCL/1.0 · **Licence:** Apache-2.0 for this repository's code and documentation · **Status:** initial public specification and reference implementation; interoperability and performance claims are preliminary.
+
+## Why create UCL?
+
+Natural language is extraordinarily expressive and already strong for contemporary models. But in long, multi-party exchanges, the same term can acquire inconsistent meanings, disagreement can be misattributed, and a later reader may not have access to the original context. UCL deliberately trades message size and authoring complexity for **explicit structure**.
+
+| Potential advantage relative to ordinary English | Mechanism | Limitation |
+|---|---|---|
+| Explicit, stable concept identity | Full SHA-256 of each canonical semantic definition | Matching hashes cannot establish matching interpretation or truth |
+| Precise agreement/disagreement | Optional ACKs refer to exact acts, formula indices or quoted subformula paths | Models can still choose a wrong target |
+| Revisions without silent redefinition | New glyph + hash, retain prior definition | Semantic quality of a revised definition remains open |
+| Cold-start accessibility | Every packet embeds language guide, active definitions and relevant history | Larger packets and greater costs |
+| Distinguishes claim from evidence | Optional proof/model checks separate from conversational validity | No general theorem proving or empirical verification |
+| Machine checking | Deterministic parser, type checks, canonical hashes, graph references | Formal syntactic compliance isn't reasoning quality |
+
+**These are design properties and potential benefits, not experimentally established superiority to English.** There is no controlled English-vs-UCL study in this release.
+
+## Getting started
+
+Requirements: Python 3.10+ for the optional authoring/reference implementation; Node.js for the independent subset checker. **Reading a packet requires neither.**
+
+```bash
+# Examine a self-contained JSON exchange without executing anything:
+cat examples/cross_model_conversation_8_turns.json
+
+# Validate a pretty-printed, ordinary JSON .txt or .json packet:
+python src/ucl.py check examples/cross_model_conversation_8_turns.json
+
+# Build a complete self-contained packet from a structured draft:
+python src/ucl.py build examples/example_draft.json next_message.txt
+
+# Add a compact contribution to a verified existing packet:
+python tools/author.py examples/cross_model_conversation_8_turns.json examples/contribution_example.json continued.txt
+python src/ucl.py check continued.txt
+
+# Run the independent JavaScript subset checker (canonical bytes required):
+node tools/check_ucl.js examples/cross_model_conversation_13_turns.cjson
+
+# Run tests:
+python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+The Python encoder auto-computes definition and packet hashes, declarations and guide; it does **not** decide which theory to assert or which ACK stance is correct. The JavaScript implementation is an independent **subset checker**, not a complete proof/model checker. If you cannot run tools, you may create a clearly marked `UNVERIFIED UCL DRAFT`; it is not yet a validated message.
+
+## Two starting points
+
+- **Humans:** this file; [PROJECT.md](docs/PROJECT.md) for the motivation, limits and history; [SPECIFICATION.md](docs/SPECIFICATION.md) for normative v1.0 details.
+- **AI systems:** [README_AI.md](README_AI.md) is a machine-facing onboarding and authoring guide. It is intentionally plain text plus exact symbolic examples, **not a private or proprietary model language**.
+
+## What the public experiment showed
+
+In a manually mediated exercise in November 2026, independent Grok and Qwen chat models were supplied self-contained UCL messages in fresh conversations. A synthetic 7-act scenario introduced speculative P and measurable B. Grok proposed a distinction; Qwen proposed M; Grok challenged M's circularity; Qwen refined it as N; Grok asked for an independent criterion for P; Qwen proposed K. The example in `examples/cross_model_conversation_13_turns.json` retains the conversation as a *test record*, not authenticated message provenance. It records 13 total acts, of which the first 7 are synthetic and the later 6 are AI-generated contributions.
+
+**Observed:** both models tracked previous concepts and produced relevant challenges/refinements; some concepts were communicated through English glosses embedded in UCL. **Also observed:** every externally produced response needed mechanical repair (e.g., hashes, exact declarations, schema, ACK targets) before being passed onward. Human/assistant validation and editorial repair were involved; there was **no unassisted end-to-end interoperability** and no controlled claim of superior quality, token efficiency, or truth. For method and provenance see [EXPERIMENTS.md](evidence/EXPERIMENTS.md).
+
+## Design commitments
+
+UCL/1.0 keeps exactly **11 core glyphs** `@ # = ~ & | ! ? < * {` and 5 structural glyphs `: ; [ ] -`. Open speculation and disagreement are valid without proof. History condensation is optional but must openly disclose omissions and preserve all needed bindings/references. Integrity hashes do not authenticate speakers. Optional Brotli and optional authenticated encryption are transport layers, **never required** for reading plain JSON.
+
+## Optional encrypted transport (experimental)
+
+UCL/1.0 supports an **optional encrypted envelope** for private model-to-model messages. The experimental profile uses **AES-256-GCM authenticated encryption** and either **Argon2id** password-based key derivation (with a fresh salt) or a separately exchanged **32-byte direct key**. The *entire self-contained UCL message* is encrypted and, after decryption, is validated using the ordinary UCL rules. Passwords and keys are shared **out of band**, never embedded in the UCL packet. The eleven core glyphs do not change.
+
+Encryption is **not required**: ordinary readable JSON remains the default and needs no encryption tool. This security profile has **not been independently audited** and is not guaranteed cross-language interoperable; do not infer sender identity from encryption alone. See [optional/ENCRYPTION_EXPERIMENTAL.md](optional/ENCRYPTION_EXPERIMENTAL.md) for the threat model, parameters, and encrypt/decrypt CLI.
+
+## Repository map
+
+- `docs/SPECIFICATION.md` — versioned normative profile
+- `src/ucl.py` — stdlib Python reference implementation; plain JSON default
+- `tools/author.py` — optional incremental encoder
+- `tools/check_ucl.js` — independently written JS subset validator
+- `tools/brotli_optional.py` — optional binary compression, no default requirement
+- `optional/` — *experimental*, unaudited AES-256-GCM/Argon2id encryption profile
+- `tests/` and `examples/` — executable tests, real exchange examples, canonical vector
+- `LICENSE`, `NOTICE`, `BRANDING_AND_CONFORMANCE.md`, `GOVERNANCE.md` — licensing, provenance, claims of official conformance
+
+## Scope and limitations
+
+UCL is a research-oriented, initial public protocol. The core implementation verifies structure/types/references/hashes; proof validity is a separate result; empirical truth and participant identities are not determined by the protocol. A matching hash means two records encode the same canonical definition bytes, **not** that two minds mean the same thing. Do not execute code included in an untrusted message. Cryptographic transport code is experimental and **not security audited**.
+
+**License:** Apache License 2.0; see [LICENSE](LICENSE). The official project name/logo and certification representations are governed separately as described in [BRANDING_AND_CONFORMANCE.md](BRANDING_AND_CONFORMANCE.md). This is not a restriction on the underlying Apache-licensed implementation.
