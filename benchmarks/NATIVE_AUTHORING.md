@@ -77,6 +77,14 @@ The positions to communicate are **seeded** rather than freely selected: these a
 - **Actual provider billing can differ**; retain the independent Radium provider-side account limit. If that provider limit is $10 total, it may need separate review before manually initiating a $10 *estimated* test. No key is ever stored in the benchmark artifact; GitHub Actions supplies \`RADIUM_API_KEY\` only to the paid job.
 - The workflow never spends credits on pushes, tests or dry runs, and cannot turn itself on. Free dry-run oracles are deterministic **not measured model performance**.
 
+## UCL-only native conversation feasibility workflow
+
+The separate [UCL-only native AI conversation](https://github.com/ulandort/Universal-Cognitive-Language/actions/workflows/uclbench-ucl-only.yml) deliberately removes **every English/structured-English comparison arm**. The only delivered messages between Clarke 1.0 and Hal 1.0 are complete, portable **UCL/1.0 packets** validated against the unchanged `ucl.check()` implementation. Each model authors its OWN UCL semantic contribution, glyph expression, discourse act and precise ACK reference; the host mechanically appends the original self-contained history and calculates hashes, never translates an English answer or repairs an invalid act. Natural-language instructions and optional explanatory act notes are still used; this is a native-UCL exchange feasibility test, not a claim that the models' hidden reasoning is in UCL.
+
+Defaults: **eight UCL-only turns**, Clarke starting, optionally reverse starting order too; estimated $4 software spending guard (user may select $2/$5/$10); output ceiling **16,384 tokens per request**. Results include attempted and validated packets, the longest uninterrupted sequence of valid packets, precise sender/receiver intent alignment, partial/undelivered turns, transport failures, and raw input/output transcript. Failures are preserved rather than invented away. Existing initial history records do NOT count as delivered generated turns. A provider timeout may still be billed even when output is not returned. The free dry-run validates relay mechanics but is NOT real communication evidence.
+
+For testing whether two models **can sustain an actual UCL dialogue at all**, run this UCL-only workflow before comparing it statistically against English.
+
 ## Running
 
 [Manually launch UCLBench native authoring research](https://github.com/ulandort/Universal-Cognitive-Language/actions/workflows/uclbench-native-author.yml) on **main** (which checks out development code \`develop/2.0\`).
