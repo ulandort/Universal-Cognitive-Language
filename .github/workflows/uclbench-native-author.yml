@@ -1,0 +1,79 @@
+name: UCLBench native authoring research (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      paid_run:
+        description: 'Permit real paid Radium requests? No = free regression + oracle'
+        type: choice
+        required: true
+        default: 'no'
+        options: ['no', 'yes']
+      cases:
+        description: 'Independent ambiguity and evidence challenges'
+        type: choice
+        required: true
+        default: '4'
+        options: ['2', '4']
+      directions:
+        description: 'Both model sender/receiver directions?'
+        type: choice
+        required: true
+        default: '2'
+        options: ['1', '2']
+      strict_full_packet:
+        description: 'Also challenge each model to author entire checksum-bearing UCL packet natively'
+        type: choice
+        required: true
+        default: 'yes'
+        options: ['yes', 'no']
+      cap_usd:
+        description: 'Total estimated API spending guard (NOT provider billing cap)'
+        type: choice
+        required: true
+        default: '10.00'
+        options: ['5.00', '7.50', '10.00']
+
+permissions:
+  contents: read
+concurrency:
+  group: uclbench-native-authoring-paid
+  cancel-in-progress: false
+
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop/2.0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate direct authoring and independent strict UCL packet offline (free)
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_native_author.py' -v
+          python benchmarks/native_author.py --dry-run --cases 4 --directions 2 --strict yes --output native-dry-run.json
+      - name: Install compatible Radium client for paid run only
+        if: inputs.paid_run == 'yes'
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Paid unassisted UCL semantic authorship plus strict full-packet challenge
+        if: inputs.paid_run == 'yes'
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+          CASES: ${{ inputs.cases }}
+          DIRECTIONS: ${{ inputs.directions }}
+          STRICT: ${{ inputs.strict_full_packet }}
+          CAP: ${{ inputs.cap_usd }}
+        run: python benchmarks/native_author.py --cases "$CASES" --directions "$DIRECTIONS" --strict "$STRICT" --cap-usd "$CAP" --output native-live.json
+      - name: Upload full native authorship research transcripts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uclbench-native-authoring-results
+          path: |
+            native-dry-run.json
+            native-live.json
+          retention-days: 14
