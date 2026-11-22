@@ -14,6 +14,10 @@ The [2.0 development notes](docs/UCL_2_0_DEVELOPMENT.md) describe two planned pr
 
 **[UCLBench offline](benchmarks/README.md)** provides deterministic tests for definitions, references, integrity, tampering and guide-profile reconstruction. Run `python benchmarks/offline_suite.py --iterations 1000`; the [GitHub Actions workflow](.github/workflows/uclbench.yml) runs automatically on development changes. Offline tests verify protocol mechanics, **not** AI understanding or superiority to English.
 
+### Live UCLBench with Radium Cloud (manual, experimental)
+
+The [live Radium harness](benchmarks/LIVE_RADIUM.md) relays small, controlled messages between Hal and Clarke across English, structured English, UCL Portable and UCL Compact. **No paid calls occur on commits**. The manually triggered [UCLBench live workflow](https://github.com/ulandort/Universal-Cognitive-Language/actions/workflows/uclbench-live.yml) defaults to a zero-cost dry run, and uses the `RADIUM_API_KEY` GitHub Actions secret only if you explicitly choose the paid run. The launcher resides on `main` only because GitHub requires manual-dispatch workflows there; it checks out this development branch for all test code.
+
 ## How UCL works: glyphs, layers and meaning
 
 UCL uses **11 core glyphs** as a small, fixed vocabulary for expressing typed statements. They are not substitutes for English letters: their meanings come from the grammar, while custom symbols such as `A`, `P` or `D` get **explicit definitions** carried inside the message. Square brackets group arguments. An AI can inspect those definitions instead of guessing what an unfamiliar symbol means.
