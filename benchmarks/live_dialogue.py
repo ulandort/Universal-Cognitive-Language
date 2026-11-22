@@ -20,7 +20,7 @@ BASELINE=ROOT/'examples/cross_model_conversation_8_turns.json'
 FORMATS=('english','structured_english','ucl_portable')
 MODELS=('clarke-1.0','hal-1.0')
 ACTIONS=('reject','adopt-for-discussion','withhold-judgment','accept')
-MAX_OUTPUT=1536
+MAX_OUTPUT=3072
 SYSTEM=('You are one of two AI agents in an experimental relay. '
         'Give your short final JSON answer immediately, no Markdown. '
         'Be precise: provisional adoption is not proof, and understanding is not agreement.')
