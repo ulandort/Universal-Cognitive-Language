@@ -102,8 +102,51 @@ class TestAdversarial25(unittest.TestCase):
         self.assertLess(result['questions_correct'],112)
         self.assertGreater(result['estimated_cost_usd'],0)
 
+    def test_rotated_order_preserves_coverage(self):
+        orders=[b.rotated_formats(r,0,0) for r in range(4)]
+        self.assertEqual(len(set(orders)),4)
+        for order in orders:self.assertEqual(set(order),set(b.FORMATS))
+        self.assertNotEqual(b.rotated_formats(0,0,0),b.rotated_formats(0,1,0))
+
+    def test_repetition_dry_run_and_separate_metrics(self):
+        result=b.run(dry_run=True,cap=.01,repetitions=2)
+        self.assertEqual(result['completed'],32)
+        self.assertEqual(result['questions_total'],224)
+        self.assertEqual(result['questions_correct'],224)
+        self.assertEqual(result['valid_responses'],32)
+        self.assertEqual(result['completed_answer_accuracy'],1)
+        self.assertEqual(result['end_to_end_accuracy'],1)
+        self.assertEqual(b.MAX_OUTPUT,3072)
+        for fmt in b.FORMATS:
+            self.assertEqual(result['by_format'][fmt]['requests'],8)
+
+    def test_length_failure_not_misclassified_as_semantic_error(self):
+        rows=[
+            {'repetition':0,'checkpoint':10,'model':'clarke-1.0','format':'english',
+             'questions':6,'passed':0,'format_valid':False,'failure_type':'empty_output_length',
+             'usage':{'input':200,'output':3072}},
+            {'repetition':0,'checkpoint':10,'model':'hal-1.0','format':'english',
+             'questions':6,'passed':5,'format_valid':True,'valid_answer_count':6,
+             'incorrect_answer_count':1,'usage':{'input':300,'output':400}},
+        ]
+        result=b.summarize(rows,.02,'complete')
+        english=result['by_format']['english']
+        self.assertEqual(english['correct'],5)
+        self.assertEqual(english['total'],12)
+        self.assertEqual(english['invalid_outputs'],1)
+        self.assertEqual(english['output_length_failures'],1)
+        self.assertEqual(english['semantic_errors_in_valid_answers'],1)
+        self.assertAlmostEqual(english['completed_answer_accuracy'],5/6)
+        self.assertAlmostEqual(english['end_to_end_accuracy'],5/12)
+        self.assertEqual(english['input_tokens'],500)
+        self.assertEqual(result['invalid_responses'],1)
+
+    def test_repetition_guard(self):
+        for n in (0,3,5,True):
+            with self.assertRaises(ValueError):b.run(dry_run=True,repetitions=n)
+
     def test_cap_and_guards(self):
-        for cap in (0,-1,2.01):
+        for cap in (0,-1,4.01):
             with self.assertRaises(ValueError):b.run(cap=cap,dry_run=True)
         self.assertGreater(b.reserve_upper_bound('hal-1.0',b.request_messages('ucl_portable',self.states[25],25),b.MAX_OUTPUT),0)
 
