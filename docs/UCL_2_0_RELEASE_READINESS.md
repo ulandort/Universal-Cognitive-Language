@@ -2,6 +2,20 @@
 
 Status: experimental development checklist, not a claim of UCL/2.0 conformance or release approval. UCL/1.0 on `main` remains stable. Each gate needs reproducible evidence, recorded failure analysis, and an explicit go/no-go decision. Do not equate syntax correctness, self-reported intent matching, or an oracle dry run with independently validated comprehension.
 
+## Public benchmark reporting policy — disagreement is not a protocol failure
+
+UCL is intended to support independent reasoning, including dissent, counterexamples, unresolved questions and revisions. **A receiving model disagreeing with the preceding model's conclusion is not a language error.** Nor is a model changing its own position after discussion.
+
+For every public benchmark summary, distinguish clearly:
+1. **Structural/transport failures:** invalid UCL grammar, broken references, lost history, altered immutable definitions, failed integrity validation, empty or truncated outputs, and provider failures (with provider problems reported separately).
+2. **Communication fidelity:** whether the recipient accurately attributes the sender's proposition, scope, stance, definitions and epistemic qualifications. A receiver may accurately understand an argument and still reject it. Measured mismatches against privately self-reported intent are *receipt disagreements*, not automatically proven semantic misunderstandings.
+3. **Ancillary classification:** differences in detecting an example, the sense of an ambiguous word, or a requested output enum. These must be named rather than collapsed into an undifferentiated “language failure” score.
+4. **Productive intellectual disagreement:** independent objections, counterexamples, alternate theories, and coherent revisions are legitimate—even desirable—conversation outcomes, not correctness penalties. Logical disagreement only becomes an interoperation concern when attribution or intended scope is demonstrably distorted.
+
+Report both numerators and denominators, first-attempt versus repaired delivery, model/provider limitations, and representative qualitative transcript examples. Preserve the original raw evidence and disclose ambiguity; never relabel a measured mismatch as a proven defect or hide a genuine error to improve public presentation. Do not claim superiority over English without a controlled comparison.
+
+In particular, [native UCL-only run 45077733957](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45077733957) achieved 16/16 delivered packets with three model-authored repairs. Its 9/14 exact four-field receipts **must not** be described as “five language failures” or a 35.7% inability to converse. The mismatches include ancillary evidence or signal classifications and one stance distinction; they deserve transcript-level review. Neither their existence nor apparent productive conversation proves perfect semantic fidelity.
+
 ## Gate 1 — Optional FR-1 communicative roles
 
 - [x] Implement optional, checksum-protected, indexed author-declared annotations in the self-contained Portable envelope; preserve the original UCL/1.0 inner packet, all 11 core glyphs, and backward compatibility.
