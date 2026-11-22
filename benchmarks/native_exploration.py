@@ -19,7 +19,7 @@ FORMATS=n.FORMATS
 DIRECTIONS=(0,1)
 def make_prompt(fmt,turn,speaker,state):
     prompt=(n.DOMAIN+
-      '\nYou are '+speaker+' in an open-ended, four-turn conversation with a separate model. '
+      '\nYou are '+speaker+' in an open-ended cross-model UCL research conversation. '
       'Explore potentially unexpected distinctions, hypotheses, or implications that '
       'follow from the stipulated meanings of P and B. You may introduce a possible '
       'counterexample, ask a new question, qualify an earlier hypothesis, change your '
@@ -100,27 +100,30 @@ def parse_response(raw,fmt,has_previous):
         if not isinstance(authored,dict):raise ValueError('Formal authored message must be object')
     return obj
 
-def run(client=None,dry_run=False,cap=4.0,turns=TURNS,directions=2):
-    if turns not in (2,4):raise ValueError('turns must be 2 or 4')
+def run(client=None,dry_run=False,cap=4.0,turns=TURNS,directions=2,formats=None):
+    if turns not in (2,4,6,8):raise ValueError('turns must be 2, 4, 6 or 8')
+    formats=FORMATS if formats is None else tuple(formats)
+    if not formats or len(set(formats))!=len(formats) or any(f not in FORMATS for f in formats):
+        raise ValueError('formats must be unique supported protocols')
     if directions not in (1,2):raise ValueError('directions must be 1 or 2')
     if not 0<cap<=10:raise ValueError('cap must be USD 0-10')
     base=ucl.load_json(n.BASELINE.read_text())
     rows=[];spent=0.
     for direction in range(directions):
-      for fmt in FORMATS:
+      for fmt in formats:
         state={'packet':base,'history':[],'last_intent':None,'last_act':None,'failed':0}
         for turn in range(turns):
             sender=n.MODELS[(turn+direction)%2]
             messages=make_prompt(fmt,turn,sender,state)
             reserve=reserve_upper_bound(sender,messages,n.MAX_OUTPUT)
             if not dry_run and spent+reserve>cap:
-                return summary(rows,spent,'budget_stop','Pre-call estimate would exceed cap')
+                return summary(rows,spent,'budget_stop','Pre-call estimate would exceed cap',formats=formats)
             row={'direction':direction,'turn':turn,'format':fmt,'model':sender,
                  'resumed_after_failure':bool(state['failed']),
                  'prompt_bytes':sum(len(x['content'].encode()) for x in messages),
                  'prompt':safe_text(messages[-1]['content'])}
             if dry_run:
-                case=n.CASES[turn]
+                case=n.CASES[turn % len(n.CASES)]
                 intent={k:case[k] for k in n.FIELDS}
                 receipt=state['last_intent']
                 atom='~[P][A]' if intent['path']==0 else '~[B][A]'
@@ -200,14 +203,14 @@ def run(client=None,dry_run=False,cap=4.0,turns=TURNS,directions=2):
                 row['validation_error']=str(exc)[:180]
                 state['failed']+=1
             rows.append(row)
-    out=summary(rows,spent,'dry_run' if dry_run else 'complete')
+    out=summary(rows,spent,'dry_run' if dry_run else 'complete',formats=formats)
     if any(r.get('provider_charge_unknown') for r in rows):
         out['estimated_cost_caveat']='Provider timeouts may still be billed; unknown charges are not included in estimate'
     return out
 
-def summary(rows,spent,status,reason=None):
+def summary(rows,spent,status,reason=None,formats=None):
     stats={}
-    for fmt in FORMATS:
+    for fmt in (FORMATS if formats is None else formats):
         r=[x for x in rows if x['format']==fmt]
         sc=[x for x in r if x.get('receipt_correct') is not None]
         stats[fmt]={'turns':len(r),'valid_authored':sum(x.get('valid') is True for x in r),
@@ -219,6 +222,7 @@ def summary(rows,spent,status,reason=None):
                     'input_tokens':sum((x.get('usage') or {}).get('input') or 0 for x in r),
                     'output_tokens':sum((x.get('usage') or {}).get('output') or 0 for x in r)}
     out={'status':status,'total_estimated_cost_usd':round(spent,6),
+         'formats_requested':list(FORMATS if formats is None else formats),
          'by_format':stats,'cases':rows,
          'limitations':'Exploratory, not proof of truth or novelty. Models choose hypotheses and positions; no predetermined semantic answer. Private intent is self-reported, not independent truth. Novel inference requires blinded human review, and absence of false empirical claims must be audited. UCL formal structures contain host-calculated checksums only.'}
     if reason:out['reason']=reason
