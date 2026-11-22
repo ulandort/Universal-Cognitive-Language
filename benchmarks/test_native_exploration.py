@@ -30,6 +30,36 @@ class TestNativeExploration(unittest.TestCase):
         self.assertNotIn('Your task: communicate ONLY your stance',p)
         self.assertIn('ACK target',p)
 
+    def test_no_prior_ucl_receipt_is_explicitly_null(self):
+        base=ucl.load_json(n.BASELINE.read_text())
+        state={'history':[],'packet':base,'last_intent':None,'last_act':None,'failed':2}
+        msg=e.make_prompt('ucl_native',2,'clarke-1.0',state)[-1]['content']
+        self.assertIn('Set receipt to JSON null',msg)
+        self.assertIn('historical UCL act',msg)
+
+    def test_timeout_is_logged_and_next_turn_continues(self):
+        from types import SimpleNamespace
+        class Fake:
+            def __init__(self):self.calls=0
+            def create(self,**kwargs):
+                self.calls+=1
+                if self.calls==1:raise TimeoutError('mock timeout')
+                return SimpleNamespace(
+                  choices=[SimpleNamespace(
+                    message=SimpleNamespace(content='{"receipt":null,"intent":{"action":"reject","path":0,"signal_sense":"conceptual-hint","evidence":"none"},"authored":"I reject only P. Signal is conceptual, not proven; no evidence is offered."}'),
+                    finish_reason='stop')],
+                  usage=SimpleNamespace(prompt_tokens=100,completion_tokens=100))
+        fake=Fake()
+        api=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=fake.create)))
+        out=e.run(api,cap=10,turns=2,directions=1)
+        self.assertEqual(out['status'],'complete')
+        self.assertEqual(len(out['cases']),6)
+        self.assertTrue(out['cases'][0]['provider_charge_unknown'])
+        self.assertEqual(out['cases'][0]['failure_type'],'api_TimeoutError')
+        self.assertTrue(out['cases'][1]['valid'])
+        self.assertTrue(out['cases'][1]['resumed_after_failure'])
+        self.assertIn('estimated_cost_caveat',out)
+
     def test_invalid_private_intent_rejected(self):
         obj={'receipt':None,'intent':{'action':'made-up','path':0,
              'signal_sense':'conceptual-hint','evidence':'none'},'authored':'A valid sentence.'}
