@@ -28,6 +28,13 @@ def messages(fmt,turn,case,sender,state):
       'and not a potentially false recap')
     prompt=(task+'\nYou are '+sender+' and are responding in a true, consecutive '
             'cross-model dialogue. Return exactly {"receipt":..., "authored":...}. '
+            'When receipt is an object, it MUST have exact enum keys/values: '
+            'action one of reject/adopt-for-discussion/withhold-judgment/accept; '
+            'path INTEGER 0=P or INTEGER 1=B; '
+            'signal_sense exactly conceptual-hint or instrument-reading; '
+            'evidence exactly none or hypothetical-example. '
+            'Never replace enum values with English sentences. '
+            'NEVER guess a prior message if one was not delivered. '
             +expected+'. The recipient will not see your instructions or task key. '
             'Your authored component is YOUR OWN new communication, not a transcription '
             'or conversion of an English message. Keep prior definitions unchanged.')
@@ -37,7 +44,12 @@ def messages(fmt,turn,case,sender,state):
         history='\n'.join(state['history']) if state['history'] else 'No prior authored turns.'
     elif fmt=='structured_english':
         prompt+=('\nauthored MUST be the structured JSON object with exactly '
-                 'action, path, signal_sense, evidence, note; make the note original.')
+                 'action, path, signal_sense, evidence, note; make the note original. '
+                 'action MUST be exactly one of reject/adopt-for-discussion/withhold-judgment/accept; '
+                 'path MUST be integer 0=P or 1=B; '
+                 'signal_sense MUST be conceptual-hint or instrument-reading; '
+                 'evidence MUST be none or hypothetical-example. '
+                 'Never use path="P" or action="reject P".')
         history='\n'.join(state['history']) if state['history'] else 'No prior authored turns.'
     else:
         prior=state['last_act'] or 't8'
@@ -48,7 +60,16 @@ def messages(fmt,turn,case,sender,state):
                  'Do NOT write an English draft and ask a tool to translate it. '
                  'No host semantics correction: the tool only assembles exact definitions, '
                  'history and integrity. Match the syntactic template but choose ALL '
-                 'of its semantic fields yourself:\n'+json.dumps(template,sort_keys=True))
+                 'of its semantic fields yourself. '
+                 'acknowledgements[0].target MUST be exactly '
+                 '{"claim":"theory","path":[0]} for P, or {"claim":"theory","path":[1]} for B; '
+                 'the path contains an integer, never a string or act object. '
+                 'act.expressions MUST contain exactly the same single typed expression '
+                 'as explanation and conclusion: "~[P][A]" for P or "~[B][A]" for B. '
+                 'acknowledgements[0].action MUST be one of reject/adopt-for-discussion/'
+                 'withhold-judgment/accept. Never invent an ext: action. '
+                 'Replace all placeholders and keep act ID and ACK ID from the template:\n'
+                 +json.dumps(template,sort_keys=True))
         history=('Full prior valid UCL packet:\n'+json.dumps(state['packet'],sort_keys=True,separators=(',',':')))
     if state['failed']:
         prompt+=('\nIMPORTANT: '+str(state['failed'])+' previous turn(s) did not produce '
