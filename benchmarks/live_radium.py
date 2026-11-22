@@ -21,9 +21,9 @@ BASELINE = ROOT / 'examples/cross_model_conversation_8_turns.json'
 PRICES = {'hal-1.0': (2.00, 10.00), 'clarke-1.0': (0.75, 4.50), 'tycho-1.0': (0.10, 1.50)}
 FORMATS = ('english', 'structured_english', 'ucl_portable', 'ucl_compact')
 MODEL_CHOICES = ('hal-1.0', 'clarke-1.0')
-MAX_OUTPUT = 192
+MAX_OUTPUT = 1024
 BASE_URL = 'https://api.radium.cloud/v1'
-SYSTEM = 'You are participating in a controlled message-relay benchmark. Follow the requested response format precisely. Do not discuss the test.'
+SYSTEM = 'You are participating in a controlled message-relay benchmark. Give the requested short final response immediately. Follow the requested response format precisely. Do not discuss the test.'
 
 
 def parse_json(text):
@@ -147,7 +147,7 @@ def run(client, trials=1, cap=0.50, dry_run=False):
             actual_in=getattr(usage,'prompt_tokens',None)
             actual_out=getattr(usage,'completion_tokens',None)
             cost += price_estimate(sender, actual_in, actual_out) if actual_in is not None and actual_out is not None else reservation
-            row={'trial':trial,'format':fmt,'sender':sender,'receiver':receiver,'intended':case,'sender_response':safe_text(sender_text), 'sender_usage':{'input':actual_in,'output':actual_out}}
+            row={'trial':trial,'format':fmt,'sender':sender,'receiver':receiver,'intended':case,'sender_response':safe_text(sender_text), 'sender_usage':{'input':actual_in,'output':actual_out},'sender_finish_reason':getattr(sender_resp.choices[0],'finish_reason',None)}
             try:
                 handoff,meta=build_handoff(fmt,case,sender_text,baseline)
                 row['author_valid']=True
@@ -166,6 +166,7 @@ def run(client, trials=1, cap=0.50, dry_run=False):
             cost+=price_estimate(receiver,pi,co) if pi is not None and co is not None else reserve
             row['receiver_response']=safe_text(rec_text)
             row['receiver_usage']={'input':pi,'output':co}
+            row['receiver_finish_reason']=getattr(rec_resp.choices[0],'finish_reason',None)
             row['wire_bytes']=len(handoff.encode())
             row['receiver_prompt_bytes']=sum(len(m['content'].encode()) for m in msgs)
             try:
@@ -174,7 +175,7 @@ def run(client, trials=1, cap=0.50, dry_run=False):
             except (ValueError,TypeError,KeyError):row['correct']=False
             if not row['correct']:failures+=1
             records.append(row)
-    return {'status':'dry_run' if dry_run else 'complete','completed':len(records),'spent_usd_estimate':round(cost,6),'failures':failures,'cases':records,'warning':'Exploratory small-sample smoke test; no statistically significant claims. API charges may differ from estimate.'}
+    return {'status':'dry_run' if dry_run else 'complete','completed':len(records),'spent_usd_estimate':round(cost,6),'failures':failures,'cases':records,'warning':'Exploratory small-sample smoke test; no statistically significant claims. API charges may differ from estimate. Empty visible model responses are protocol/output failures, not demonstrated UCL semantic failures.'}
 
 
 def main():
