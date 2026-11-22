@@ -17,6 +17,14 @@ Each trial: a deterministic hypothetical two-part claim P & B and a specified st
 
 **Important design caveats:** The four conditions do not yet perfectly match informational overhead, sender interface, or the amount of history. Because the UCL arms carry a baseline synthetic conversation, raw token counts must not be interpreted as efficiency measures of the glyph language alone. This run is for authentication, compatibility, mechanics, and preliminary reference-accuracy signals only. Future UCLBench should match task content and add pre-registered, randomized and blinded evaluation.
 
+## Live-test improvements after the first two paid runs
+
+The first Hal-first test produced no visible answer within 192 output tokens. A later 1,024-token trial yielded successful structured English and UCL Portable handoffs, while Hal still produced empty length-limited messages in English and UCL Compact. Those are **model generation/output-budget failures**, not demonstrated semantic failures of those communication formats.
+
+The live harness now sends **Clarke first** for trial 1 and reverses the model roles in trial 2. It reports `author_valid` (mechanically well-formed message), `sender_intent_correct` (whether structured contributions target the intended claim and stance), `correct` (end-to-end receiver answer), `failure_type`, and finish reasons/token usage separately. English sender-intent correctness is left **unscored**, rather than being guessed with naive pattern matching; future independent blind grading is needed. If a sender produces no valid message, the recipient is not tested, and the result must not be described as a comprehension failure.
+
+Use **1 trial and USD $0.25 estimated cap** first, followed by 2 or 4 trials for role reversal and case balance only after checking transcripts. The software cap remains an estimate; the provider-side limit is authoritative. The four arms do not establish UCL superiority: sender interfaces differ, UCL employs a mechanical authoring tool, and the UCL packets include substantial historical context.
+
 ## Local commands
 
 ```bash
