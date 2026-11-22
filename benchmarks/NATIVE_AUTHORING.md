@@ -1,12 +1,27 @@
 # UCLBench: native UCL authorship research suite (experimental 2.0)
 
-**This is the first intentionally native-authoring comparison; no paid experiments have been run automatically.** The stable UCL/1.0 specification on main is unchanged. UCL Compact is retired and is not part of this benchmark.
+**The first native-authorship paid experiment completed on November 22, 2026. The revised benchmark below is a follow-up; no further paid run has been launched automatically.** The stable UCL/1.0 specification on main is unchanged. UCL Compact is retired and is not part of this benchmark.
 
 ## Why the preceding results are not a proof of UCL superiority
 
 The November 22, 2026, 6-turn × 2-trial assisted live dialogue completed **36 scheduled messages** for an estimated **$0.998079 USD**. English delivered **12/12** valid turns and **10/10** correct scored receipts; structured English delivered **12/12** and **10/10**; tool-assisted Portable UCL delivered **11/12** and **9/9**, with **two paid recovery requests**, one successful. Input usage was English **11,794**, structured English **12,525**, and UCL Portable **60,674** tokens; output usage was **33,343**, **32,604**, and **51,843**. All scored receipts were correct; there was **no UCL semantic advantage** demonstrated. Crucially, in that run the AI authored English prose and a separate tool created the formal UCL packet from a private intent. This tested assisted encoding rather than native symbolic authorship.
 
 See [paid workflow 45064778784](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45064778784). Historical raw model responses remain in its GitHub Actions artifact.
+
+## First native-authorship paid baseline: November 22, 2026
+
+The first paid [native workflow run 45066654527](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45066654527) completed **26 one-hop/strict challenges and 24 dialogue turns**, with **$1.990501 USD** estimated total cost. This is the empirical baseline for the syntax-and-output revision.
+
+| Format | One-hop author-valid | One-hop receivers correct | Multi-turn valid messages | Multi-turn receipts scored |
+|---|---:|---:|---:|---:|
+| English | 8/8 | 4/8 | 2/8 | 0 |
+| Structured English | 0/8 | 0 tested | 0/8 | 0 |
+| Native UCL symbolic contributions | 0/8 | 0 tested | 0/8 | 0 |
+| Strict full UCL packet | 0/2 | Not applicable | — | — |
+
+**Failure analysis:** English receiver answers failed mostly on the claim target, with no demonstrated errors in the other scored facets. Structured English and UCL often produced invalid shape/value combinations rather than valid messages delivered to a receiving model. Several failed outputs hit the previous 8,192-token ceiling; strict full-packet tasks hit 16,384 tokens. **Neither semantic superiority nor semantic inferiority can be inferred from a receiver evaluation that never occurred.**
+
+**Predeclared follow-up changes:** The revised primary native sender/receiver call budget is 16,384 tokens, while strict full-packet generation remains limited to 16,384 (the shared limit supported by both selected models). Prompts now give unambiguous *exact enum fields*, **integer** P/B claim paths, required ACK target object, matching UCL expression syntax, and original complete immutable UCL baseline in the native one-hop sender prompt. No model output is semantically fixed by the host. Repeat tests are exploratory and do not become independent task samples just because the prompting improved.
 
 ## What the new suite actually tests
 
@@ -35,7 +50,7 @@ The positions to communicate are **seeded** rather than freely selected: these a
 
 ## Model and cost controls
 
-- **Main model outputs:** up to **8,192 tokens per sender or recipient call**.
+- **Main model outputs:** up to **16,384 tokens per sender or recipient call**, increased from 8,192 to test whether models exhausted their reasoning/completion budget.
 - **Strict full-packet outputs:** up to **16,384 tokens per model**.
 - At defaults: **24 one-hop pairs = up to 48 API calls**, plus **2 strict native packet calls**, plus **24 multiturm dialogue author calls** = **up to 74 API calls**.
 - One workflow has a single estimated guard, user-set at **USD $5, $7.50, or $10**. A first-stage budget reservation (~55% of selected cap) is allocated to one-hop/strict testing and the remaining unspent budget is available to multi-turn dialogue. No automatic retries; a failed case remains a failure. If a stage hits a cap, the results are retained and the run reports \`budget_stop\`.
