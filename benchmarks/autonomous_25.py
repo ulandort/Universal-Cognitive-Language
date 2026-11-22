@@ -202,7 +202,7 @@ def run(seed,client=None,dry_run=False,turns=25,cap=12.,max_repairs=2):
                     act_text=obj['authored']['act']['text'],
                     interpretation=obj['interpretation'],
                     formulas=obj['authored']['act']['expressions'],
-                    handoff=safe_text(wire))
+                    handoff=wire)
                 state['packet']=new;state['wire']=wire;state['delivered_count']+=1
                 break
             except (ValueError,TypeError,KeyError) as ex:
