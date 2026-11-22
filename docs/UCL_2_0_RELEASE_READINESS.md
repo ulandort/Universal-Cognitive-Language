@@ -67,11 +67,14 @@ In particular, [native UCL-only run 45077733957](https://github.com/ulandort/Uni
 ## Gate 3 — Long conversational stability
 
 - [x] Preserve the scripted 10-turn and 25-event semantic-retention benchmarks (see `benchmarks/LONG_CONVERSATION.md` and `benchmarks/ADVERSARIAL_25.md`). These are scripted histories, **not autonomous AI discussions**.
-- [x] Execute the 25-turn independently generated dialogue pilot (23/25 deliveries, two undelivered turns; **not** uninterrupted success).\n- [ ] Prepare and complete the 50-turn stress run with corrected auxiliary format rule and predefined cost guard.
+- [x] Execute the 25-turn independently generated dialogue pilot (23/25 deliveries, two undelivered turns; **not** uninterrupted success).
+- [ ] Prepare and complete the 50-turn stress run with corrected auxiliary format rule and predefined cost guard.
 - [ ] Check literal full-history preservation, immutable definition hashes, act/ACK/reference resolution, non-monotonic stances, quotation scopes, and extension handling.
 - [ ] Track token cost and envelope byte growth by turn, validation and provider failures, first-try and repaired delivery, and semantic receipt agreement. Do not silently condense UCL/2.0 active history.
 
 ### Live autonomous 25-turn experiment (2026-11-22)
+
+**Headline outcome:** Clarke and Hal delivered **23 independently authored, validated self-contained UCL messages** across a scheduled 25-turn continuation, retaining the complete delivered conversation, all six immutable invented concepts, and passing **five of five structurally verified historical-reference checkpoints**. Most rejected *attempts* came from a **benchmark-only, non-UCL interpretation-length condition**, not failure of UCL transport, definition identity or history integrity. See the [L25 benchmark report](../benchmarks/AUTONOMOUS_25.md) for the positive evidence first, followed by exact methodological limitations and the complete error audit.
 
 - [Paid L25 run 45081092157](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45081092157) completed its workflow successfully, but this does **not** mean every scheduled turn delivered: **23/25** new native authored UCL messages passed validation, **2/25 first-try valid**, **21/25 repaired and delivered**, and **two undelivered turns (scheduled #7 and #24)** after their allowed attempts. **53 API attempts**, estimated cost **$2.955910 USD**, approximately 22m38s elapsed.
 - **All 30 rejected API responses** were preserved: **23** were rejected by the *experimental auxiliary interpretation-summary minimum length* (at least 20 characters), **5** for invalid ACK target path arrays, **1** for non-string explanation/conclusion, and **1** for an unknown UCL operator. Do **not** equate the 23 auxiliary-format rejections with semantic misunderstandings or language/protocol failures. Actual ACK syntax and expression defects must also be transparently reported. Two turns were not delivered; there is no evidence that every turn succeeded on the first attempt.
@@ -105,7 +108,7 @@ In particular, [native UCL-only run 45077733957](https://github.com/ulandort/Uni
 
 ## Release rule — full 2.0 launch target
 
-**User-approved launch designation: UCL/2.0 full public release, not a beta.** RR-1 is running as of November 22, 2026; no outcome is assumed. Following transcript review, conduct the proposed 25-turn and 50-turn stress tests, finalize versioned documentation and the portable `.txt` format, complete Python/JavaScript interoperability checks and negative conformance tests, and disclose reproducible benchmark strengths and limitations. Record explicit go/no-go decisions for unresolved issues before tagging `2.0`.
+**User-approved launch designation: UCL/2.0 full public release, not a beta.** CG-1, RR-1 and the 25-turn trial have completed, with documented successes and limits. Complete the proposed 50-turn stress test, finalize versioned documentation and the portable `.txt` format, complete Python/JavaScript interoperability checks and negative conformance tests, and disclose reproducible benchmark strengths and limitations. Record explicit go/no-go decisions for unresolved issues before tagging `2.0`.
 
 This is a **target designation, not a declaration that the necessary checks have already passed**. If a release-blocking issue remains, fix it or transparently scope the feature; do not disguise it to meet the full-release label. Functional disagreement among AIs is not a language failure. No claim of semantic superiority or flawless comprehension without evidence.
 
