@@ -24,6 +24,10 @@ FORMAT='UCL/2.0-SAP1-PORTABLE-DRAFT'
 RULE_DOMAIN=b'UCL-SAP1-RULES-DRAFT-1\n'
 ENVELOPE_DOMAIN=b'UCL-SAP1-ENVELOPE-DRAFT-1\n'
 ROLES=frozenset(('hypothesis','example','counterexample','quotation','question'))
+ROLE_GUIDE=('FR-1 draft: act/index identifies an exact expression in packet.discourse.acts; '
+            'role is an author-declared purpose (hypothesis, example, counterexample, '
+            'quotation, question), NOT proof or truth. Missing role is unspecified. '
+            'Never suppress original novel ideas.')
 
 # Full, inspectable rules are part of EVERY message. All required structure,
 # extension policy, types and reply-authoring procedure appear inline.
@@ -99,15 +103,6 @@ RULES={
     'reporting':'No verdicts or assessment transcripts are required inside UCL wire. Optional signed or unsigned sidecar may reference exact packet checksum; any transmitted result is explicitly labeled as separate assessor opinion.',
     'no_silent_semantic_repair':True
   },
-  'optional_formula_roles':{
-    'id':'UCL/2.0-FR-1-DRAFT',
-    'wire':'OPTIONAL formula_roles array on the envelope; absence means no author-declared roles',
-    'per_item':'{"act":"retained-act-id","index":0,"role":"hypothesis|example|counterexample|quotation|question"}; index refers to act.expressions and is an integer',
-    'authority':'Author-declared intent or expressly attributed annotator opinion, not logical truth or an independent verification result',
-    'novelty':'Never reject, rewrite or silently recast novel UCL formulas because of a role annotation; a counterexample is a discussed scenario, not asserted as a true fact',
-    'unmarked':'No role shall be inferred when annotations are absent; mark as unannotated rather than defaulting to assertion',
-    'scope':'Roles apply only to exact indexed expression strings of the referenced act; unchanged inner UCL packet remains authoritative'
-  },
   'integrity_notice':'SHA-256 detects accidental or untrusted rewriting only when trusted anchors exist; a self-hash alone is NOT authentication or authority.'
 }
 
@@ -155,12 +150,13 @@ def encode(packet,formula_roles=None):
     if formula_roles is not None:
         _validate_formula_roles(packet,formula_roles)
         env['formula_roles']=copy.deepcopy(formula_roles)
+        env['formula_role_guide']=ROLE_GUIDE
     env['checksum']=envelope_checksum(env)
     return env
 
 def decode(env):
     required={'format','profile','structural_rules','packet','checksum'}
-    if type(env) is not dict or set(env) not in (required,required|{'formula_roles'}):
+    if type(env) is not dict or set(env) not in (required,required|{'formula_roles','formula_role_guide'}):
         raise ValueError('SAP portable: envelope fields invalid')
     if env['format']!=FORMAT or env['profile']!='portable':
         raise ValueError('SAP portable: unsupported profile')
@@ -178,6 +174,8 @@ def decode(env):
     if type(pkt.get('guide')) is not dict:
         raise ValueError('SAP portable: missing full embedded UCL guide')
     if 'formula_roles' in env:
+        if env['formula_role_guide']!=ROLE_GUIDE:
+            raise ValueError('SAP portable: unknown formula role profile')
         _validate_formula_roles(pkt,env['formula_roles'])
     return pkt
 
