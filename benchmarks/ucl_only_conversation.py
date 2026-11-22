@@ -18,6 +18,10 @@ import native_author as n
 import native_exploration as e
 import structural_authoring as sap
 import ucl
+from pathlib import Path as _Path
+import sys as _sys
+_sys.path.insert(0,str(_Path(__file__).resolve().parents[1]/'tools'))
+import sap_portable
 from live_radium import parse_json, safe_text, reserve_upper_bound, price_estimate
 
 SYNTAX_GUIDE = """UCL/2.0 EXPERIMENTAL NATIVE AUTHORING CHECKLIST
@@ -86,6 +90,12 @@ def validate_candidate(raw,speaker,state,turn):
         ack_id='x'+str(5+turn))
     # A parser or host-derived string is never sent without a final protocol check.
     ucl.check(packet)
+    # Wire carries the COMPLETE structural standard, original UCL guide,
+    # definitions and conversation history. The receiver needs no registry.
+    portable=sap_portable.encode(packet)
+    sap_portable.decode(portable)
+    wire=json.dumps(portable,ensure_ascii=True,sort_keys=True,separators=(',',':'))
+    meta['self_contained_profile_hash']=portable['structural_rules']['sha256']
     return obj,wire,packet,meta
 
 def synthetic_response(turn,speaker,state):
@@ -130,6 +140,8 @@ def summary(rows,spent,status,turns,directions,max_repairs,reason=None):
         'api_calls_attempted':sum(len(r['attempts']) for r in rows),
         'conversations':conversations,'cases':rows,
         'structural_profile':sap.PROFILE,
+        'transport_format':sap_portable.FORMAT,
+        'structural_rules_embedded':True,
         'limitations':('Only validated complete UCL packets are delivered; no '
          'English comparison arm or automatic semantic converter. Correcting models '
          'receive explicit error feedback; success after correction is NOT '
@@ -150,11 +162,20 @@ def run(client=None,dry_run=False,turns=8,directions=1,cap=4.0,max_repairs=2):
     original=ucl.load_json(n.BASELINE.read_text())
     rows=[];spent=0.0
     for direction in range(directions):
+      initial_envelope=sap_portable.encode(original)
       state={'packet':original,'history':[],'last_intent':None,
-             'last_act':None,'failed':0}
+             'last_act':None,'failed':0,
+             'latest_wire':json.dumps(initial_envelope,sort_keys=True,separators=(',',':'))}
       for turn in range(turns):
         speaker=n.MODELS[(turn+direction)%2]
         base=e.make_prompt('ucl_native',turn,speaker,state)
+        # Replace the plain 1.0 baseline with the fully self-contained 2.0
+        # envelope. The standalone embedded structural rules are included in
+        # the ACTUAL message, not only a host prompt or online documentation.
+        old_packet=json.dumps(state['packet'],sort_keys=True,separators=(',',':'))
+        if old_packet not in base[-1]['content']:
+            raise ValueError('Internal error: prior packet missing from authored prompt')
+        base[-1]['content']=base[-1]['content'].replace(old_packet,state['latest_wire'])
         base[-1]['content']+='\n'+SYNTAX_GUIDE+'\n'+sap.authoring_rules(
             act_id='t'+str(9+turn),ack_id='x'+str(5+turn),speaker=speaker,
             prior_act=state['last_act'] or 't8')
@@ -162,6 +183,7 @@ def run(client=None,dry_run=False,turns=8,directions=1,cap=4.0,max_repairs=2):
              'resumed_after_failure':state['failed']>0,
              'last_delivered_act':state['last_act'],
              'structural_profile':sap.PROFILE,
+            'transport_format':sap_portable.FORMAT,
             'attempts':[]}
         prior_raw='';prior_error=''
         for retry in range(max_repairs+1):
@@ -216,6 +238,7 @@ def run(client=None,dry_run=False,turns=8,directions=1,cap=4.0,max_repairs=2):
                 row['wire_bytes']=len(wire.encode())
                 # Only here is a validated packet made the next turn's state.
                 state['packet']=packet
+                state['latest_wire']=wire
                 state['last_act']='t'+str(9+turn)
                 state['last_intent']=parsed['intent']
                 state['history'].append(wire)
