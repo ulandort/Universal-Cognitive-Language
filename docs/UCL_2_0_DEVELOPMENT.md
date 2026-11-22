@@ -62,3 +62,24 @@ Models may invent concepts or propose alternative operators. A correctly defined
 The manual UCL-only workflow optionally allows 0, 1 or 2 additional calls per failed message. An author is shown its own raw draft and the exact validator error and must reauthor a COMPLETE candidate. No English semantic converter or external repair algorithm is involved. A packet is passed to the other model ONLY after it validates. Every call, correction, provider timeout and its estimated spend is recorded. The runner distinguishes first-attempt valid packets, repaired packets and longest uninterrupted conversation. A repair-assisted success must not be described as first-attempt native authorship.
 
 Before promotion to released 2.0, define independent cross-language SAP-1 validation vectors, confirm new-definition extensibility and compatibility, and measure whether the stable structure helps or unduly constrains real exploratory discourse.
+
+
+## Self-contained SAP-1 Portable envelope (implemented, experimental)
+
+The experimental 2.0 Portable transport now embeds the COMPLETE SAP-1 authoring rules inside every UTF-8 JSON (.txt/.json) message, rather than requiring a prompt, repository lookup, remote service or central registry. The canonical tool is tools/sap_portable.py.
+
+Each message contains: format UCL/2.0-SAP1-PORTABLE-DRAFT; a complete structural_rules block with authoring field requirements, exact references and IDs, typed symbolic examples, extension proposal policy and a SHA-256 fingerprint; an unchanged, complete UCL/1.0 packet with its entire guide, definitions, acts and history; plus an independently recomputable domain-separated envelope checksum.
+
+The UCL-only dialogue runner now passes this self-contained 2.0 draft envelope as the actual message to the next model, not just as an off-wire prompt. The receiver can implement the embedded rules locally. A validator can pin the known version and recheck the embedded rules, outer checksum and UCL/1.0 packet. A self-contained checksum is tamper detection, NOT authentication or truth. No centralized third-party is required. Independently written cross-language validators are still needed before calling the format a stable 2.0 standard.
+
+Offline, without API keys or internet:
+
+```bash
+python tools/sap_portable.py encode examples/cross_model_conversation_8_turns.json example-ucl2.txt
+python tools/sap_portable.py check example-ucl2.txt
+python tools/sap_portable.py decode example-ucl2.txt restored-ucl1.txt
+```
+
+The November 22, 2026 native UCL-only run 45072956129 produced 8/8 first-try valid messages with zero repairs, cost estimate $0.501071, and 4/7 correct four-field receipts. All three receipt mismatches were evidence classification only. That earlier run used off-wire SAP-1 instructions; it is a baseline, NOT a test of the new embedded wire. Source: https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45072956129
+
+Unknown core operators may be proposed as non-normative notes, but may not silently redefine the syntax. Stable UCL/1.0 remains unchanged.
