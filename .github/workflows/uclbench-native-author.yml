@@ -27,6 +27,12 @@ on:
         required: true
         default: 'yes'
         options: ['yes', 'no']
+      multi_turn:
+        description: 'Include native 4-turn back-and-forth dialogue for every format and both roles'
+        type: choice
+        required: true
+        default: 'yes'
+        options: ['yes', 'no']
       cap_usd:
         description: 'Total estimated API spending guard (NOT provider billing cap)'
         type: choice
@@ -54,26 +60,29 @@ jobs:
           python-version: '3.12'
       - name: Validate direct authoring and independent strict UCL packet offline (free)
         run: |
-          python -m unittest discover -s benchmarks -p 'test_native_author.py' -v
-          python benchmarks/native_author.py --dry-run --cases 4 --directions 2 --strict yes --output native-dry-run.json
+          python -m unittest discover -s benchmarks -p 'test_native_*.py' -v
+          python benchmarks/native_suite.py --dry-run --cases 4 --directions 2 --strict yes --multi-turn yes --output-prefix native-dry
       - name: Install compatible Radium client for paid run only
         if: inputs.paid_run == 'yes'
         run: python -m pip install 'openai>=1.0,<3.0'
-      - name: Paid unassisted UCL semantic authorship plus strict full-packet challenge
+      - name: Paid native symbolic authorship and multi-turn dialogue within ONE shared cap
         if: inputs.paid_run == 'yes'
         env:
           RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
           CASES: ${{ inputs.cases }}
           DIRECTIONS: ${{ inputs.directions }}
           STRICT: ${{ inputs.strict_full_packet }}
+          MULTI: ${{ inputs.multi_turn }}
           CAP: ${{ inputs.cap_usd }}
-        run: python benchmarks/native_author.py --cases "$CASES" --directions "$DIRECTIONS" --strict "$STRICT" --cap-usd "$CAP" --output native-live.json
+        run: python benchmarks/native_suite.py --cases "$CASES" --directions "$DIRECTIONS" --strict "$STRICT" --multi-turn "$MULTI" --cap-usd "$CAP" --output-prefix native-live
       - name: Upload full native authorship research transcripts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: uclbench-native-authoring-results
           path: |
-            native-dry-run.json
-            native-live.json
+            native-dry-results.json
+            native-dry-summary.json
+            native-live-results.json
+            native-live-summary.json
           retention-days: 14
