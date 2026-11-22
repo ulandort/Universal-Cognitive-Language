@@ -71,15 +71,15 @@ def task_text(case):
             'Make clear that neither claim is proven. '+case['challenge'])
 
 def contrib_template(sender,act_id='t9',ack_id='x5',prior_act='t8'):
-    # The writer must fill every semantic field itself; no target/stance
-    # is prepopulated with the correct expected answer.
+    # A syntactically valid path exemplar is safe: the author still chooses
+    # which actual claim to address. No target stance or answer is prescribed.
     return {
       'act':{'id':act_id,'kind':'response','speaker':sender,'references':['t1'],
              'text':'WRITE YOUR OWN SUBSTANTIVE UCL ACT NOTE',
              'expressions':['WRITE TYPED UCL PREDICATE e.g. ~[P][A]'],
              'details':{'responds_to':prior_act,'stance':'mixed'}},
       'orientation':'L','explanation':'WRITE UCL EXPRESSION','conclusion':'WRITE UCL EXPRESSION',
-      'acknowledgements':[{'id':ack_id,'by':act_id,'target':{'claim':'theory','path':['CHOOSE 0 OR 1']},
+      'acknowledgements':[{'id':ack_id,'by':act_id,'target':{'claim':'theory','path':[0]},
                            'action':'CHOOSE VALID ACK ACTION','qualification':None,
                            'replacement':None,'note':'WRITE A PRECISE EXPLANATION'}],
       'history_summary':'All eight original acts retained; native UCL contribution t9 appended.'
