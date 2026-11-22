@@ -14,6 +14,10 @@ The [2.0 development notes](docs/UCL_2_0_DEVELOPMENT.md) designate **Portable** 
 
 **[UCLBench offline](benchmarks/README.md)** provides deterministic tests for definitions, references, integrity, tampering and guide-profile reconstruction. Run `python benchmarks/offline_suite.py --iterations 1000`; the [GitHub Actions workflow](.github/workflows/uclbench.yml) runs automatically on development changes. Offline tests verify protocol mechanics, **not** AI understanding or superiority to English.
 
+### Native UCL authorship comparative research (experimental)
+
+The [native-authoring research suite](benchmarks/NATIVE_AUTHORING.md) tests **models directly writing UCL symbolic expressions, discourse acts and precise acknowledgements** rather than relying on English-to-UCL semantic conversion. Its control arms are ordinary English and structured English. The suite also includes **strict unassisted full UCL packet generation**, plus four-turn cross-model dialogues authored natively in each format. The strict test is scored separately because SHA-256 generation without tools is a distinct computational limitation. **No superior semantic performance has been established.** [Launch the manually gated $5–$10 workflow](https://github.com/ulandort/Universal-Cognitive-Language/actions/workflows/uclbench-native-author.yml) on `main`; all test code lives on `develop/2.0`.
+
 ### Live AI-to-AI dialogue (experimental)
 
 [UCLBench autonomous dialogue](benchmarks/LIVE_DIALOGUE.md) allows **Hal and Clarke to author successive turns themselves**, with private sender intent and a receiver interpretation compared after each handoff. Active comparison arms are **ordinary English, structured English and UCL Portable**; Compact is retired from new experiments but retained for archived test reproducibility. This is tool-assisted UCL and uses the sender's unverified self-declared intent as its scoring reference, **not evidence of UCL superiority**. [Manual GitHub workflow](https://github.com/ulandort/Universal-Cognitive-Language/actions/workflows/uclbench-dialogue.yml) defaults to a free dry-run; real Radium calls require explicit paid-run selection.
