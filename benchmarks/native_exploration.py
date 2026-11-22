@@ -68,6 +68,13 @@ def make_prompt(fmt,turn,speaker,state):
                  +json.dumps(template,sort_keys=True))
         history='Full verified prior UCL packet:\n'+json.dumps(
             state['packet'],sort_keys=True,separators=(',',':'))
+    if state['last_intent'] is None:
+        prompt+=('\nCRITICAL FOR THIS TURN: NO PREVIOUS MESSAGE HAS BEEN DELIVERED '
+                 'IN THIS FORMAT. Set receipt to JSON null (NOT an object), even '
+                 'though the reference packet includes historical acts or you '
+                 'were asked to address old claims. Those old acts are NOT '
+                 'the previous generated speaker message. Do not interpret a '
+                 'historical UCL act as the prior relay message.')
     if state['failed']:
         prompt+=('\n'+str(state['failed'])+' previously scheduled message(s) failed '
                  'validation, and were NOT delivered. Interpret only the last real '
@@ -141,9 +148,15 @@ def run(client=None,dry_run=False,cap=4.0,turns=TURNS,directions=2):
                     result=client.chat.completions.create(model=sender,messages=messages,
                                                           max_tokens=n.MAX_OUTPUT)
                 except Exception as exc:
-                    row.update({'valid':False,'failure_type':'api_'+type(exc).__name__})
+                    # A provider timeout is NOT a syntax or semantic failure.
+                    # Record it, explicitly leave the relay empty, and move on.
+                    # A timed-out request may still have been processed or billed
+                    # by the provider; the exact provider charge is unknown.
+                    row.update({'valid':False,'failure_type':'api_'+type(exc).__name__,
+                                'provider_charge_unknown':True})
+                    state['failed']+=1
                     rows.append(row)
-                    return summary(rows,spent,'api_error','No retries')
+                    continue
                 raw=result.choices[0].message.content or ''
                 usage=result.usage
                 pi=getattr(usage,'prompt_tokens',None);po=getattr(usage,'completion_tokens',None)
@@ -187,7 +200,10 @@ def run(client=None,dry_run=False,cap=4.0,turns=TURNS,directions=2):
                 row['validation_error']=str(exc)[:180]
                 state['failed']+=1
             rows.append(row)
-    return summary(rows,spent,'dry_run' if dry_run else 'complete')
+    out=summary(rows,spent,'dry_run' if dry_run else 'complete')
+    if any(r.get('provider_charge_unknown') for r in rows):
+        out['estimated_cost_caveat']='Provider timeouts may still be billed; unknown charges are not included in estimate'
+    return out
 
 def summary(rows,spent,status,reason=None):
     stats={}
@@ -221,7 +237,7 @@ if __name__=='__main__':
         key=os.getenv('RADIUM_API_KEY')
         if not key:raise SystemExit('RADIUM_API_KEY missing')
         from openai import OpenAI
-        client=OpenAI(api_key=key,base_url=n.BASE_URL,max_retries=0,timeout=120)
+        client=OpenAI(api_key=key,base_url=n.BASE_URL,max_retries=0,timeout=240)
     out=run(client,dry_run=a.dry_run,cap=a.cap_usd,turns=a.turns,
             directions=a.directions)
     Path(a.output).write_text(json.dumps(out,ensure_ascii=True,indent=2)+'\n')
