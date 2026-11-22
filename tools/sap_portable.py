@@ -82,6 +82,22 @@ RULES={
     'new_semantics':'open hypotheses and unexpected inferences allowed; syntax validity does not certify truth',
     'no_central_registry':'all necessary guide, rules, definitions and conversation context are in this message'
   },
+  'semantic_verification':{
+    'id':'UCL/2.0-SVP-1-DRAFT',
+    'execution':'OPTIONAL local check by any recipient; no central judge or network, no mandatory audit metadata on wire',
+    'checks':{
+      'types':'Use existing UCL typed grammar and validator; syntax validity is distinct from truth',
+      'consistency':'Within declared finite Boolean fragments, test satisfiability against explicitly named premises; contradiction must include assumptions and a reproducible counterexample or derivation',
+      'alignment':'Compare original act.text with formal expressions and referenced stance; use uncertain/needs-clarification when natural-language meaning is ambiguous; NOT deterministic truth',
+      'continuity':'Compare claims, scoped ACK actions, prior reference and evidence status with earlier acts; show exact source locations'
+    },
+    'verdicts':['formally-consistent-under-assumptions','demonstrated-contradiction-under-assumptions','alignment-question','novel-or-unresolved','unsupported-empirical-claim','not-assessed'],
+    'novelty':'NEVER reject, delete, rewrite, auto-normalize, or declare false because an original hypothesis is unfamiliar, unverified, speculative or contrary to expectations',
+    'contradictions':'Preserve original even if formally contradictory; report precise premises, scope and derivation; invite model to revise assumptions or explain interpretation',
+    'authority':'Audits are local and advisory. Independent auditors may disagree; no single AI opinion may govern acceptance or transport of well-formed UCL.',
+    'reporting':'No verdicts or assessment transcripts are required inside UCL wire. Optional signed or unsigned sidecar may reference exact packet checksum; any transmitted result is explicitly labeled as separate assessor opinion.',
+    'no_silent_semantic_repair':True
+  },
   'integrity_notice':'SHA-256 detects accidental or untrusted rewriting only when trusted anchors exist; a self-hash alone is NOT authentication or authority.'
 }
 
