@@ -16,6 +16,7 @@ from types import SimpleNamespace
 
 import native_author as n
 import native_exploration as e
+import structural_authoring as sap
 import ucl
 from live_radium import parse_json, safe_text, reserve_upper_bound, price_estimate
 
@@ -76,6 +77,10 @@ def attempt_prompt(base_messages, old_raw, error, repair_index):
 def validate_candidate(raw,speaker,state,turn):
     obj=e.parse_response(raw,'ucl_native',state['last_intent'] is not None)
     authored=obj['authored']
+    sap.check_contribution(authored,speaker=speaker,act_id='t'+str(9+turn),
+                           ack_id='x'+str(5+turn),
+                           prior_acts={x['id'] for x in state['packet']['discourse']['acts']},
+                           claims=state['packet']['claims'])
     wire,packet,meta=n.normalise_sender('ucl_native',json.dumps(authored),
         state['packet'],speaker,act_id='t'+str(9+turn),
         ack_id='x'+str(5+turn))
@@ -124,6 +129,7 @@ def summary(rows,spent,status,turns,directions,max_repairs,reason=None):
         'max_repairs_per_turn':max_repairs,'total_estimated_cost_usd':round(spent,6),
         'api_calls_attempted':sum(len(r['attempts']) for r in rows),
         'conversations':conversations,'cases':rows,
+        'structural_profile':sap.PROFILE,
         'limitations':('Only validated complete UCL packets are delivered; no '
          'English comparison arm or automatic semantic converter. Correcting models '
          'receive explicit error feedback; success after correction is NOT '
@@ -149,11 +155,14 @@ def run(client=None,dry_run=False,turns=8,directions=1,cap=4.0,max_repairs=2):
       for turn in range(turns):
         speaker=n.MODELS[(turn+direction)%2]
         base=e.make_prompt('ucl_native',turn,speaker,state)
-        base[-1]['content']+='\n'+SYNTAX_GUIDE
+        base[-1]['content']+='\n'+SYNTAX_GUIDE+'\n'+sap.authoring_rules(
+            act_id='t'+str(9+turn),ack_id='x'+str(5+turn),speaker=speaker,
+            prior_act=state['last_act'] or 't8')
         row={'direction':direction,'turn':turn,'model':speaker,'format':'ucl_native',
              'resumed_after_failure':state['failed']>0,
              'last_delivered_act':state['last_act'],
-             'attempts':[]}
+             'structural_profile':sap.PROFILE,
+            'attempts':[]}
         prior_raw='';prior_error=''
         for retry in range(max_repairs+1):
             msgs=attempt_prompt(base,prior_raw,prior_error,retry)
@@ -215,9 +224,13 @@ def run(client=None,dry_run=False,turns=8,directions=1,cap=4.0,max_repairs=2):
             except (ValueError,TypeError,KeyError) as exc:
                 prior_error=str(exc)
                 prior_raw=raw
-                attempt.update({'valid':False,'failure_type':n.classify_failure(
-                    raw,attempt.get('finish_reason'),exc),
-                    'validation_error':str(exc)[:400]})
+                attempt.update({'valid':False,'failure_type':(
+                    'structural_profile_rejection' if isinstance(exc,sap.StructuralProfileError)
+                    else n.classify_failure(raw,attempt.get('finish_reason'),exc)),
+                    'validation_error':str(exc)[:400],
+                    'possible_language_extension':'manual_review_required'
+                        if any(t in raw for t in ('new operator','extend the language',
+                                                   'proposed glyph','novel syntax')) else None})
                 row['attempts'].append(attempt)
                 if attempt['failure_type']=='output_token_exhaustion':
                     # The model may use another attempt if budget remains.
