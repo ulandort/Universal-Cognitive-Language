@@ -162,7 +162,7 @@ def run(client=None,cap=1.0,dry_run=False,trials=1,turns=6):
         reserve=reserve_upper_bound(model,msgs,MAX_OUTPUT)
         if not dry_run and spent+reserve>cap:
             return summarize(rows,spent,'budget_stop','Pre-call estimate would exceed cap; no further API call')
-        row={'trial':trial,'format':fmt,'turn':turn,'model':model,'prompt_bytes':sum(len(m['content'].encode()) for m in msgs)}
+        row={'trial':trial,'format':fmt,'turn':turn,'model':model,'prompt_bytes':sum(len(m['content'].encode()) for m in msgs),'prompt':safe_text(msgs[-1]['content'])}
         if dry_run:
             action=ACTIONS[turn%len(ACTIONS)]
             intent={'action':action,'path':turn%2}
@@ -197,6 +197,7 @@ def run(client=None,cap=1.0,dry_run=False,trials=1,turns=6):
             wire,newpkt=encoded_handoff(fmt,parsed['intent'],note,state['packet'],turn,model)
             row['packet_valid']=newpkt is not None if fmt=='ucl_portable' else None
             row['wire_bytes']=len(wire.encode())
+            row['handoff']=safe_text(wire)
             if newpkt is not None:state['packet']=newpkt
             state['wire']=wire
             state['history'].append(f'Turn {turn}, {model}: {wire}')
