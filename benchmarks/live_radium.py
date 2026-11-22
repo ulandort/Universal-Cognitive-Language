@@ -20,7 +20,7 @@ from author import author
 BASELINE = ROOT / 'examples/cross_model_conversation_8_turns.json'
 PRICES = {'hal-1.0': (2.00, 10.00), 'clarke-1.0': (0.75, 4.50), 'tycho-1.0': (0.10, 1.50)}
 FORMATS = ('english', 'structured_english', 'ucl_portable', 'ucl_compact')
-MODEL_CHOICES = ('hal-1.0', 'clarke-1.0')
+MODEL_CHOICES = ('clarke-1.0', 'hal-1.0')  # Start with the more reliable author; swap roles in later trials.
 MAX_OUTPUT = 1024
 BASE_URL = 'https://api.radium.cloud/v1'
 SYSTEM = 'You are participating in a controlled message-relay benchmark. Give the requested short final response immediately. Follow the requested response format precisely. Do not discuss the test.'
@@ -41,6 +41,29 @@ def case_for(index):
     path = (index // 2) % 2
     action = ('reject', 'adopt-for-discussion')[index % 2]
     return {'claim_id': 'theory', 'path': path, 'action': action}
+
+
+def score_authored(fmt, case, text):
+    """Independently score sender intent before encoding and receiver evaluation."""
+    if not text.strip():
+        return False
+    if fmt == 'english':
+        return None  # Semantic English sender grading requires a separate judge; don't guess.
+    try:
+        data = parse_json(text)
+        action = data.get('action')
+        path = data.get('target_path') if fmt == 'structured_english' else data.get('path')
+        if fmt == 'structured_english' and isinstance(path, list) and len(path) == 1:
+            path = path[0]
+        return action == case['action'] and type(path) is int and path == case['path']
+    except (ValueError, TypeError, KeyError):
+        return False
+
+
+def failure_kind(text, finish_reason, phase):
+    if not text.strip():
+        return phase + '_empty_output' + ('_length' if finish_reason == 'length' else '')
+    return phase + '_invalid_output'
 
 
 def sender_prompt(fmt, case):
@@ -148,12 +171,15 @@ def run(client, trials=1, cap=0.50, dry_run=False):
             actual_out=getattr(usage,'completion_tokens',None)
             cost += price_estimate(sender, actual_in, actual_out) if actual_in is not None and actual_out is not None else reservation
             row={'trial':trial,'format':fmt,'sender':sender,'receiver':receiver,'intended':case,'sender_response':safe_text(sender_text), 'sender_usage':{'input':actual_in,'output':actual_out},'sender_finish_reason':getattr(sender_resp.choices[0],'finish_reason',None)}
+            row['sender_intent_correct'] = score_authored(fmt,case,sender_text)
             try:
                 handoff,meta=build_handoff(fmt,case,sender_text,baseline)
                 row['author_valid']=True
                 row.update(meta)
             except Exception as exc:
-                row['author_valid']=False;row['error']=str(exc);row['correct']=False;failures+=1;records.append(row);continue
+                row['author_valid']=False;row['error']=str(exc);row['correct']=False
+                row['failure_type']=failure_kind(sender_text,row['sender_finish_reason'],'sender')
+                failures+=1;records.append(row);continue
             msgs=receiver_messages(fmt,handoff,baseline)
             reserve=reserve_upper_bound(receiver,msgs)
             if cost+reserve>cap:
@@ -173,9 +199,15 @@ def run(client, trials=1, cap=0.50, dry_run=False):
                 ans=parse_json(rec_text)
                 row['correct']=set(ans)=={'action','path'} and ans['action']==case['action'] and type(ans['path']) is int and ans['path']==case['path']
             except (ValueError,TypeError,KeyError):row['correct']=False
-            if not row['correct']:failures+=1
+            if not row['correct']:
+                row['failure_type']=failure_kind(rec_text,row['receiver_finish_reason'],'receiver') if not rec_text.strip() else 'receiver_wrong_or_malformed_answer'
+                failures+=1
+            elif row['sender_intent_correct'] is False:
+                row['failure_type']='sender_wrong_intent_despite_receiver_match'
+                row['correct']=False
+                failures+=1
             records.append(row)
-    return {'status':'dry_run' if dry_run else 'complete','completed':len(records),'spent_usd_estimate':round(cost,6),'failures':failures,'cases':records,'warning':'Exploratory small-sample smoke test; no statistically significant claims. API charges may differ from estimate. Empty visible model responses are protocol/output failures, not demonstrated UCL semantic failures.'}
+    return {'status':'dry_run' if dry_run else 'complete','completed':len(records),'spent_usd_estimate':round(cost,6),'failures':failures,'generation_valid':sum(bool(r.get('author_valid')) for r in records),'recipient_correct':sum(bool(r.get('correct')) for r in records),'unscored_english_author_intent':sum(r.get('sender_intent_correct') is None and not r.get('dry_run') for r in records),'cases':records,'warning':'Exploratory small-sample smoke test; no statistically significant claims. API charges may differ from estimate. Empty visible model responses are protocol/output failures, not demonstrated UCL semantic failures.'}
 
 
 def main():
