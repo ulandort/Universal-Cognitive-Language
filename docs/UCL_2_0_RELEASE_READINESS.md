@@ -58,6 +58,12 @@ In particular, [native UCL-only run 45077733957](https://github.com/ulandort/Uni
 - **Do not equate valid conjunctions with demonstrated logical independence**: hypothetical combinations such as `&[~[N][A]][![~[M][A]]]` are model-authored speculative counterexample *descriptions*, not verified satisfiable models or formal proofs. Models did not demonstrate new empirical discoveries, entailment theorems, or superiority over structured English.
 - **Next stress gate:** autonomous 25-turn conversation and then 50-turn if viable. Track cumulative input length, maximum body/act limits, no silent history loss, valid identity hashes, first-try versus recovery, attributable context retention and total cost. Long turns may require explicit continuation ID budgeting and accommodation of increasing full-packet sizes without silently condensing history.
 
+### Autonomous L25 experiment prepared (paid run not yet performed)
+
+- [Manual 25-turn workflow](https://github.com/ulandort/Universal-Cognitive-Language/actions/workflows/uclbench-autonomous-25.yml) on `main` checks out `develop/2.0`. Uses authentic final RR-1 full Portable message (20 already retained acts), verified immutable six CG-1 concept identities, 25 model-generated new turns (goal: 45 retained acts), no silent condensation, five spaced historical-reference probes, and bounded retries. [Detailed methodology](../benchmarks/AUTONOMOUS_25.md).
+- The offline synthetic 25-turn oracle and seed-preservation tests run before any paid calls in this manual workflow; a successful offline oracle is not evidence that the live models pass. Default estimated cap is $12 USD, 16,384 completion-token maximum per request, two possible model-owned repairs; cap is an estimate, not a billing guarantee.
+- No 25-turn live conclusions or release claims until artifacts, first-attempt counts, semantic interpretations, retained history integrity, packet growth, and provider failures are audited. 50-turn workflow follows observed L25 results.
+
 ## Gate 3 — Long conversational stability
 
 - [x] Preserve the scripted 10-turn and 25-event semantic-retention benchmarks (see `benchmarks/LONG_CONVERSATION.md` and `benchmarks/ADVERSARIAL_25.md`). These are scripted histories, **not autonomous AI discussions**.
