@@ -46,6 +46,21 @@ class TestLiveRadium(unittest.TestCase):
         self.assertEqual(r['failures'],0)
         self.assertEqual(r['spent_usd_estimate'],0)
 
+    def test_sender_intent_scored_independently(self):
+        case={'claim_id':'theory','path':0,'action':'reject'}
+        self.assertTrue(lr.score_authored('ucl_portable',case,'{"action":"reject","path":0,"note":"ok"}'))
+        self.assertFalse(lr.score_authored('ucl_portable',case,'{"action":"reject","path":1,"note":"wrong target"}'))
+        self.assertFalse(lr.score_authored('structured_english',case,'{"claim_id":"theory","target_path":[0],"action":"adopt-for-discussion","note":"wrong stance"}'))
+        self.assertIsNone(lr.score_authored('english',case,'I reject the P component, not B.'))
+        self.assertFalse(lr.score_authored('ucl_compact',case,''))
+        self.assertEqual(lr.failure_kind('', 'length', 'sender'),'sender_empty_output_length')
+
+    def test_clarke_first_and_later_role_swap(self):
+        self.assertEqual(lr.MODEL_CHOICES[0],'clarke-1.0')
+        self.assertEqual(lr.MODEL_CHOICES[1],'hal-1.0')
+        self.assertEqual(lr.case_for(0)['path'],0)
+        self.assertEqual(lr.case_for(2)['path'],1)
+
     def test_budget_guards(self):
         with self.assertRaises(ValueError):lr.run(None,9,.5,True)
         with self.assertRaises(ValueError):lr.run(None,1,10,True)
