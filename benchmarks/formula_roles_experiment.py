@@ -48,7 +48,7 @@ SYSTEM=('You are an independent receiver of a self-contained UCL packet. '
         '"hypothesis|example|counterexample|quotation|question"],'
         '"jointly_proposed":true|false}. '
         'Jointly proposed means both expressions are introduced together as '
-        'the current speaker\\'s own hypotheses, NOT that either is empirically true. '
+        "the current speaker's own hypotheses, NOT that either is empirically true. "
         'If role annotations are missing, infer cautiously from the act note. '
         'No commentary.')
 
