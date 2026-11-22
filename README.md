@@ -6,6 +6,53 @@ UCL is designed to help AI systems exchange hypotheses, questions, disagreements
 
 **Version:** UCL/1.0 · **Licence:** Apache-2.0 for this repository's code and documentation · **Status:** initial public specification and reference implementation; interoperability and performance claims are preliminary.
 
+## How UCL works: glyphs, layers and meaning
+
+UCL uses **11 core glyphs** as a small, fixed vocabulary for expressing typed statements. They are not substitutes for English letters: their meanings come from the grammar, while custom symbols such as `A`, `P` or `D` get **explicit definitions** carried inside the message. Square brackets group arguments. An AI can inspect those definitions instead of guessing what an unfamiliar symbol means.
+
+| Glyph | Read as | Example / role |
+|---|---|---|
+| `@` | belongs to a domain | `@[A][D]` — A is a member of domain D |
+| `#` | scoped variable reference | `#0` — bound variable at index 0 |
+| `=` | identical in denotation | `=[A][B]` — identity, **not** mere similarity |
+| `~` | typed property or relation | `~[P][A]` — property P applies to A |
+| `&` | both | `&[p][q]` — p **and** q |
+| `\|` | either or both | `\|[p][q]` — inclusive **or** |
+| `!` | not | `![p]` — negation of p |
+| `?` | sourced uncertainty or conflict | `?[p]` — epistemic status, **not** a question or missing data |
+| `<` | strictly ordered by named relation | `<[O][a][b]` — a precedes b under O |
+| `*` | deterministic typed function | applies a declared function to its typed arguments |
+| `{` | exists in a declared domain | existential quantifier with a scoped variable |
+
+The five **structural glyphs** `: ; [ ] -` separate and organize expressions and declarations; they are not additional logical operators. For example, given definitions of `A` (a hypothetical system), `P` (a proposed property) and `B` (a different property):
+
+```text
+&[~[P][A]][![~[B][A]]]
+```
+
+This reads: **“A has property P, and A does not have property B.”** It expresses a *proposition*, not a verified fact. In UCL, `![~[B][A]]` is importantly different from “we have no information about B.”
+
+### The four-layer body
+
+Every complete packet has a `body` with **four semicolon-separated bracketed layers**, not four separate files:
+
+```text
+[orientation];[explanation];[conclusion];[exact-symbol-declaration]
+```
+
+1. **Orientation:** the kind of communication (for example, a hypothesis, question or proposal), referenced through a defined orientation symbol.
+2. **Explanation:** a typed logical proposition stating what is being considered.
+3. **Conclusion:** a typed proposition (or supported sourced epistemic record) expressing the message's conclusion; it does **not** need a proof.
+4. **Exact symbol declaration:** all core glyphs and custom symbols actually used in the packet's expressions, including full cryptographic definition IDs for custom symbols. An encoder can construct this mechanically.
+
+The body is only **one part** of the surrounding, ordinary JSON packet. That packet also carries the language guide, complete relevant definitions, domains, dialogue acts, precise acknowledgements of earlier claims, and the history needed by a new reader. For instance, a participant can **reject one subclaim while provisionally adopting another** without implying that either is proven true.
+
+### Why the layers matter
+
+English is flexible, but “I disagree with that” can be ambiguous in a long exchange. UCL separates **what is said**, **how it is expressed symbolically**, **which exact earlier claim it addresses**, and **the participant's stance toward that claim**. Definitions are given immutable SHA-256 identities so a revision cannot silently replace an earlier definition. This aims to make long, multi-model conversations easier to trace and check, while keeping speculation, dissent and open-ended discussion valid.
+
+For the complete syntax, including scoped quantifiers, definition hashing and acknowledgement paths, see the [UCL/1.0 specification](docs/SPECIFICATION.md). The [AI-facing README](README_AI.md) gives a compact reading and authoring procedure.
+
 ## Why create UCL?
 
 Natural language is extraordinarily expressive and already strong for contemporary models. But in long, multi-party exchanges, the same term can acquire inconsistent meanings, disagreement can be misattributed, and a later reader may not have access to the original context. UCL deliberately trades message size and authoring complexity for **explicit structure**.
