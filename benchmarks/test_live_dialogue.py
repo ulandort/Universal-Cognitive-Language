@@ -34,7 +34,7 @@ class TestLiveDialogue(unittest.TestCase):
         self.assertEqual(r['completed'],36)
         self.assertEqual(r['estimated_cost_usd'],0)
         for fmt,stats in r['by_format'].items():
-            self.assertEqual(stats['calls'],12)
+            self.assertEqual(stats['scheduled_turns'],12)
             self.assertEqual(stats['valid_agent_outputs'],12)
             self.assertEqual(stats['receipts_scored'],10)
             self.assertEqual(stats['receipts_correct'],10)
