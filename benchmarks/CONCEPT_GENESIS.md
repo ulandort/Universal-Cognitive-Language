@@ -14,6 +14,14 @@ Can Clarke and Hal create new, precisely typed UCL concept definitions in their 
 - Up to two explicitly model-authored corrections per turn; the first-try and repaired deliveries are scored separately. Invalid attempts are never relayed. Full transcripts and raw error details are saved to an artifact.
 - Budget cap is estimated, not a hard provider billing guarantee. Per-call maximum completion tokens is **16,384**; provider-hidden reasoning may consume them.
 
+## Interpreting disagreement and benchmark outcomes
+
+**Intellectual disagreement is not a language failure.** Independent models may understand exactly what another model proposes while rejecting its conclusion, offering a counterexample, preserving uncertainty, or choosing a different line of inquiry. Those are valid UCL interactions.
+
+Reports must separate (a) malformed or undelivered packets and provider/output-format failures, (b) demonstrable mistakes in reference, attributed meaning or stance, (c) auxiliary scoring discrepancies such as labeling an illustrative example or interpreting an ambiguous word, and (d) coherent differences in belief or reasoning. A mismatch against a sender's privately declared intent is **a measured receipt mismatch**, not automatic proof that its UCL message was misunderstood. Inspect the sender's text, formal expressions and acknowledgements before making that judgment.
+
+Preserve counts and raw results without masking genuine errors. Treat novel claims and productive challenges as subjects for qualitative review, not penalties. No claimed UCL superiority follows from a successful debate without a controlled comparison.
+
 ## Limits and interpretation
 The initial research question and domain D are stipulated, so conceptual invention is free *within a bounded typed-predicate grammar*, not unrestricted AI discovery. Unsupported operators and novel domain sorts are intentionally excluded from this first test. A new glyph or SHA identity does **not** prove new conceptual content; human review must compare glosses to earlier definitions and evaluate whether later speakers use them coherently. Exact-reference matching and a successful local validator do not establish semantic equivalence, originality, truth, or an advantage over structured English. The baseline references to P/B are provided for communication continuity but do not dictate new concepts.
 
