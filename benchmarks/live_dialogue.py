@@ -59,7 +59,7 @@ def parse_agent(text, expect_receipt):
         raise ValueError('First turn must report receipt=null')
     return obj
 
-def encoded_handoff(fmt, intent, note, packet, turn):
+def encoded_handoff(fmt, intent, note, packet, turn, speaker):
     """Sender self-report is encoded into an explicit acknowledgement by the tool.
     This is an assisted-protocol comparison, not native UCL composition.
     """
@@ -72,7 +72,7 @@ def encoded_handoff(fmt, intent, note, packet, turn):
     glyph='P' if path==0 else 'B'
     act_id='t'+str(9+turn)
     contribution={
-      'act':{'id':act_id,'kind':'response','speaker':MODELS[turn%2],
+      'act':{'id':act_id,'kind':'response','speaker':speaker,
              'references':['t1'],'text':note,'expressions':[f'~[{glyph}][A]'],
              'details':{'responds_to':'t8','stance':'mixed'}},
       'orientation':'L','explanation':f'~[{glyph}][A]',
@@ -194,7 +194,7 @@ def run(client=None,cap=1.0,dry_run=False,trials=1,turns=6):
             # A model has to convey the same intent through its message as privately
             # self-declared. For English this is not independently proven; all raw
             # text is retained to support external blinded annotation.
-            wire,newpkt=encoded_handoff(fmt,parsed['intent'],note,state['packet'],turn)
+            wire,newpkt=encoded_handoff(fmt,parsed['intent'],note,state['packet'],turn,model)
             row['packet_valid']=newpkt is not None if fmt=='ucl_portable' else None
             row['wire_bytes']=len(wire.encode())
             if newpkt is not None:state['packet']=newpkt
