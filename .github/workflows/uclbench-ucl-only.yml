@@ -1,0 +1,71 @@
+name: UCL-only native AI conversation (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      paid_run:
+        description: 'Real Radium API requests? no = free offline protocol test'
+        type: choice
+        required: true
+        default: 'no'
+        options: ['no','yes']
+      turns:
+        description: 'Native UCL messages per conversation'
+        type: choice
+        required: true
+        default: '8'
+        options: ['2','4','6','8']
+      directions:
+        description: 'Starting speaker orders (1 Clarke first, 2 both orders)'
+        type: choice
+        required: true
+        default: '1'
+        options: ['1','2']
+      cap_usd:
+        description: 'Estimated experiment cap, not a guaranteed billing cap'
+        type: choice
+        required: true
+        default: '4.00'
+        options: ['2.00','4.00','5.00','10.00']
+
+permissions:
+  contents: read
+concurrency:
+  group: uclbench-only-native-manual
+  cancel-in-progress: false
+jobs:
+  native_ucl_only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop/2.0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Free eight-turn UCL-only oracle
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_ucl_only_conversation.py' -v
+          python benchmarks/ucl_only_conversation.py --dry-run --turns 8 --directions 2 --output ucl-only-dry.json
+      - name: Install compatible provider client when selected
+        if: inputs.paid_run == 'yes'
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Paid UCL-only native Clarke-Hal conversation
+        if: inputs.paid_run == 'yes'
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+          TURNS: ${{ inputs.turns }}
+          DIRECTIONS: ${{ inputs.directions }}
+          CAP: ${{ inputs.cap_usd }}
+        run: python benchmarks/ucl_only_conversation.py --turns "$TURNS" --directions "$DIRECTIONS" --cap-usd "$CAP" --output ucl-only-live.json
+      - name: Preserve every native UCL attempt and handoff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uclbench-ucl-only-conversation-results
+          path: |
+            ucl-only-dry.json
+            ucl-only-live.json
+          retention-days: 14
