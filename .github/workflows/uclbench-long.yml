@@ -1,0 +1,57 @@
+name: UCLBench 10-turn (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      paid_run:
+        description: 'Send paid Radium API requests? No = free local dry run.'
+        type: choice
+        required: true
+        default: 'no'
+        options: ['no', 'yes']
+      cap_usd:
+        description: 'Maximum estimated cost for this run in USD (provider limit is separate)'
+        required: true
+        type: choice
+        default: '1.00'
+        options: ['0.50', '1.00', '2.00']
+
+permissions:
+  contents: read
+concurrency:
+  group: uclbench-long-manual
+  cancel-in-progress: false
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop/2.0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test runner and validate the scripted UCL conversation without spending
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_long_conversation.py' -v
+          python benchmarks/long_conversation.py --dry-run --output long-dry-run.json
+      - name: Install OpenAI-compatible SDK for Radium only when paid mode is selected
+        if: inputs.paid_run == 'yes'
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Paid 10-turn controlled semantic-retention experiment
+        if: inputs.paid_run == 'yes'
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+          BUDGET: ${{ inputs.cap_usd }}
+        run: python benchmarks/long_conversation.py --cap-usd "$BUDGET" --output long-results.json
+      - name: Upload reproducible results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uclbench-long-results
+          path: |
+            long-dry-run.json
+            long-results.json
+          retention-days: 14
