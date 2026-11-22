@@ -23,6 +23,20 @@ The first paid [native workflow run 45066654527](https://github.com/ulandort/Uni
 
 **Predeclared follow-up changes:** The revised primary native sender/receiver call budget is 16,384 tokens, while strict full-packet generation remains limited to 16,384 (the shared limit supported by both selected models). Prompts now give unambiguous *exact enum fields*, **integer** P/B claim paths, required ACK target object, matching UCL expression syntax, and original complete immutable UCL baseline in the native one-hop sender prompt. No model output is semantically fixed by the host. Repeat tests are exploratory and do not become independent task samples just because the prompting improved.
 
+## Follow-up: formal expressivity without an artificial exact-formula rule
+
+The earlier native-authoring benchmark required **every** act expression, explanation and conclusion to equal the bare positive proposition `~[P][A]` or `~[B][A]`. This was **an extra experimental restriction, not a UCL/1.0 rule**. It could incorrectly reject a model that wrote `![~[P][A]]` while rejecting P. The revised benchmark removes this check. **The unchanged real UCL validator remains mandatory**, including typing, orientation, epistemic provenance, immutable definitions, references, preserved history and integrity. We never repair invalid authored semantics after receipt.
+
+Results now explicitly distinguish `output_token_exhaustion`, `invalid_json`, `author_schema_rejection` and `ucl_validator_rejection`, plus count validator-accepted model-generated expressions differing from the canonical positive atom. This enables a substantive audit of whether an authored expression is a justified inference or simply a valid but irrelevant formula. Grammar validity, stance compliance, recipient understanding and truth are not equivalent.
+
+The native UCL main sender/receiver allowance remains **16,384** completion tokens per call; strict full-packet challenge remains 16,384. The prior paid results are frozen as the baseline. This follow-up still uses seeded targets and is an accuracy experiment, **not** a free-discovery benchmark.
+
+## Separate free-choice hypothesis exploration
+
+A distinct [exploratory native conversation workflow](https://github.com/ulandort/Universal-Cognitive-Language/actions/workflows/uclbench-native-exploration.yml) and [runner](native_exploration.py) let models choose their own P/B target, position, hypothetical example, UCL composition and theoretical inference across four turns in both directions. The comparison arms remain original English, structured English and **directly authored UCL**; no semantic English-to-UCL converter is used. Models can explore negations, conjectures, counterexamples, distinctions between conceptual and measured convergence, and other implications consistent with the existing UCL definitions. They cannot rewrite P or B or claim empirical proof. A receiver reconstructs the prior sender's *privately self-declared* intent without having seen that intent.
+
+This mode is deliberately **not judged by a predetermined answer key**. The summary measures delivered-message validity, structured self-report agreement, cross-model interpretation accuracy against private self-report, output cost and completion problems. Novel, unexpected or apparently efficient inferences are preserved as full transcripts for blinded qualitative review, **not promoted to facts or proofs**. Whether UCL yielded more surprising insights than English cannot be automatically determined from the metadata alone. Strict formal syntax validity still does not establish the truth or originality of a hypothesis. All real API calls require separate manual paid authorization and a separately selected estimated $2/$4/$5 cap; start with the free dry-run.
+
 ## What the new suite actually tests
 
 The new workflow performs **three separable protocols**, within ONE total manually chosen estimated cost guard ($5/$7.50/$10).
