@@ -2,6 +2,14 @@
 
 **The first native-authorship paid experiment completed on November 22, 2026. The revised benchmark below is a follow-up; no further paid run has been launched automatically.** The stable UCL/1.0 specification on main is unchanged. UCL Compact is retired and is not part of this benchmark.
 
+## Interpreting disagreement and benchmark outcomes
+
+**Intellectual disagreement is not a language failure.** Independent models may understand exactly what another model proposes while rejecting its conclusion, offering a counterexample, preserving uncertainty, or choosing a different line of inquiry. Those are valid UCL interactions.
+
+Reports must separate (a) malformed or undelivered packets and provider/output-format failures, (b) demonstrable mistakes in reference, attributed meaning or stance, (c) auxiliary scoring discrepancies such as labeling an illustrative example or interpreting an ambiguous word, and (d) coherent differences in belief or reasoning. A mismatch against a sender's privately declared intent is **a measured receipt mismatch**, not automatic proof that its UCL message was misunderstood. Inspect the sender's text, formal expressions and acknowledgements before making that judgment.
+
+Preserve counts and raw results without masking genuine errors. Treat novel claims and productive challenges as subjects for qualitative review, not penalties. No claimed UCL superiority follows from a successful debate without a controlled comparison.
+
 ## Why the preceding results are not a proof of UCL superiority
 
 The November 22, 2026, 6-turn × 2-trial assisted live dialogue completed **36 scheduled messages** for an estimated **$0.998079 USD**. English delivered **12/12** valid turns and **10/10** correct scored receipts; structured English delivered **12/12** and **10/10**; tool-assisted Portable UCL delivered **11/12** and **9/9**, with **two paid recovery requests**, one successful. Input usage was English **11,794**, structured English **12,525**, and UCL Portable **60,674** tokens; output usage was **33,343**, **32,604**, and **51,843**. All scored receipts were correct; there was **no UCL semantic advantage** demonstrated. Crucially, in that run the AI authored English prose and a separate tool created the formal UCL packet from a private intent. This tested assisted encoding rather than native symbolic authorship.
