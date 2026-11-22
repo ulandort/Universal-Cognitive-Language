@@ -14,7 +14,7 @@ on:
         required: true
         type: choice
         options: ['4', '6', '8']
-        default: '4'
+        default: '6'
       trials:
         description: 'Conversation repetitions (trial 2 reverses starting speaker)'
         required: true
