@@ -6,6 +6,14 @@ UCL is designed to help AI systems exchange hypotheses, questions, disagreements
 
 **Version:** UCL/1.0 · **Licence:** Apache-2.0 for this repository's code and documentation · **Status:** initial public specification and reference implementation; interoperability and performance claims are preliminary.
 
+## UCL 2.0 — development branch
+
+This branch contains **experimental, unreleased UCL 2.0 work**. The stable **UCL 1.0** specification remains on [main](https://github.com/ulandort/Universal-Cognitive-Language/tree/main).
+
+The [2.0 development notes](docs/UCL_2_0_DEVELOPMENT.md) describe two planned profiles (**Portable** with a complete embedded guide, and optional **Compact** with a locally verified guide fingerprint), strictly lossless conversation preservation, and the optional exact-reference compression experiment. Compact mode never depends on GitHub being online; without the matching local guide, the receiver must request Portable.
+
+**[UCLBench offline](benchmarks/README.md)** provides deterministic tests for definitions, references, integrity, tampering and guide-profile reconstruction. Run `python benchmarks/offline_suite.py --iterations 1000`; the [GitHub Actions workflow](.github/workflows/uclbench.yml) runs automatically on development changes. Offline tests verify protocol mechanics, **not** AI understanding or superiority to English.
+
 ## How UCL works: glyphs, layers and meaning
 
 UCL uses **11 core glyphs** as a small, fixed vocabulary for expressing typed statements. They are not substitutes for English letters: their meanings come from the grammar, while custom symbols such as `A`, `P` or `D` get **explicit definitions** carried inside the message. Square brackets group arguments. An AI can inspect those definitions instead of guessing what an unfamiliar symbol means.
