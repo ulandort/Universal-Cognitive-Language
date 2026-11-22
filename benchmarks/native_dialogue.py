@@ -64,8 +64,12 @@ def messages(fmt,turn,case,sender,state):
                  'acknowledgements[0].target MUST be exactly '
                  '{"claim":"theory","path":[0]} for P, or {"claim":"theory","path":[1]} for B; '
                  'the path contains an integer, never a string or act object. '
-                 'act.expressions MUST contain exactly the same single typed expression '
-                 'as explanation and conclusion: "~[P][A]" for P or "~[B][A]" for B. '
+                 'Use fully valid UCL symbolic expressions of your own choosing. '
+                 'The earlier P atom is "~[P][A]" and B atom is "~[B][A]"; '
+                 'negation such as "![~[P][A]]" is allowed if well typed, '
+                 'and provenance-backed uncertainty may be allowed when the '
+                 'UCL/1.0 validator accepts the packet. Do not force an expression '
+                 'to equal the positive atom just for this benchmark. '
                  'acknowledgements[0].action MUST be one of reject/adopt-for-discussion/'
                  'withhold-judgment/accept. Never invent an ext: action. '
                  'Replace all placeholders and keep act ID and ACK ID from the template:\n'
@@ -191,7 +195,7 @@ def run(client=None,dry_run=False,directions=2,cap=5.0):
                 state['failed']=0
             except (ValueError,TypeError,KeyError) as exc:
                 row['valid']=False
-                row['failure_type']='invalid_authorship_or_receipt'
+                row['failure_type']=n.classify_failure(raw,row.get('finish_reason'),exc)
                 row['validation_error']=str(exc)[:180]
                 state['failed']+=1
             results.append(row)
@@ -203,7 +207,13 @@ def summarize(rows,spent,status,reason=None):
         subset=[r for r in rows if r['format']==fmt]
         scored=[r for r in subset if r.get('receipt_correct') is not None]
         by_format[fmt]={
-            'turns':len(subset),'valid_generated_messages':sum(r.get('valid') is True for r in subset),
+            'turns':len(subset),
+            'output_token_exhaustions':sum(r.get('failure_type')=='output_token_exhaustion' for r in subset),
+            'validator_rejections':sum(r.get('failure_type')=='ucl_validator_rejection' for r in subset),
+            'schema_rejections':sum(r.get('failure_type')=='author_schema_rejection' for r in subset),
+            'invalid_json':sum(r.get('failure_type')=='invalid_json' for r in subset),
+            'noncanonical_formulas_accepted':sum(r.get('valid') is True and
+                r.get('formula_differs_from_positive_atom') is True for r in subset),'valid_generated_messages':sum(r.get('valid') is True for r in subset),
             'invalid_generated_messages':sum(r.get('valid') is False for r in subset),
             'receipt_correct':sum(r['receipt_correct'] is True for r in scored),
             'receipt_scored':len(scored),
