@@ -20,6 +20,7 @@ from author import author
 from live_radium import parse_json, reserve_upper_bound, price_estimate, safe_text
 
 ROLES=tuple(sorted(portable.ROLES))
+MAX_OUTPUT_TOKENS=16384  # Shared ceiling used by earlier native UCL experiments.
 FIXTURES=(
     ('counterexample',
      'I propose P as one hypothetical possibility; the opposite not-P is a counterexample to taking P for granted, not a second assertion.',
@@ -121,7 +122,7 @@ def run(client=None,dry_run=False,cap=4.0,models=('clarke-1.0','hal-1.0')):
         for arm in arms:
           envelope=f['without' if arm=='plain' else 'with']
           messages=build_prompt(envelope)
-          limit=1500
+          limit=MAX_OUTPUT_TOKENS
           reserve=reserve_upper_bound(model,messages,limit)
           if not dry_run and spent+reserve>cap:
               return summary(rows,spent,'budget_stop','Pre-request cost estimate exceeded cap')
@@ -152,7 +153,11 @@ def run(client=None,dry_run=False,cap=4.0,models=('clarke-1.0','hal-1.0')):
                   continue
           row['raw_response']=safe_text(raw)
           try:row['score']=score(raw,f)
-          except (ValueError,TypeError,KeyError) as exc:row['error']=str(exc)[:180]
+          except (ValueError,TypeError,KeyError) as exc:
+              row['error']=str(exc)[:180]
+              row['failure_type']=('output_token_exhaustion' if row.get('finish_reason')=='length'
+                                   else 'empty_visible_response' if not raw.strip()
+                                   else 'invalid_receiver_json_or_schema')
           rows.append(row)
     return summary(rows,spent,'dry_run' if dry_run else 'complete')
 
