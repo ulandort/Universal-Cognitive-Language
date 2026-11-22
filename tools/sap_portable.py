@@ -23,6 +23,7 @@ import structural_authoring as sap
 FORMAT='UCL/2.0-SAP1-PORTABLE-DRAFT'
 RULE_DOMAIN=b'UCL-SAP1-RULES-DRAFT-1\n'
 ENVELOPE_DOMAIN=b'UCL-SAP1-ENVELOPE-DRAFT-1\n'
+ROLES=frozenset(('hypothesis','example','counterexample','quotation','question'))
 
 # Full, inspectable rules are part of EVERY message. All required structure,
 # extension policy, types and reply-authoring procedure appear inline.
@@ -98,6 +99,15 @@ RULES={
     'reporting':'No verdicts or assessment transcripts are required inside UCL wire. Optional signed or unsigned sidecar may reference exact packet checksum; any transmitted result is explicitly labeled as separate assessor opinion.',
     'no_silent_semantic_repair':True
   },
+  'optional_formula_roles':{
+    'id':'UCL/2.0-FR-1-DRAFT',
+    'wire':'OPTIONAL formula_roles array on the envelope; absence means no author-declared roles',
+    'per_item':'{"act":"retained-act-id","index":0,"role":"hypothesis|example|counterexample|quotation|question"}; index refers to act.expressions and is an integer',
+    'authority':'Author-declared intent or expressly attributed annotator opinion, not logical truth or an independent verification result',
+    'novelty':'Never reject, rewrite or silently recast novel UCL formulas because of a role annotation; a counterexample is a discussed scenario, not asserted as a true fact',
+    'unmarked':'No role shall be inferred when annotations are absent; mark as unannotated rather than defaulting to assertion',
+    'scope':'Roles apply only to exact indexed expression strings of the referenced act; unchanged inner UCL packet remains authoritative'
+  },
   'integrity_notice':'SHA-256 detects accidental or untrusted rewriting only when trusted anchors exist; a self-hash alone is NOT authentication or authority.'
 }
 
@@ -112,26 +122,51 @@ def rules_hash(rules):
 def envelope_checksum(envelope):
     return fingerprint(ENVELOPE_DOMAIN,{k:v for k,v in envelope.items() if k!='checksum'})
 
-def encode(packet):
+def _validate_formula_roles(packet,roles):
+    if type(roles) is not list:
+        raise ValueError('SAP portable: formula_roles must be an array')
+    if len(roles)>512:
+        raise ValueError('SAP portable: formula_roles array too long')
+    acts={a['id']:a for a in packet['discourse']['acts']}
+    used=set()
+    for item in roles:
+        if type(item) is not dict or set(item)!={'act','index','role'}:
+            raise ValueError('SAP portable: formula role entry has invalid fields')
+        act=item['act']; index=item['index']; role=item['role']
+        if type(act) is not str or act not in acts:
+            raise ValueError('SAP portable: formula role references missing act')
+        formulas=acts[act]['expressions']
+        if type(index) is not int or index<0 or index>=len(formulas):
+            raise ValueError('SAP portable: formula role references missing expression')
+        if type(role) is not str or role not in ROLES:
+            raise ValueError('SAP portable: unknown formula role')
+        key=(act,index)
+        if key in used:
+            raise ValueError('SAP portable: duplicate formula role target')
+        used.add(key)
+    return True
+
+def encode(packet,formula_roles=None):
     ucl.check(packet)
     rules=copy.deepcopy(RULES)
     env={'format':FORMAT,'profile':'portable',
          'structural_rules':{'rules':rules,'sha256':rules_hash(rules)},
          'packet':copy.deepcopy(packet)}
+    if formula_roles is not None:
+        _validate_formula_roles(packet,formula_roles)
+        env['formula_roles']=copy.deepcopy(formula_roles)
     env['checksum']=envelope_checksum(env)
     return env
 
 def decode(env):
-    if type(env) is not dict or set(env)!={'format','profile','structural_rules','packet','checksum'}:
+    required={'format','profile','structural_rules','packet','checksum'}
+    if type(env) is not dict or set(env) not in (required,required|{'formula_roles'}):
         raise ValueError('SAP portable: envelope fields invalid')
     if env['format']!=FORMAT or env['profile']!='portable':
         raise ValueError('SAP portable: unsupported profile')
     block=env['structural_rules']
     if type(block) is not dict or set(block)!={'rules','sha256'}:
         raise ValueError('SAP portable: rules block invalid')
-    # Published expected SAP-1 structure is pinned by the local independently
-    # installed implementation; a cold reader can also inspect entire rules
-    # without any central resource. Self-hash alone is not authentication.
     if block['sha256']!=rules_hash(block['rules']):
         raise ValueError('SAP portable: embedded authoring rules checksum mismatch')
     if block['rules']!=RULES:
@@ -142,6 +177,8 @@ def decode(env):
     ucl.check(pkt)
     if type(pkt.get('guide')) is not dict:
         raise ValueError('SAP portable: missing full embedded UCL guide')
+    if 'formula_roles' in env:
+        _validate_formula_roles(pkt,env['formula_roles'])
     return pkt
 
 def main():
