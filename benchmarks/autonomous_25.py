@@ -42,6 +42,7 @@ def prompt(state,turn,speaker):
     act,ack=ids(state)
     prior=state['packet']['discourse']['current']
     example=n.contrib_template(speaker,act,ack,prior)
+    example['history_summary']='All prior acts preserved in full; new act '+act+' appended.'
     every_five=(turn+1)%5==0
     txt=('UCL/2.0 FULL-HISTORY 25-TURN AUTONOMOUS CONTINUATION. '
         'You are '+speaker+'. Continue the *actual* preceding Clarke/Hal conversation '
@@ -63,6 +64,7 @@ def prompt(state,turn,speaker):
         ', details.stance=accept|reject|mixed|undetermined. '
         'Keep ACK target scoped to historical claim theory with path [0] or [1], '
         'and make ACK action agree with its own stated meaning. '
+        'history_summary must accurately reflect that all preceding acts remain expanded and the new act is appended. '
         'For first NEW stress turn, interpretation=null. Thereafter '
         'interpretation is a concise, independent summary (at least 20 characters) '
         'of the previous delivered NEW turn, recognizing a legitimate disagreement '
@@ -130,6 +132,7 @@ def synthetic(state,turn,speaker):
     c['acknowledgements'][0]['target']['path']=[0]
     c['acknowledgements'][0]['action']='adopt-for-discussion'
     c['acknowledgements'][0]['note']='Provisional discussion, not proof'
+    c['history_summary']='All earlier acts remain fully expanded; current act '+act+' appended.'
     if (turn+1)%5==0:c['act']['references']=['t9']
     return json.dumps({'authored':c,'interpretation':None if state['delivered_count']==0 else
         'The preceding speaker considered speculative relationships between original concepts without proof.'})
