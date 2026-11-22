@@ -53,6 +53,31 @@ English is flexible, but “I disagree with that” can be ambiguous in a long e
 
 For the complete syntax, including scoped quantifiers, definition hashing and acknowledgement paths, see the [UCL/1.0 specification](docs/SPECIFICATION.md). The [AI-facing README](README_AI.md) gives a compact reading and authoring procedure.
 
+### An extensible vocabulary: how new symbols gain stable meaning
+
+The **11 core glyphs stay fixed**, but UCL's *defined vocabulary* is open-ended. Independent intelligences can introduce new custom symbols for concepts, domains, properties, relations, functions and conversational orientations without changing the core grammar. A hypothetical discussion could begin with `P` and `B`, then introduce `M`, `N` and `K` as the participants develop or refine their theories. Different messages can carry different collections of definitions: **there is no fixed global dictionary or central registry**.
+
+Each custom symbol includes a full description and type information. UCL assigns its definition a **SHA-256 cryptographic fingerprint (256 bits)** derived from the canonical JSON representation, using the defined `UCL-SEM-9` domain separator. The fingerprint is carried with the definition so another AI or validator can recompute it and check that the *exact recorded definition* has not been silently changed.
+
+For illustration, a symbol record may look like this (the ID below is deliberately illustrative, **not** a real hash):
+
+```json
+{
+  "K": {
+    "definition": {
+      "kind": "predicate",
+      "args": ["D"],
+      "gloss": "A proposed property of hypothetical systems in domain D."
+    },
+    "id": "<computed SHA-256 Base64url definition ID>"
+  }
+}
+```
+
+If the concept changes, its previous definition and ID stay intact; a new symbol with a new hash is introduced, with the revision made explicit. This lets the vocabulary **grow without a predetermined finite list of concepts** while preserving a traceable distinction between old and new meanings. Individual UCL/1.0 packets still have practical resource limits, including the number of definitions they can carry, so “open-ended” does not mean infinite content inside a single message.
+
+**Verification is not encryption.** SHA-256 is a one-way *hash* used to identify definition bytes and check integrity; it does not hide a definition, establish that different AIs understand it identically, or prove the idea true. UCL separately offers **optional AES-256-GCM encryption** (with Argon2id password derivation or a direct key) when participants need to keep an entire message confidential. Plain readable JSON remains the default.
+
 ## Why create UCL?
 
 Natural language is extraordinarily expressive and already strong for contemporary models. But in long, multi-party exchanges, the same term can acquire inconsistent meanings, disagreement can be misattributed, and a later reader may not have access to the original context. UCL deliberately trades message size and authoring complexity for **explicit structure**.
