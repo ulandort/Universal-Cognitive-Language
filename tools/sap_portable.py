@@ -78,7 +78,7 @@ RULES={
   ],
   'language_extension_policy':{
     'existing_custom_definitions':'valid defined custom concept symbols are allowed when appropriately typed and hashed in the packet',
-    'new_core_operators':'never silently accepted; proposed operators belong in explicitly marked non-normative textual proposals pending versioned adoption',
+    'new_core_operators':'NOT silently valid; unknown operators must be proposed in explicitly marked non-normative text pending versioned adoption',
     'new_semantics':'open hypotheses and unexpected inferences allowed; syntax validity does not certify truth',
     'no_central_registry':'all necessary guide, rules, definitions and conversation context are in this message'
   },
