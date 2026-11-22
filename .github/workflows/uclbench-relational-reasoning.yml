@@ -1,0 +1,93 @@
+name: UCLBench Relational Reasoning RR-1 (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      paid_run:
+        description: 'Run real Clarke/Hal API calls? no = free offline tests only'
+        type: choice
+        required: true
+        default: 'no'
+        options: ['no', 'yes']
+      turns:
+        description: 'Reasoning turns using six real CG-1 concepts'
+        type: choice
+        required: true
+        default: '6'
+        options: ['4', '6', '8']
+      max_repairs:
+        description: 'Model-authored repair attempts per turn'
+        type: choice
+        required: true
+        default: '2'
+        options: ['0', '1', '2']
+      cap_usd:
+        description: 'Estimated cost guard; not guaranteed provider billing cap'
+        type: choice
+        required: true
+        default: '4.00'
+        options: ['2.00', '4.00', '6.00', '10.00']
+
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: uclbench-relational-reasoning-manual
+  cancel-in-progress: false
+
+jobs:
+  relational_reasoning:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop/2.0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve immutable CG-1 live transcript as input
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "/repos/ulandort/Universal-Cognitive-Language/actions/artifacts/14776243270/zip" > cg1-artifact.zip
+          python - <<'PY'
+          import json,zipfile
+          with zipfile.ZipFile('cg1-artifact.zip') as z:
+              r=json.loads(z.read('cg1-live.json'))
+          assert r['status']=='complete' and r['delivered']==6 and r['new_definitions_created']==6
+          last=r['cases'][-1]
+          assert last['valid'] and last['turn']==5
+          seed=json.loads(last['handoff'])
+          with open('rr1-seed.json','w') as f:
+              json.dump(seed,f,sort_keys=True,separators=(',',':'))
+          print('Loaded six model-invented concepts and real final CG-1 message')
+          PY
+      - name: Free protocol regression, real seed checks and six-turn oracle
+        env:
+          RR1_SEED: rr1-seed.json
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_relational_reasoning.py' -v
+          python benchmarks/relational_reasoning.py --seed rr1-seed.json --dry-run --turns 6 --output rr1-dry.json
+      - name: Install compatible provider client if manually approved
+        if: inputs.paid_run == 'yes'
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Paid model-authored reasoning over six newly defined concepts
+        if: inputs.paid_run == 'yes'
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+          TURNS: ${{ inputs.turns }}
+          REPAIRS: ${{ inputs.max_repairs }}
+          CAP: ${{ inputs.cap_usd }}
+        run: python benchmarks/relational_reasoning.py --seed rr1-seed.json --turns "$TURNS" --max-repairs "$REPAIRS" --cap-usd "$CAP" --output rr1-live.json
+      - name: Preserve exact seed, authoring attempts and handoffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uclbench-relational-reasoning-rr1-results
+          path: |
+            rr1-seed.json
+            rr1-dry.json
+            rr1-live.json
+          retention-days: 14
