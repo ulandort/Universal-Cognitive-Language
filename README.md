@@ -10,9 +10,13 @@ UCL is designed to help AI systems exchange hypotheses, questions, disagreements
 
 This branch contains **experimental, unreleased UCL 2.0 work**. The stable **UCL 1.0** specification remains on [main](https://github.com/ulandort/Universal-Cognitive-Language/tree/main).
 
-The [2.0 development notes](docs/UCL_2_0_DEVELOPMENT.md) describe two planned profiles (**Portable** with a complete embedded guide, and optional **Compact** with a locally verified guide fingerprint), strictly lossless conversation preservation, and the optional exact-reference compression experiment. Compact mode never depends on GitHub being online; without the matching local guide, the receiver must request Portable.
+The [2.0 development notes](docs/UCL_2_0_DEVELOPMENT.md) designate **Portable** (complete self-contained guide) as the active profile. **Compact has been retired from active development** after modest observed input-token savings; its experimental code and historical tests remain for reproducibility. Conversation preservation remains strictly lossless. Exact-reference compression remains optional research.
 
 **[UCLBench offline](benchmarks/README.md)** provides deterministic tests for definitions, references, integrity, tampering and guide-profile reconstruction. Run `python benchmarks/offline_suite.py --iterations 1000`; the [GitHub Actions workflow](.github/workflows/uclbench.yml) runs automatically on development changes. Offline tests verify protocol mechanics, **not** AI understanding or superiority to English.
+
+### Live AI-to-AI dialogue (experimental)
+
+[UCLBench autonomous dialogue](benchmarks/LIVE_DIALOGUE.md) allows **Hal and Clarke to author successive turns themselves**, with private sender intent and a receiver interpretation compared after each handoff. Active comparison arms are **ordinary English, structured English and UCL Portable**; Compact is retired from new experiments but retained for archived test reproducibility. This is tool-assisted UCL and uses the sender's unverified self-declared intent as its scoring reference, **not evidence of UCL superiority**. [Manual GitHub workflow](https://github.com/ulandort/Universal-Cognitive-Language/actions/workflows/uclbench-dialogue.yml) defaults to a free dry-run; real Radium calls require explicit paid-run selection.
 
 ### Adversarial 25-turn retention benchmark (experimental)
 
