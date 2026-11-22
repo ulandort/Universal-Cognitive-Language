@@ -69,7 +69,8 @@ QUESTIONS = {
 }
 CHECKPOINTS = (10,25)
 MODELS = ('clarke-1.0','hal-1.0')
-MAX_OUTPUT = 1536
+MAX_OUTPUT = 3072
+MAX_REPETITIONS = 4
 SYSTEM = ('Read the entire historical record including early and revised meanings. '
           'Correctly distinguish assertions, allegations, provisional acceptance, rejections '
           'and definition identities. Reply ONLY with a JSON object {"answers":{"question_id":"a"}} '
@@ -130,20 +131,30 @@ def score(text,checkpoint):
     except (ValueError, TypeError,KeyError):return None
 
 
-def run(client=None,cap=1.,dry_run=False):
-    if not 0<cap<=2:raise ValueError('Software estimated cap must be 0 < cap <= USD 2')
+def rotated_formats(repetition, model_index, checkpoint_index):
+    """Predeclared cyclic format order; all formats appear once in each model/checkpoint block."""
+    shift=(repetition + model_index + checkpoint_index) % len(FORMATS)
+    return FORMATS[shift:]+FORMATS[:shift]
+
+
+def run(client=None,cap=1.,dry_run=False,repetitions=1):
+    if not 0<cap<=4:raise ValueError('Software estimated cap must be 0 < cap <= USD 4')
+    if type(repetitions) is not int or repetitions not in (1,2,4):
+        raise ValueError('repetitions must be 1, 2 or 4')
     states=build_packets()
     results=[];spent=0.
-    # Both models evaluated on both checkpoints, eliminating the original
-    # checkpoint/model confound. Interleave formats without silently repairing replies.
-    for checkpoint in CHECKPOINTS:
-      for model in MODELS:
-       for fmt in FORMATS:
+    # Every repetition covers both models, both checkpoints, all formats.
+    # Cyclic order reduces systematic first/last-format position effects;
+    # this does not randomize the actual semantic scenario.
+    for repetition in range(repetitions):
+     for checkpoint_index,checkpoint in enumerate(CHECKPOINTS):
+      for model_index,model in enumerate(MODELS):
+       for fmt in rotated_formats(repetition,model_index,checkpoint_index):
         packet=states[checkpoint]; msgs=request_messages(fmt,packet,checkpoint)
         reserve=reserve_upper_bound(model,msgs,MAX_OUTPUT)
         if not dry_run and spent+reserve>cap:
             return summarize(results,spent,'budget_stop','Estimated pre-call reserve exceeds cap')
-        row={'checkpoint':checkpoint,'model':model,'format':fmt,
+        row={'repetition':repetition,'checkpoint':checkpoint,'model':model,'format':fmt,
              'prompt_bytes':sum(len(m['content'].encode('utf-8')) for m in msgs),
              'wire_bytes':len(format_record(fmt,packet).encode('utf-8')),
              'questions':len(QUESTIONS[checkpoint])}
@@ -168,34 +179,69 @@ def run(client=None,cap=1.,dry_run=False):
                         'format_valid':values is not None,'finish_reason':getattr(choice,'finish_reason',None),
                         'usage':{'input':pin,'output':pout}})
             if values is None:
-                row['failure_type']='empty_output' if not txt.strip() else 'malformed_output'
+                reason=getattr(choice,'finish_reason',None)
+                row['failure_type']=('empty_output_length' if reason=='length' else 'empty_output') if not txt.strip() else 'malformed_output'
+                row['valid_answer_count']=0
+            else:
+                row['valid_answer_count']=len(values)
+                row['incorrect_answer_count']=len(values)-sum(values.values())
         results.append(row)
     return summarize(results,spent,'dry_run' if dry_run else 'complete')
 
 
 def summarize(rows,spent,status,reason=None):
-    by_format={fmt:{'correct':sum(r.get('passed',0) for r in rows if r['format']==fmt),
-                    'total':sum(r['questions'] for r in rows if r['format']==fmt),
-                    'invalid_outputs':sum(not r.get('format_valid',False) for r in rows if r['format']==fmt)} for fmt in FORMATS}
-    out={'status':status,'completed':len(rows),'estimated_cost_usd':round(spent,6),
-         'questions_correct':sum(r.get('passed',0) for r in rows),
-         'questions_total':sum(r['questions'] for r in rows),
-         'by_format':by_format,'cases':rows,
-         'limitations':'Scripted history, tool-assisted UCL and unequal encoding overhead; no autonomous AI-to-AI dialogue and no demonstrated UCL superiority.'}
+    # A malformed or missing JSON response contributes zero to end-to-end
+    # accuracy, but is NOT scored as a semantic misinterpretation.
+    by_format={}
+    for fmt in FORMATS:
+        cases=[r for r in rows if r['format']==fmt]
+        valid=[r for r in cases if r.get('format_valid')]
+        total=sum(r['questions'] for r in cases)
+        correct=sum(r.get('passed',0) for r in cases)
+        completed_questions=sum(r['questions'] for r in valid)
+        token_in=sum((r.get('usage') or {}).get('input') or 0 for r in cases)
+        token_out=sum((r.get('usage') or {}).get('output') or 0 for r in cases)
+        by_format[fmt]={
+            'correct':correct,'total':total,
+            'end_to_end_accuracy':(correct/total if total else None),
+            'completed_answer_accuracy':(correct/completed_questions if completed_questions else None),
+            'completed_answer_questions':completed_questions,
+            'valid_responses':len(valid),'requests':len(cases),
+            'invalid_outputs':len(cases)-len(valid),
+            'output_length_failures':sum(r.get('failure_type')=='empty_output_length' for r in cases),
+            'semantic_errors_in_valid_answers':sum(r.get('incorrect_answer_count',0) for r in valid),
+            'input_tokens':token_in,'output_tokens':token_out,
+        }
+    output_valid=[r for r in rows if r.get('format_valid')]
+    correct=sum(r.get('passed',0) for r in rows)
+    total=sum(r['questions'] for r in rows)
+    answered=sum(r['questions'] for r in output_valid)
+    out={
+        'status':status,'completed':len(rows),
+        'estimated_cost_usd':round(spent,6),
+        'max_output_tokens':MAX_OUTPUT,
+        'repetitions_requested':max((r['repetition'] for r in rows),default=-1)+1,
+        'questions_correct':correct,'questions_total':total,
+        'end_to_end_accuracy':(correct/total if total else None),
+        'completed_answer_accuracy':(correct/answered if answered else None),
+        'valid_responses':len(output_valid),
+        'invalid_responses':len(rows)-len(output_valid),
+        'by_format':by_format,'cases':rows,
+        'limitations':'Scripted history, tool-assisted UCL, unequal encoding overhead, and repeated identical questions; no autonomous AI-to-AI dialogue or demonstrated UCL superiority. Output exhaustion is not evidence of semantic misunderstanding.'
+    }
     if reason:out['reason']=reason
     return out
 
-
 def main():
     p=argparse.ArgumentParser();p.add_argument('--dry-run',action='store_true');p.add_argument('--cap-usd',type=float,default=1.)
-    p.add_argument('--output',default='uclbench-25-results.json');a=p.parse_args()
+    p.add_argument('--output',default='uclbench-25-results.json');p.add_argument('--repetitions',type=int,choices=(1,2,4),default=2);a=p.parse_args()
     if a.dry_run:client=None
     else:
         key=os.environ.get('RADIUM_API_KEY')
         if not key:raise SystemExit('RADIUM_API_KEY secret missing')
         from openai import OpenAI
         client=OpenAI(api_key=key,base_url=BASE_URL,max_retries=0,timeout=90.)
-    result=run(client,cap=a.cap_usd,dry_run=a.dry_run)
+    result=run(client,cap=a.cap_usd,dry_run=a.dry_run,repetitions=a.repetitions)
     Path(a.output).write_text(json.dumps(result,ensure_ascii=True,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({k:v for k,v in result.items() if k!='cases'},indent=2))
     if result['status'] not in ('dry_run','complete'):raise SystemExit(2)
