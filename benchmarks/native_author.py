@@ -25,7 +25,7 @@ FIELDS=('action','path','signal_sense','evidence')
 ACTIONS=('reject','adopt-for-discussion','withhold-judgment','accept')
 SENSES=('conceptual-hint','instrument-reading')
 EVIDENCE=('none','hypothetical-example')
-MAX_OUTPUT=8192
+MAX_OUTPUT=16384
 FULL_OUTPUT=16384
 CASES=(
     {'id':'ambiguous_signal','action':'reject','path':0,'signal_sense':'conceptual-hint','evidence':'none',
@@ -78,7 +78,14 @@ def sender_messages(fmt,case,sender,baseline):
     if fmt=='english':
         prompt+='\nWrite ONLY your original natural-language handoff to another AI (80-200 words). No JSON, intent declaration, or key-value labels.'
     elif fmt=='structured_english':
-        prompt+='\nWrite a single JSON object with exactly action, path, signal_sense, evidence, note. Use standard values and a substantive original English note (<=1200 characters). No other keys.'
+        prompt+=('\nWrite ONLY a JSON object with EXACTLY these five keys and exact types: '
+                 'action: one of "reject", "adopt-for-discussion", "withhold-judgment", "accept"; '
+                 'path: INTEGER 0 for P or INTEGER 1 for B (NEVER use strings such as "P", "B", "claim_P"); '
+                 'signal_sense: one of "conceptual-hint" or "instrument-reading" (not a paraphrase); '
+                 'evidence: one of "none" or "hypothetical-example" (not a paraphrase); '
+                 'note: original English text 20-1200 characters. No extra keys. '
+                 'Example SCHEMA ONLY, not the correct answer for this task: '
+                 '{"action":"reject","path":0,"signal_sense":"conceptual-hint","evidence":"none","note":"I address only P; this is hypothetical."}')
     else:
         prompt+=('\nYou are an independent UCL author, NOT an English-to-UCL converter. '
                  'Produce the next formal contribution as raw JSON matching the template. '
@@ -89,7 +96,17 @@ def sender_messages(fmt,case,sender,baseline):
                  'Do not output a complete checksum-bearing packet in this arm. '
                  'The earlier immutable reference packet is valid; it has claim ID theory with '
                  'path 0=P and path 1=B. Your act ID must be t9 and ACK x5 by t9. '
-                 'Only existing glyphs and actions are supported. Exact JSON template:\n'
+                 'Only existing glyphs and actions are supported. The acknowledgement target MUST '
+                 'be EXACTLY {"claim":"theory","path":[0]} for P or '
+                 '{"claim":"theory","path":[1]} for B. The path is an ARRAY of ONE INTEGER; '
+                 'DO NOT write "P", "B", {"act":"t1"}, or a string for the index. '
+                 'The expression in act.expressions, explanation and conclusion must '
+                 'be IDENTICAL and exactly "~[P][A]" for P or "~[B][A]" for B; '
+                 'never prepend "?" or "!" or use a different expression. '
+                 'The ACK action must be EXACTLY one of '
+                 '"reject", "adopt-for-discussion", "withhold-judgment", "accept". '
+                 'Never invent an ext: action. The template contains placeholders '
+                 'that MUST all be replaced with real valid values. Exact JSON template:\n'
                  +json.dumps(contrib_template(sender),ensure_ascii=True)
                  +'\nFULL, LOCALLY VERIFIED, IMMUTABLE UCL/1.0 REFERENCE PACKET (read directly, '
                  'do not alter its existing history or definitions):\n'
