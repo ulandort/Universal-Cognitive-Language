@@ -17,7 +17,9 @@ class TestFormulaRoles(unittest.TestCase):
             self.assertNotIn('formula_roles',a)
             self.assertEqual([x['role'] for x in b['formula_roles']],f['gold_roles'])
             self.assertEqual(len(b['formula_roles']),2)
-            self.assertLess(len(ucl.canon(b))-len(ucl.canon(a)),180)
+            self.assertLess(len(ucl.canon(b))-len(ucl.canon(a)),480)
+            self.assertNotIn('formula_role_guide',a)
+            self.assertEqual(b['formula_role_guide'],p.ROLE_GUIDE)
             self.assertNotEqual(a['checksum'],b['checksum'])
             self.assertEqual(a['packet']['integrity'],b['packet']['integrity'])
     def test_invalid_indices_duplicates_operators_rejected(self):
@@ -49,7 +51,7 @@ class TestFormulaRoles(unittest.TestCase):
         self.assertEqual(out['by_arm']['annotated']['attempted'],10)
         self.assertEqual(out['by_arm']['plain']['exact_roles'],10)
         self.assertEqual(out['by_arm']['annotated']['exact_roles'],10)
-        self.assertTrue(all(row['added_bytes']<180 for row in out['rows']))
+        self.assertTrue(all(row['added_bytes']<480 for row in out['rows']))
     def test_budget_prevents_any_paid_requests(self):
         r=e.run(client=None,dry_run=False,cap=.000001)
         self.assertEqual(r['status'],'budget_stop')
