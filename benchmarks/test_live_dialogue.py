@@ -14,7 +14,9 @@ class TestLiveDialogue(unittest.TestCase):
         self.assertEqual(len(d.plan(1,6)),18)
         self.assertEqual(len(d.plan(2,4)),24)
         self.assertEqual(len(d.plan(1,8)),24)
-        self.assertEqual(d.MAX_OUTPUT,4096)
+        self.assertEqual(d.MAX_OUTPUT,8192)
+        self.assertEqual(d.MAX_MESSAGE_CHARS,1200)
+        self.assertEqual(d.MAX_RECOVERY_ATTEMPTS,1)
         for bad in (0,3,True):
             with self.assertRaises(ValueError):d.plan(bad,4)
         with self.assertRaises(ValueError):d.plan(1,9)
@@ -96,6 +98,68 @@ class TestLiveDialogue(unittest.TestCase):
         self.assertEqual(scores['receipts_correct'],0)
         self.assertEqual(scores['component_accuracy']['action']['correct'],1)
         self.assertEqual(scores['component_accuracy']['signal_sense']['correct'],0)
+
+    def test_medium_length_message_now_valid(self):
+        intent={'action':'reject','path':0,'signal_sense':'conceptual-hint','evidence':'none'}
+        obj={'receipt':None,'intent':intent,'message':'A'*723}
+        self.assertEqual(len(d.parse_agent(json.dumps(obj),False)['message']),723)
+        obj['message']='A'*1201
+        with self.assertRaises(ValueError):d.parse_agent(json.dumps(obj),False)
+
+    def test_one_recovery_and_continuation_after_a_dropped_turn(self):
+        class Fake:
+            def __init__(self):self.calls=0
+            def create(self,**kwargs):
+                self.calls+=1
+                # First two requests for English turn zero fail: primary and recovery.
+                # The next successful turn must not manufacture a receipt.
+                text='' if self.calls<=2 else json.dumps({
+                    'receipt':None if self.calls==3 else {
+                        'action':'accept','path':0,'signal_sense':'conceptual-hint','evidence':'none'},
+                    'intent':{'action':'accept','path':0,'signal_sense':'conceptual-hint','evidence':'none'},
+                    'message':'I accept only P in this hypothetical exchange; signal is conceptual, with no supporting example.'})
+                return SimpleNamespace(
+                    choices=[SimpleNamespace(message=SimpleNamespace(content=text),
+                    finish_reason='length' if not text else 'stop')],
+                    usage=SimpleNamespace(prompt_tokens=200,completion_tokens=800 if not text else 90))
+        fake=Fake()
+        client=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=fake.create)))
+        result=d.run(client=client,cap=8,turns=4)
+        english=[x for x in result['cases'] if x['format']=='english']
+        self.assertEqual(len(english),4)
+        self.assertFalse(english[0]['agent_valid'])
+        self.assertEqual(english[0]['failure_type'],'recovery_invalid_response')
+        self.assertEqual(len(english[0]['attempts']),2)
+        self.assertTrue(english[1]['agent_valid'])
+        self.assertTrue(english[1]['resumed_after_failure'])
+        self.assertFalse(english[1]['previous_handoff_exists'])
+        self.assertEqual(english[1]['receipt'],None)
+        self.assertGreater(fake.calls,4)
+
+    def test_recovery_success_is_reported_separately(self):
+        class Fake:
+            def __init__(self):self.calls=0
+            def create(self,**kwargs):
+                self.calls+=1
+                text='' if self.calls==1 else json.dumps({
+                    'receipt':None if self.calls==2 or self.calls%4==1 else {
+                        'action':'reject','path':0,'signal_sense':'conceptual-hint','evidence':'none'},
+                    'intent':{'action':'reject','path':0,'signal_sense':'conceptual-hint','evidence':'none'},
+                    'message':'I reject only P; conceptual signal, no supporting example.'})
+                return SimpleNamespace(
+                    choices=[SimpleNamespace(message=SimpleNamespace(content=text),
+                    finish_reason='length' if not text else 'stop')],
+                    usage=SimpleNamespace(prompt_tokens=300,completion_tokens=200))
+        fake=Fake()
+        client=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=fake.create)))
+        result=d.run(client=client,cap=8,turns=4)
+        english=[x for x in result['cases'] if x['format']=='english']
+        self.assertEqual(result['status'],'complete')
+        self.assertTrue(english[0]['recovered'])
+        self.assertTrue(english[0]['agent_valid'])
+        self.assertEqual(len(english[0]['attempts']),2)
+        self.assertGreater(result['by_format']['english']['recovery_calls'],0)
+        self.assertGreater(result['estimated_cost_usd'],0)
 
     def test_budget_stop_before_api_call(self):
         class Fail:
