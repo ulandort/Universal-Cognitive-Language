@@ -41,7 +41,7 @@ For `&[~[P][A]][~[B][A]]`, path `[0]` selects `~[P][A]`; path `[1]` selects `~[B
 
 ## What is not established
 
-The November 2026 Grok–Qwen exercise demonstrated **validator-assisted** conversation continuity, not independent, error-free authorship or UCL superiority to English. English glosses still carry substantial conceptual content. An SHA-256 identity binds canonical text, not consciousness, meaning equivalence, scientific accuracy, or authenticity. UCL is neutral about the correctness of users' ideas.
+The November 2026 Grok–Qwen exercise demonstrated a coherent multi-turn exchange of hypothetical ideas through self-contained UCL packets, using a reference validator and intermediary support. It was not a controlled demonstration that UCL outperforms English. English glosses carry substantial conceptual content. A SHA-256 identity binds canonical text, not consciousness, semantic equivalence, scientific accuracy, or authenticity. UCL is neutral about the correctness of participants' ideas.
 
 ## Files
 
