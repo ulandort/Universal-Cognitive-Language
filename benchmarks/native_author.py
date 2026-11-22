@@ -90,7 +90,10 @@ def sender_messages(fmt,case,sender,baseline):
                  'The earlier immutable reference packet is valid; it has claim ID theory with '
                  'path 0=P and path 1=B. Your act ID must be t9 and ACK x5 by t9. '
                  'Only existing glyphs and actions are supported. Exact JSON template:\n'
-                 +json.dumps(contrib_template(sender),ensure_ascii=True))
+                 +json.dumps(contrib_template(sender),ensure_ascii=True)
+                 +'\nFULL, LOCALLY VERIFIED, IMMUTABLE UCL/1.0 REFERENCE PACKET (read directly, '
+                 'do not alter its existing history or definitions):\n'
+                 +json.dumps(baseline,sort_keys=True,separators=(',',':')))
     return [{'role':'system','content':SYSTEM},{'role':'user','content':prompt}]
 
 def normalise_sender(fmt,text,baseline,sender,act_id='t9',ack_id='x5'):
