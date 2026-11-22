@@ -42,3 +42,23 @@ This **does not** test any LLM's comprehension, English-vs-UCL performance, auth
 ## Active 2.0 AI dialogue research
 
 New paid research prioritizes **UCL Portable, ordinary English, and structured English**, with generated multi-turn exchanges, self-declared private author intentions, independent recipient interpretation, exact claim/stance target scoring, validation and cost reporting. See [live autonomous relay](../benchmarks/LIVE_DIALOGUE.md). **No UCL superiority has been established**: an encoder provides explicit intent metadata to the structured variants and the English author's self-report still needs independent evaluation against actual prose.
+
+## Structural Authoring Profile SAP-1 — experimental 2.0 (November 2026)
+
+**Status: prototype, not a released UCL 2.0 wire standard.** The 11 core glyphs, UCL/1.0 grammar, stable 1.0 branch and its validator remain unchanged. SAP-1 is a hard-coded deterministic authoring schema for model-authored incremental contributions; it does not dictate which philosophical or scientific conclusions can be expressed.
+
+An eight-attempt UCL-only Clarke/Hal experiment produced 3 valid packets and a longest uninterrupted exchange of two. Rejections included wrong expression type, missing epistemic provenance, unrecognized operators, malformed syntax and an invalid acknowledgement ID. None was caused by the output-token cap. Fixed structure and targeted feedback can address authoring reliability while preserving theoretical novelty.
+
+The prototype lives at benchmarks/structural_authoring.py, applied before the unchanged real UCL validator. It enforces fixed contribution/act/ACK field shapes; exact current act and acknowledgement IDs; existing response and claim bindings; an array of integer path indices; supported ACK actions and response stances; response orientation L; and expression-string types. Nested glyph types, evidence provenance, history and integrity continue to be checked by UCL/1.0. SAP-1 never repairs a model's semantics, and it does not force its formula to one previously preferred positive atom.
+
+The model-facing rules include examples of property applications, negation, conjunction and disjunction, plus an explicit distinction between an ACK action of withhold-judgment and a provenance-bearing epistemic conclusion.
+
+### Language evolution versus syntax mistakes
+
+Models may invent concepts or propose alternative operators. A correctly defined custom concept is legitimate within UCL's open vocabulary; an unknown core operator is NOT silently valid. A model can explicitly describe a proposed new grammar/operator in an act note for future analysis. It remains NON-NORMATIVE until versioned adoption and independent validator interoperability. This prevents accidental drift from being mistaken for established consensus while allowing genuine innovations to be studied. Current SAP-1 limits its contribution envelope and does not yet implement arbitrary new-definition creation in the experimental relay; preserving this extension path is a requirement before release.
+
+### Feedback-directed authorship
+
+The manual UCL-only workflow optionally allows 0, 1 or 2 additional calls per failed message. An author is shown its own raw draft and the exact validator error and must reauthor a COMPLETE candidate. No English semantic converter or external repair algorithm is involved. A packet is passed to the other model ONLY after it validates. Every call, correction, provider timeout and its estimated spend is recorded. The runner distinguishes first-attempt valid packets, repaired packets and longest uninterrupted conversation. A repair-assisted success must not be described as first-attempt native authorship.
+
+Before promotion to released 2.0, define independent cross-language SAP-1 validation vectors, confirm new-definition extensibility and compatibility, and measure whether the stable structure helps or unduly constrains real exploratory discourse.
