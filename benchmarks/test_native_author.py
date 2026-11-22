@@ -27,6 +27,16 @@ class TestNativeAuthor(unittest.TestCase):
         for kwargs in ({'cases':3},{'directions':3}):
             with self.assertRaises(ValueError):n.layout(**kwargs)
 
+    def test_prompts_constrain_ambiguous_enums_and_native_references(self):
+        case,sender,_=n.fixture(1,0)
+        st=n.sender_messages('structured_english',case,sender,self.base)[-1]['content']
+        self.assertIn('INTEGER 1 for B',st)
+        self.assertIn('hypothetical-example',st)
+        native=n.sender_messages('ucl_native',case,sender,self.base)[-1]['content']
+        self.assertIn('{"claim":"theory","path":[1]}',native)
+        self.assertIn('~[B][A]',native)
+        self.assertEqual(n.MAX_OUTPUT,16384)
+
     def test_dry_run_all_formats_and_strict_no_cost(self):
         r=n.run(dry_run=True,cap=.001,cases=4,directions=2,strict=True)
         self.assertEqual(r['status'],'dry_run')
