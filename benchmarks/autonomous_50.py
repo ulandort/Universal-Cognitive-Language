@@ -24,10 +24,13 @@ CONCEPT_IDS={
  'M':'LDgpltoM1WebFUyzX5fMOmbsBby5b2wtScW0SpT25Kw',
  'N':'AbFl-OdjrW5JOWH9KGoMdF0Aosf5yjAxEgEslXnWYc4'}
 MAX_WIRE=900000
+EXPECTED_SEED_SHA='KSyyxhhzqja2Kp-K7DGReJfx99l1vcy5wDn-ErwSDm8'
 
 def load_seed(path):
     env=json.loads(Path(path).read_text(encoding='utf8'))
     pkt=sap_portable.decode(env)
+    if pkt['integrity']['sha256']!=EXPECTED_SEED_SHA:
+        raise ValueError('L50 seed is not the exact pinned final L25 handoff')
     if len(pkt['discourse']['acts'])!=43 or pkt['discourse']['current']!='t43':
         raise ValueError('L50 expects authentic 23-delivery L25 final 43-act packet')
     if any(pkt['definitions'].get(g,{}).get('id')!=d for g,d in CONCEPT_IDS.items()):
@@ -109,6 +112,8 @@ def validate(raw,state,turn,speaker):
     ucl.check(pkt)
     if pkt['definitions']!=state['packet']['definitions']:
         raise ValueError('immutability regression')
+    if pkt['history']['status']!='fully-expanded':
+        raise ValueError('silent history condensation is forbidden in L50')
     if pkt['discourse']['acts'][:-1]!=state['packet']['discourse']['acts']:
         raise ValueError('history rewriting')
     if len(pkt['acknowledgements'])!=len(state['packet']['acknowledgements'])+1:
@@ -144,6 +149,8 @@ def summarize(rows,spent,status,reason=None):
          'estimated_cost_usd':round(spent,6),
          'first_wire_bytes':rows[0].get('wire_bytes') if rows else None,
          'last_wire_bytes':next((r['wire_bytes'] for r in rows[::-1] if r.get('valid')),None),
+         'starting_seed_sha256':EXPECTED_SEED_SHA,
+         'interpretations_recorded':sum(type(r.get('interpretation')) is str for r in rows),
          'checkpoint_references_validated':sum(r.get('checkpoint_passed') is True for r in rows),
          'cases':rows,'limitations':('Independent authored reasoning is not proof of truth '
          'or superior comprehension; human review needed. Disagreement is not failure. '
@@ -161,7 +168,7 @@ def run(seed,client=None,dry_run=False,turns=50,cap=20.,max_repairs=2):
            'delivered_count':0}
     rows=[];spent=0.
     for turn in range(turns):
-        speaker=n.MODELS[turn%2]
+        speaker=n.MODELS[(turn+1)%2]  # last L25 delivered speaker was Clarke
         base=prompt(state,turn,speaker)
         row={'turn':turn,'speaker':speaker,'attempts':[],
              'prior_packet_bytes':len(state['wire'].encode()),
