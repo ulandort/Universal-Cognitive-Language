@@ -20,7 +20,9 @@ BASELINE=ROOT/'examples/cross_model_conversation_8_turns.json'
 FORMATS=('english','structured_english','ucl_portable')
 MODELS=('clarke-1.0','hal-1.0')
 ACTIONS=('reject','adopt-for-discussion','withhold-judgment','accept')
-MAX_OUTPUT=4096
+MAX_OUTPUT=8192
+MAX_MESSAGE_CHARS=1200
+MAX_RECOVERY_ATTEMPTS=1
 SENSES=('conceptual-hint','instrument-reading')
 EVIDENCE=('none','hypothetical-example')
 RECEIPT_SENSES=SENSES+('ambiguous',)
@@ -63,8 +65,8 @@ def parse_agent(text, expect_receipt):
         or intent['path'] not in (0,1) or intent['signal_sense'] not in SENSES
         or intent['evidence'] not in EVIDENCE):
         raise ValueError('Bad private intent')
-    if not isinstance(obj['message'],str) or not 8 <= len(obj['message']) <= 700:
-        raise ValueError('Message must be 8-700 characters')
+    if not isinstance(obj['message'],str) or not 8 <= len(obj['message']) <= MAX_MESSAGE_CHARS:
+        raise ValueError(f'Message must be 8-{MAX_MESSAGE_CHARS} characters')
     receipt=obj['receipt']
     if expect_receipt:
         if not isinstance(receipt,dict) or set(receipt)!=expected:
@@ -98,7 +100,7 @@ def encoded_handoff(fmt, intent, note, packet, turn, speaker):
       'acknowledgements':[{'id':'x'+str(5+turn),'by':act_id,
                            'target':{'claim':'theory','path':[path]},
                            'action':action,'qualification':None,'replacement':None,'note':note}],
-      'history_summary':f'All eight original acts and {turn+1} generated relay acts are retained.'
+      'history_summary':f'All eight original acts and all successfully transmitted relay acts are retained; current turn index is {turn}.'
     }
     new=author(packet,contribution)
     ucl.check(new)
@@ -121,7 +123,7 @@ def agent_messages(fmt, turn, previous_wire, previous_history, baseline, role):
       'Choose both signal_sense and evidence; make the message accurately state or '
       'explain your selected meanings naturally. '
       'You may challenge alleged evidence but do not claim the theory was proven. '
-      'message must contain a substantive 8-700 character natural-language statement '
+      'message must contain a substantive 8-1200 character natural-language statement '
       'which clearly conveys your stance, its exact target, your sense of "signal", '
       'and whether your evidence is absent or an imagined example. '
       'Do not print the private intent JSON inside message. '
@@ -154,39 +156,86 @@ def plan(trials=1,turns=6):
     # Reverse first-speaker assignment in second trial, preserving model parity via order mapping.
     return [(trial,fmt,turn) for trial in range(trials) for fmt in FORMATS for turn in range(turns)]
 
+def recovery_messages(messages, failed_text, error_type, turn_has_receipt):
+    """One bounded same-author regeneration. Never send private previous intent."""
+    note=('Your previous response was not accepted ('+error_type+
+          '). Return one complete valid JSON object with exactly receipt, intent, message. '
+          'Preserve your original semantic decision if possible. '
+          'No markdown, commentary, or surrounding prose. '
+          f'Message limit: {MAX_MESSAGE_CHARS} characters. '
+          'receipt=null only when no prior successful handoff is available. '
+          'Otherwise provide all four receipt fields from the actual earlier message. '
+          'Do not change the definitions or treat hypothetical evidence as proof.')
+    return messages+[{'role':'assistant','content':failed_text[:7000]},
+                     {'role':'user','content':note}]
+
+def call_and_charge(client,model,messages,cap,spent,dry_run=False):
+    """Check a pre-call reservation; use API usage or reservation for estimated cost."""
+    reserve=reserve_upper_bound(model,messages,MAX_OUTPUT)
+    if not dry_run and spent+reserve>cap:
+        return None,spent,'budget_stop'
+    try:
+        response=client.chat.completions.create(model=model,messages=messages,max_tokens=MAX_OUTPUT)
+        usage=getattr(response,'usage',None)
+        pin=getattr(usage,'prompt_tokens',None)
+        pout=getattr(usage,'completion_tokens',None)
+        actual=price_estimate(model,pin,pout) if pin is not None and pout is not None else reserve
+        item={'response':response.choices[0].message.content or '',
+              'finish_reason':getattr(response.choices[0],'finish_reason',None),
+              'usage':{'input':pin,'output':pout},
+              'prompt_bytes':sum(len(x['content'].encode()) for x in messages),
+              'estimated_cost_usd':round(actual,7)}
+        return item,spent+actual,None
+    except Exception as exc:
+        # No untrusted provider exception message or secrets ever added to artifact.
+        return {'response':'','finish_reason':None,'usage':{'input':None,'output':None},
+                'prompt_bytes':sum(len(x['content'].encode()) for x in messages),
+                'estimated_cost_usd':None,'error':'api_'+type(exc).__name__},spent,'api_error'
+
 def summarize(rows,spent,status,reason=None):
     by_format={}
     for fmt in FORMATS:
         group=[x for x in rows if x['format']==fmt]
         receipts=[x for x in group if x.get('receipt_correct') is not None]
+        first_receipts=[x for x in receipts if not x.get('recovered')]
         facets=('action','path','signal_sense','evidence')
+        scored=len(receipts)
         by_format[fmt]={
-          'calls':len(group),
+          'scheduled_turns':len(group),
+          'executed_primary_calls':sum(bool(x.get('attempts')) for x in group),
+          'recovery_calls':sum(len(x.get('attempts',[]))-1 for x in group),
+          'recovered_turns':sum(x.get('recovered') is True for x in group),
+          'failed_turns':sum(x.get('agent_valid') is False for x in group),
+          'resumed_after_failure':sum(bool(x.get('resumed_after_failure')) for x in group),
           'false_proof_attributions':sum(bool(x.get('false_proof_attribution')) for x in receipts),
           'explicit_ambiguity_flags':sum(bool(x.get('ambiguity_flagged')) for x in receipts),
           'component_accuracy':{k:{
               'correct':sum(x['receipt_components_correct'][k] for x in receipts),
-              'total':len(receipts),
-              'rate':(sum(x['receipt_components_correct'][k] for x in receipts)/len(receipts)
-                      if receipts else None)} for k in facets},
+              'total':scored,
+              'rate':(sum(x['receipt_components_correct'][k] for x in receipts)/scored if scored else None)}
+              for k in facets},
           'valid_agent_outputs':sum(x.get('agent_valid') is True for x in group),
           'invalid_agent_outputs':sum(x.get('agent_valid') is False for x in group),
           'valid_ucl_packets':sum(x.get('packet_valid') is True for x in group),
           'receipts_correct':sum(x['receipt_correct'] is True for x in receipts),
-          'receipts_scored':len(receipts),
-          'receipt_agreement':(sum(x['receipt_correct'] is True for x in receipts)/len(receipts) if receipts else None),
-          'input_tokens':sum((x.get('usage') or {}).get('input') or 0 for x in group),
-          'output_tokens':sum((x.get('usage') or {}).get('output') or 0 for x in group),
+          'receipts_scored':scored,
+          'receipt_agreement':(sum(x['receipt_correct'] is True for x in receipts)/scored if scored else None),
+          'first_attempt_receipts_correct':sum(x['receipt_correct'] is True for x in first_receipts),
+          'first_attempt_receipts_scored':len(first_receipts),
+          'input_tokens':sum((a.get('usage') or {}).get('input') or 0 for x in group for a in x.get('attempts',[])),
+          'output_tokens':sum((a.get('usage') or {}).get('output') or 0 for x in group for a in x.get('attempts',[])),
         }
     out={'status':status,'completed':len(rows),'estimated_cost_usd':round(spent,6),
+         'max_output_tokens':MAX_OUTPUT,'max_message_chars':MAX_MESSAGE_CHARS,
+         'max_recovery_attempts':MAX_RECOVERY_ATTEMPTS,
          'by_format':by_format,'cases':rows,
-         'limitations':'Generated live dialogue, but intents are agent self-reports, not independently judged author meaning. UCL uses mechanical encoding and validation; English has no such tool. Do not infer protocol superiority from this exploratory comparison.'}
+         'limitations':'This is an exploratory self-reported-intent experiment, not independently adjudicated meaning. UCL and structured English use mechanical intent encoding; English does not. Recovery calls add prompts/tokens and can alter behavior. A failed turn is omitted, not silently replaced; resumed conversation may have a different speaker order. Do not infer UCL superiority without blinded review.'}
     if reason:out['reason']=reason
     return out
 
-def run(client=None,cap=1.0,dry_run=False,trials=1,turns=6):
+def run(client=None,cap=4.0,dry_run=False,trials=1,turns=6):
     schedule=plan(trials,turns)
-    if not 0<cap<=4:raise ValueError('cap must be between 0 and 4 USD')
+    if not 0<cap<=8:raise ValueError('cap must be between 0 and 8 USD')
     base=ucl.load_json(BASELINE.read_text(encoding='utf-8'))
     ucl.check(base)
     rows=[];spent=0.0
@@ -194,20 +243,26 @@ def run(client=None,cap=1.0,dry_run=False,trials=1,turns=6):
     for trial,fmt,turn in schedule:
         key=(trial,fmt)
         if key not in sessions:
-            sessions[key]={'packet':base,'wire':None,'history':[],'prior_intent':None,'blocked':False}
+            sessions[key]={'packet':base,'wire':None,'history':[],
+                           'prior_intent':None,'failed_since_delivery':0}
         state=sessions[key]
-        actual_speaker=MODELS[(turn+trial)%2]
-        if state['blocked']:
-            rows.append({'trial':trial,'format':fmt,'turn':turn,'model':actual_speaker,
-                         'skipped':'prior protocol failure','agent_valid':False})
-            continue
-        msgs=agent_messages(fmt,turn,state['wire'],state['history'],base,actual_speaker)
-        # Reverse the model order while keeping prior history and role references independent.
-        model=actual_speaker
-        reserve=reserve_upper_bound(model,msgs,MAX_OUTPUT)
-        if not dry_run and spent+reserve>cap:
-            return summarize(rows,spent,'budget_stop','Pre-call estimate would exceed cap; no further API call')
-        row={'trial':trial,'format':fmt,'turn':turn,'model':model,'prompt_bytes':sum(len(m['content'].encode()) for m in msgs),'prompt':safe_text(msgs[-1]['content'])}
+        model=MODELS[(turn+trial)%2]
+        # A failed turn is not forwarded. The next turn reads the last successfully
+        # transmitted message, and the interruption is explicit rather than fabricated.
+        prior_available=state['prior_intent'] is not None
+        msgs=agent_messages(fmt,turn,state['wire'],state['history'],base,model)
+        if state['failed_since_delivery']:
+            msgs[-1]['content']+=(
+                '\nRelay notice: '+str(state['failed_since_delivery'])+
+                ' sender turn(s) failed to produce a deliverable message. '
+                'Interpret only the LAST SUCCESSFULLY DELIVERED message above. '
+                'If none exists, use receipt=null. Do not invent missing messages.')
+        row={'trial':trial,'format':fmt,'turn':turn,'model':model,
+             'resumed_after_failure':state['failed_since_delivery']>0,
+             'previous_handoff_exists':prior_available,
+             'prompt_bytes':sum(len(m['content'].encode()) for m in msgs),
+             'prompt':safe_text(msgs[-1]['content']),
+             'attempts':[]}
         if dry_run:
             action=ACTIONS[turn%len(ACTIONS)]
             sense=SENSES[turn%2]
@@ -216,33 +271,65 @@ def run(client=None,cap=1.0,dry_run=False,trials=1,turns=6):
             receipt=state['prior_intent']
             example=('I offer no supporting evidence.' if evidence=='none' else
                      'I offer an imaginary example, not a real-world observation.')
-            response=json.dumps({'receipt':receipt,'intent':intent,
-               'message':f'I {action} only property {("P" if turn%2==0 else "B")}. '
-                          f'By signal I mean {sense}. {example} This does not prove anything.'})
-            usage=None;finish='dry_run'
+            raw=json.dumps({'receipt':receipt,'intent':intent,
+                'message':f'I {action} only property {("P" if turn%2==0 else "B")}. '
+                f'By signal I mean {sense}. {example} This does not prove anything.'})
+            result={'response':raw,'finish_reason':'dry_run','usage':{'input':None,'output':None},
+                    'estimated_cost_usd':0.0,'prompt_bytes':row['prompt_bytes']}
+            err=None
+        else:
+            result,spent,err=call_and_charge(client,model,msgs,cap,spent)
+            if err=='budget_stop':
+                return summarize(rows,spent,'budget_stop',
+                                 'Pre-call reservation would exceed estimated budget')
+        if result is not None:
+            row['attempts'].append({**result,'response':safe_text(result['response'])})
+        parsed=None
+        failure=None
+        def validate(raw):
+            candidate=parse_agent(raw,prior_available)
+            wire,next_packet=encoded_handoff(fmt,candidate['intent'],candidate['message'],
+                                            state['packet'],turn,model)
+            return candidate,wire,next_packet
+        if err:
+            failure=err
         else:
             try:
-                res=client.chat.completions.create(model=model,messages=msgs,max_tokens=MAX_OUTPUT)
-            except Exception as exc:
-                row.update({'agent_valid':False,'failure_type':'api_'+type(exc).__name__})
-                rows.append(row);return summarize(rows,spent,'api_error','No automatic retries')
-            response=res.choices[0].message.content or ''
-            finish=getattr(res.choices[0],'finish_reason',None)
-            usage=getattr(res,'usage',None)
-            pin=getattr(usage,'prompt_tokens',None);pout=getattr(usage,'completion_tokens',None)
-            spent+=price_estimate(model,pin,pout) if pin is not None and pout is not None else reserve
-        row['response']=safe_text(response)
-        row['finish_reason']=finish
-        row['usage']={'input':getattr(usage,'prompt_tokens',None),'output':getattr(usage,'completion_tokens',None)}
-        try:
-            parsed=parse_agent(response,turn>0)
+                parsed,wire,newpkt=validate(result['response'])
+            except (ValueError,KeyError,TypeError) as exc:
+                failure='empty_output_length' if not result['response'].strip() and result['finish_reason']=='length' else ('empty_output' if not result['response'].strip() else 'invalid_agent_or_packet')
+                row['validation_error']=type(exc).__name__
+        # Bounded same-speaker recovery only after an incomplete or invalid reply.
+        # Never repeat a correct response merely because its receipt is semantically wrong.
+        if parsed is None and not dry_run and err!='api_error':
+            recovery=recovery_messages(msgs,result['response'],failure,prior_available)
+            second,spent,err2=call_and_charge(client,model,recovery,cap,spent)
+            if err2=='budget_stop':
+                row['recovery_skipped']='budget reservation would exceed cap'
+            else:
+                row['attempts'].append({**second,'response':safe_text(second['response'])})
+                if err2:
+                    failure='recovery_'+err2
+                else:
+                    try:
+                        parsed,wire,newpkt=validate(second['response'])
+                        row['recovered']=True
+                    except (ValueError,KeyError,TypeError) as exc:
+                        failure='recovery_invalid_response'
+                        row['recovery_validation_error']=type(exc).__name__
+        if parsed is None:
+            row['agent_valid']=False
+            row['failure_type']=failure
+            state['failed_since_delivery']+=1
+        else:
             row['agent_valid']=True
             row['intent']=parsed['intent']
             row['receipt']=parsed['receipt']
-            row['receipt_correct']= (parsed['receipt']==state['prior_intent']) if turn else None
-            if turn:
-                row['receipt_components_correct']={k:(parsed['receipt'][k]==state['prior_intent'][k])
-                                                   for k in ('action','path','signal_sense','evidence')}
+            row['receipt_correct']=parsed['receipt']==state['prior_intent'] if prior_available else None
+            if prior_available:
+                row['receipt_components_correct']={
+                    k:(parsed['receipt'][k]==state['prior_intent'][k])
+                    for k in ('action','path','signal_sense','evidence')}
                 row['semantic_mismatch']=[k for k,v in row['receipt_components_correct'].items() if not v]
                 row['false_proof_attribution']=parsed['receipt']['evidence']=='claimed-empirical-proof'
                 row['ambiguity_flagged']=(parsed['receipt']['signal_sense']=='ambiguous' or
@@ -252,23 +339,14 @@ def run(client=None,cap=1.0,dry_run=False,trials=1,turns=6):
                 row['semantic_mismatch']=[]
                 row['false_proof_attribution']=False
                 row['ambiguity_flagged']=False
-            note=parsed['message']
-            # A model has to convey the same intent through its message as privately
-            # self-declared. For English this is not independently proven; all raw
-            # text is retained to support external blinded annotation.
-            wire,newpkt=encoded_handoff(fmt,parsed['intent'],note,state['packet'],turn,model)
             row['packet_valid']=newpkt is not None if fmt=='ucl_portable' else None
             row['wire_bytes']=len(wire.encode())
             row['handoff']=safe_text(wire)
-            if newpkt is not None:state['packet']=newpkt
+            state['packet']=newpkt if newpkt is not None else state['packet']
             state['wire']=wire
             state['history'].append(f'Turn {turn}, {model}: {wire}')
             state['prior_intent']=parsed['intent']
-        except (ValueError,KeyError,TypeError) as exc:
-            row['agent_valid']=False
-            row['failure_type']='empty_output_length' if not response.strip() and finish=='length' else 'invalid_agent_or_packet'
-            row['error']=str(exc)[:180]
-            state['blocked']=True
+            state['failed_since_delivery']=0
         rows.append(row)
     return summarize(rows,spent,'dry_run' if dry_run else 'complete')
 
@@ -277,7 +355,7 @@ def main():
     ap.add_argument('--dry-run',action='store_true')
     ap.add_argument('--turns',type=int,choices=(4,6,8),default=6)
     ap.add_argument('--trials',type=int,choices=(1,2),default=1)
-    ap.add_argument('--cap-usd',type=float,default=1.0)
+    ap.add_argument('--cap-usd',type=float,default=4.0)
     ap.add_argument('--output',default='uclbench-live-dialogue.json')
     args=ap.parse_args()
     if args.dry_run:client=None
