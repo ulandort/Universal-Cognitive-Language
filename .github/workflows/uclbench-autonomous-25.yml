@@ -1,0 +1,87 @@
+name: UCLBench Autonomous 25-Turn Stress (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      paid_run:
+        description: 'Real paid Clarke/Hal calls? no = free offline tests only'
+        type: choice
+        required: true
+        default: 'no'
+        options: ['no','yes']
+      max_repairs:
+        description: 'Model-authored correction attempts per turn'
+        type: choice
+        required: true
+        default: '2'
+        options: ['0','1','2']
+      cap_usd:
+        description: 'Estimated total cap, not guaranteed billing ceiling'
+        type: choice
+        required: true
+        default: '12.00'
+        options: ['6.00','8.00','12.00','18.00','25.00']
+
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: uclbench-autonomous-25-manual
+  cancel-in-progress: false
+
+jobs:
+  autonomous_25:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop/2.0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve complete genuine RR-1 transcript as seed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "/repos/ulandort/Universal-Cognitive-Language/actions/artifacts/14776719080/zip" > rr1-artifact.zip
+          python - <<'PY'
+          import json,zipfile
+          with zipfile.ZipFile('rr1-artifact.zip') as z:
+              data=json.loads(z.read('rr1-live.json'))
+          assert data['status']=='complete' and data['delivered']==6
+          final=data['cases'][-1]
+          assert final['valid'] and final['turn']==5
+          seed=json.loads(final['handoff'])
+          with open('l25-seed.json','w') as f:
+              json.dump(seed,f,sort_keys=True,separators=(',',':'))
+          print('Loaded verified original CG-1 + RR-1 history with 20 acts')
+          PY
+      - name: Free authentic 25-turn regressions and synthetic full-history run
+        env:
+          L25_SEED: l25-seed.json
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_autonomous_25.py' -v
+          python benchmarks/autonomous_25.py --seed l25-seed.json --dry-run --output l25-dry.json
+      - name: Install provider SDK for explicitly selected paid run
+        if: inputs.paid_run == 'yes'
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Paid original Clarke-Hal 25-turn conversation
+        if: inputs.paid_run == 'yes'
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+          REPAIRS: ${{ inputs.max_repairs }}
+          CAP: ${{ inputs.cap_usd }}
+        run: |
+          python benchmarks/autonomous_25.py --seed l25-seed.json --turns 25 --max-repairs "$REPAIRS" --cap-usd "$CAP" --output l25-live.json
+      - name: Archive exact retained history and all model attempt transcripts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uclbench-autonomous-25-results
+          path: |
+            l25-seed.json
+            l25-dry.json
+            l25-live.json
+          retention-days: 14
