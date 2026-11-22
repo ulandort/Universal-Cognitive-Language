@@ -21,6 +21,12 @@ on:
         required: true
         default: '1'
         options: ['1','2']
+      max_repairs:
+        description: 'Additional model-authored attempts after syntax/validation failures'
+        type: choice
+        required: true
+        default: '2'
+        options: ['0','1','2']
       cap_usd:
         description: 'Estimated experiment cap, not a guaranteed billing cap'
         type: choice
@@ -59,7 +65,8 @@ jobs:
           TURNS: ${{ inputs.turns }}
           DIRECTIONS: ${{ inputs.directions }}
           CAP: ${{ inputs.cap_usd }}
-        run: python benchmarks/ucl_only_conversation.py --turns "$TURNS" --directions "$DIRECTIONS" --cap-usd "$CAP" --output ucl-only-live.json
+          REPAIRS: ${{ inputs.max_repairs }}
+        run: python benchmarks/ucl_only_conversation.py --turns "$TURNS" --directions "$DIRECTIONS" --cap-usd "$CAP" --max-repairs "$REPAIRS" --output ucl-only-live.json
       - name: Preserve every native UCL attempt and handoff
         if: always()
         uses: actions/upload-artifact@v4
