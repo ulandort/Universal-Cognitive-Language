@@ -66,7 +66,7 @@ def prompt(state,turn,speaker):
         'and make ACK action agree with its own stated meaning. '
         'history_summary must accurately reflect that all preceding acts remain expanded and the new act is appended. '
         'For first NEW stress turn, interpretation=null. Thereafter '
-        'interpretation is a concise, independent summary (at least 20 characters) '
+        'interpretation is an optional concise independent summary '
         'of the previous delivered NEW turn, recognizing a legitimate disagreement '
         'as distinct from misunderstanding. Only previous delivered turns count. '
         'Do not add new definitions, claims or unsupported fields; do not invent '
@@ -90,8 +90,8 @@ def validate(raw,state,turn,speaker):
     inter=obj['interpretation']
     if state['delivered_count']==0:
         if inter is not None:raise ValueError('interpretation must be null until first new delivered turn')
-    elif type(inter) is not str or len(inter.strip())<20:
-        raise ValueError('interpretation must summarize prior delivered turn in >=20 characters')
+    elif inter is not None and type(inter) is not str:
+        raise ValueError('interpretation metadata must be a string or null')
     c=obj['authored']; act,ack=ids(state)
     sap.check_contribution(c,speaker=speaker,act_id=act,ack_id=ack,
         prior_acts={a['id'] for a in state['packet']['discourse']['acts']},
