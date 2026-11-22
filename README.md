@@ -14,6 +14,10 @@ The [2.0 development notes](docs/UCL_2_0_DEVELOPMENT.md) describe two planned pr
 
 **[UCLBench offline](benchmarks/README.md)** provides deterministic tests for definitions, references, integrity, tampering and guide-profile reconstruction. Run `python benchmarks/offline_suite.py --iterations 1000`; the [GitHub Actions workflow](.github/workflows/uclbench.yml) runs automatically on development changes. Offline tests verify protocol mechanics, **not** AI understanding or superiority to English.
 
+### Adversarial 25-turn retention benchmark (experimental)
+
+A harder [25-event UCLBench scenario](benchmarks/ADVERSARIAL_25.md) extends the historical discussion with deceptive recaps, similar but immutable distinct definitions, scoped contradictory stances, and two independently scored checkpoints. Both Hal and Clarke face all four formats at both checkpoints (**16 calls**, **112 scored answers**). This is still a scripted-history understanding experiment, not autonomous model-written dialogue. [Launch it manually via GitHub Actions](https://github.com/ulandort/Universal-Cognitive-Language/actions/workflows/uclbench-adversarial-25.yml). The workflow defaults to a free dry run and makes no paid API calls on commits.
+
 ### Controlled 10-turn semantic-retention pilot
 
 The [10-turn pilot](benchmarks/LONG_CONVERSATION.md) adds ten scripted, fully retained events to the original eight-turn conversation, introducing a separately hashed revised concept and precisely scoped disagreements. **Clarke and Hal** answer independently scored multiple-choice questions at two checkpoints across ordinary English, structured English, UCL Portable and UCL Compact. This is an **exploratory scripted-history comprehension test**, not yet autonomous model-to-model debate or proof of UCL advantage. [Launch manually in GitHub Actions](https://github.com/ulandort/Universal-Cognitive-Language/actions/workflows/uclbench-long.yml); the workflow defaults to a free dry run and never uses Radium credits on commits.
