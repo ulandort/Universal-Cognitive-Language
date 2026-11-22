@@ -68,6 +68,8 @@ class TestLiveDialogue(unittest.TestCase):
         self.assertIn('replaced',d.STIMULI[4])
         self.assertEqual(set(d.SENSES),{'conceptual-hint','instrument-reading'})
         self.assertEqual(set(d.EVIDENCE),{'none','hypothetical-example'})
+        self.assertIn('claimed-empirical-proof',d.RECEIPT_EVIDENCE)
+        self.assertIn('ambiguous',d.RECEIPT_SENSES)
         role=d.MODELS[1]
         msg=d.agent_messages('english',0,None,[],None,role)[-1]['content']
         self.assertIn('You are '+role,msg)
@@ -80,6 +82,11 @@ class TestLiveDialogue(unittest.TestCase):
         with self.assertRaises(ValueError):d.parse_agent(json.dumps(bad),True)
         bad=dict(parsed);bad['receipt']={**intent,'signal_sense':'confused'}
         with self.assertRaises(ValueError):d.parse_agent(json.dumps(bad),True)
+        false_claim={**intent,'evidence':'claimed-empirical-proof'}
+        bad=dict(parsed);bad['receipt']=false_claim
+        self.assertEqual(d.parse_agent(json.dumps(bad),True)['receipt']['evidence'],'claimed-empirical-proof')
+        flagged=dict(parsed);flagged['receipt']={**intent,'signal_sense':'ambiguous'}
+        self.assertEqual(d.parse_agent(json.dumps(flagged),True)['receipt']['signal_sense'],'ambiguous')
 
     def test_facets_score_separately_when_main_target_correct(self):
         rows=[{'format':'ucl_portable','agent_valid':True,'receipt_correct':False,
