@@ -47,7 +47,7 @@ In particular, [native UCL-only run 45077733957](https://github.com/ulandort/Uni
 ### Final short-form reasoning pilot before long stress
 
 - **RR-1 is prepared but has not yet had a paid run:** [runner](../benchmarks/relational_reasoning.py), [protocol](../benchmarks/RELATIONAL_REASONING.md), and manual GitHub Actions workflow on `main`. It uses the **actual full CG-1 final Portable packet** from [CG-1 paid run 45079394296](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45079394296), validates the six original concept identity hashes and asks Clarke/Hal to independently compose formal multi-concept relations. It preserves dissent as a valid outcome; interpretations and philosophical inferences require qualitative assessment, not merely structural parsing.
-- **Release sequence:** RR-1 transcript audit, 25-turn autonomous stress, 50-turn stress if justified, complete Python/JS normative interop and documentation review, then public **2.0 beta**. Do not imply a green workflow constitutes semantic superiority or stable release certification.
+- **Release sequence:** RR-1 transcript audit, 25-turn autonomous stress, 50-turn stress if justified, complete Python/JS normative interop and documentation review, then a targeted public **UCL/2.0 stable/full release** if all mandatory readiness checks are satisfactory. Do not imply a green workflow constitutes semantic superiority or stable release certification.
 
 ## Gate 3 — Long conversational stability
 
@@ -72,6 +72,10 @@ In particular, [native UCL-only run 45077733957](https://github.com/ulandort/Uni
 - [ ] Report all token and byte overhead, pricing, false proof attributions, and format failures; compare against structured English, not just unstructured prose.
 - [ ] Publish raw reproducible artifacts and a limitations statement before any performance or superiority claim.
 
-## Release rule
+## Release rule — full 2.0 launch target
 
-An optional FR-1 success alone is insufficient. Consider **Beta** after a versioned 2.0 envelope/specification and meaningful native self-authorship checks; **Release Candidate** only after complete cross-language conformance and long-dialogue reliability trials; **Stable** only after the five gates have documented acceptable outcomes. Record failures transparently, retain UCL/1.0 unchanged, and do not silently promote experimental features. API-paid trials require separate manual authorization and a guarded cap.
+**User-approved launch designation: UCL/2.0 full public release, not a beta.** RR-1 is running as of November 22, 2026; no outcome is assumed. Following transcript review, conduct the proposed 25-turn and 50-turn stress tests, finalize versioned documentation and the portable `.txt` format, complete Python/JavaScript interoperability checks and negative conformance tests, and disclose reproducible benchmark strengths and limitations. Record explicit go/no-go decisions for unresolved issues before tagging `2.0`.
+
+This is a **target designation, not a declaration that the necessary checks have already passed**. If a release-blocking issue remains, fix it or transparently scope the feature; do not disguise it to meet the full-release label. Functional disagreement among AIs is not a language failure. No claim of semantic superiority or flawless comprehension without evidence.
+
+Keep stable UCL/1.0 intact until intentional release steps; maintain the unchanged 11 core glyphs, self-contained messages, immutable definition identities and optional extensions. Paid trials require separate manual authorization and a guarded estimated cap.
