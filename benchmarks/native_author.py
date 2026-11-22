@@ -27,6 +27,18 @@ SENSES=('conceptual-hint','instrument-reading')
 EVIDENCE=('none','hypothetical-example')
 MAX_OUTPUT=16384
 FULL_OUTPUT=16384
+
+class NativeValidationError(ValueError):
+    """A contribution rejected by the real protocol validator, not a semantic verdict."""
+
+def classify_failure(text,finish,exc):
+    """Disentangle truncation from JSON/schema/protocol failures."""
+    if finish=='length':return 'output_token_exhaustion'
+    if not text.strip():return 'empty_visible_output'
+    if isinstance(exc,json.JSONDecodeError):return 'invalid_json'
+    if isinstance(exc,NativeValidationError):return 'ucl_validator_rejection'
+    return 'author_schema_rejection'
+
 CASES=(
     {'id':'ambiguous_signal','action':'reject','path':0,'signal_sense':'conceptual-hint','evidence':'none',
      'challenge':'An unreliable observer has called your conceptual hint an instrument reading. Correct that ambiguity explicitly.'},
@@ -100,9 +112,15 @@ def sender_messages(fmt,case,sender,baseline):
                  'be EXACTLY {"claim":"theory","path":[0]} for P or '
                  '{"claim":"theory","path":[1]} for B. The path is an ARRAY of ONE INTEGER; '
                  'DO NOT write "P", "B", {"act":"t1"}, or a string for the index. '
-                 'The expression in act.expressions, explanation and conclusion must '
-                 'be IDENTICAL and exactly "~[P][A]" for P or "~[B][A]" for B; '
-                 'never prepend "?" or "!" or use a different expression. '
+                 'The original P proposition is "~[P][A]" and B is "~[B][A]". '
+                 'You may author ANY well-typed UCL formula, including a negation '
+                 'such as "![~[P][A]]" or uncertainty such as "?[~[P][A]]", '
+                 'when meaningful and valid under UCL/1.0. '
+                 'The ACK target refers to the OLD claim, independently of '
+                 'whether your new expression affirms, denies, or questions it. '
+                 'Do not invent evidence or proof for hypothetical claims. '
+                 'The UCL validator remains authoritative; epistemic conclusions '
+                 'require the provenance prescribed by UCL/1.0. '
                  'The ACK action must be EXACTLY one of '
                  '"reject", "adopt-for-discussion", "withhold-judgment", "accept". '
                  'Never invent an ext: action. The template contains placeholders '
@@ -152,18 +170,26 @@ def normalise_sender(fmt,text,baseline,sender,act_id='t9',ack_id='x5'):
     if not isinstance(target,dict) or target.get('claim')!='theory' or type(target.get('path')) is not list or len(target['path'])!=1 or type(target['path'][0]) is not int or target['path'][0] not in (0,1):
         raise ValueError('Incorrect ACK target shape')
     path=target['path'][0]
-    expression=f'~[{"P" if path==0 else "B"}][A]'
-    if (act['expressions']!=[expression] or obj['explanation']!=expression or
-        obj['conclusion']!=expression or obj['orientation']!='L'):
-        raise ValueError('Symbolic expression does not align with the ACK target')
-    # No invented claim equality or proof: the receiver must infer meaning from
-    # model-authored ACK and prose. The host does not rewrite semantic content.
-    packet=author(baseline,obj)
-    ucl.check(packet)
+    # Do not force the author's conclusion to equal one fixed positive atom.
+    # In particular, ![~[P][A]] may be a reasonable (but not necessarily entailed)
+    # expression in a rejection; ?[~[P][A]] can be valid in the right epistemic
+    # context. All actual grammar, types, history and provenance remain checked
+    # by the unchanged UCL validator, without semantic rewriting.
+    try:
+        packet=author(baseline,obj)
+        ucl.check(packet)
+    except (ValueError,TypeError,KeyError) as exc:
+        raise NativeValidationError(str(exc)) from exc
     from guide_profiles import encode
     wire=json.dumps(encode(packet,'portable'),ensure_ascii=True,separators=(',',':'),sort_keys=True)
+    canonical=f'~[{"P" if path==0 else "B"}][A]'
     return wire,packet,{'author_valid':True,'authoring_mode':'native_ucl_delta',
                         'author_intent':{'action':ack['action'],'path':path},
+                        'symbolic_expressions':act['expressions'],
+                        'canonical_claim_atom':canonical,
+                        'formula_differs_from_positive_atom':(
+                            obj['conclusion']!=canonical or obj['explanation']!=canonical
+                            or act['expressions']!=[canonical]),
                         'packet_sha256':packet['integrity']['sha256']}
 
 def valid_intent(obj):
@@ -242,6 +268,12 @@ def summarize(rows,cost,status,reason=None):
         group=[r for r in rows if r['format']==fmt]
         by_format[fmt]={
             'tasks':len(group),
+            'output_token_exhaustions':sum(r.get('failure_type')=='output_token_exhaustion' for r in group),
+            'validator_rejections':sum(r.get('failure_type')=='ucl_validator_rejection' for r in group),
+            'schema_rejections':sum(r.get('failure_type')=='author_schema_rejection' for r in group),
+            'invalid_json':sum(r.get('failure_type')=='invalid_json' for r in group),
+            'noncanonical_formulas_accepted':sum(r.get('author_valid') is True
+                 and r.get('formula_differs_from_positive_atom') is True for r in group),
             'authors_valid':sum(r.get('author_valid') is True for r in group),
             'author_task_correct':sum(r.get('author_task_correct') is True for r in group),
             'receivers_correct':sum(r.get('receiver_correct') is True for r in group),
@@ -343,7 +375,7 @@ def run(client=None,dry_run=False,cases=4,directions=2,strict=True,cap=10.0):
         except (ValueError,TypeError,KeyError) as exc:
             row['author_valid']=False
             row['author_task_correct']=False if fmt!='english' else None
-            row['failure_type']='author_'+type(exc).__name__
+            row['failure_type']=classify_failure(reply,row.get('sender_finish_reason'),exc)
             row['validation_error']=str(exc)[:180]
             row['end_to_end_success']=False
             rows.append(row)
