@@ -1,0 +1,6 @@
+# Core UCL/1.0 uses only the Python standard library.
+# For optional encrypted-envelope transport:
+cryptography>=42
+argon2-cffi>=23
+# For optional Brotli transport:
+brotli>=1.1

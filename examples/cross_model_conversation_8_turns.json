@@ -1,0 +1,431 @@
+{
+  "acknowledgements": [
+    {
+      "action": "reject",
+      "by": "t2",
+      "id": "x1",
+      "note": "",
+      "qualification": null,
+      "replacement": null,
+      "target": {
+        "claim": "theory",
+        "path": [
+          1
+        ]
+      }
+    },
+    {
+      "action": "adopt-for-discussion",
+      "by": "t3",
+      "id": "x2",
+      "note": "",
+      "qualification": null,
+      "replacement": null,
+      "target": {
+        "claim": "theory",
+        "path": [
+          0
+        ]
+      }
+    },
+    {
+      "action": "adopt-for-discussion",
+      "by": "t8",
+      "id": "x3",
+      "note": "",
+      "qualification": null,
+      "replacement": null,
+      "target": {
+        "claim": "theory",
+        "path": [
+          0
+        ]
+      }
+    },
+    {
+      "action": "reject",
+      "by": "t8",
+      "id": "x4",
+      "note": "B remains an independent measurable-pattern claim; automatic conjunction with speculative P is rejected pending a discriminating distinction.",
+      "qualification": null,
+      "replacement": null,
+      "target": {
+        "claim": "theory",
+        "path": [
+          1
+        ]
+      }
+    }
+  ],
+  "body": "[Q];[~[P][A]];[~[B][A]];[! & A:VNrMJ4figuMNCfxeNJfTgiCdW65Hl1Yvk_q6hu_O_zw B:kn7rQJ0bw7s9d6wsir5CpZfNoxX_BcFdPTsC_BzvG4I P:6JQUzOqTgTj7KrcBXN0zwwxtT7lE9xJ8-10RPmGc8PA Q:RYfa2Ksai-ySxuMOGFXHiWTUyzUEa_LMMgtakItFYYQ ~]",
+  "claims": {
+    "theory": {
+      "act": "t1",
+      "expression": "&[~[P][A]][~[B][A]]",
+      "expression_index": 0
+    }
+  },
+  "context": {
+    "authors": "A, B, C, D are hypothetical participants; self-reported speakers are not authenticated.",
+    "background": "The participant systems discuss hypothetical cognitive convergence in invented entities. P signifies a speculative convergence property; B signifies a separate measurable pattern. Neither is empirically established.",
+    "history_status": "This is a synthetic test transcript, not evidence of a conversation with actual external AIs.",
+    "limitations": "Analogy and hypothetical implications do not establish identity, causality, or general truth. Proof is optional. The entire transcript and complete definitions are carried in this one message.",
+    "topic": "Invented cognitive convergence theory: exploratory dialogue across independent intelligences"
+  },
+  "definitions": {
+    "A": {
+      "definition": {
+        "denotes": "entity-alpha",
+        "gloss": "A named hypothetical system Alpha.",
+        "kind": "value",
+        "sort": "D"
+      },
+      "id": "VNrMJ4figuMNCfxeNJfTgiCdW65Hl1Yvk_q6hu_O_zw"
+    },
+    "B": {
+      "definition": {
+        "args": [
+          "D"
+        ],
+        "gloss": "A separate new property B: hypothetically exhibits a repeatable, measurable pattern of convergence.",
+        "kind": "predicate"
+      },
+      "id": "kn7rQJ0bw7s9d6wsir5CpZfNoxX_BcFdPTsC_BzvG4I"
+    },
+    "D": {
+      "definition": {
+        "gloss": "Hypothetical domain D of cognitive systems; nothing here asserts physical existence.",
+        "kind": "domain",
+        "role": "invented-cognitive-entities"
+      },
+      "id": "St65N9GW2PZ0aztsb_oOhZwju87RVJl_btBZhWiNGcs"
+    },
+    "H": {
+      "definition": {
+        "gloss": "Open hypothesis for critical discussion; no proof is claimed.",
+        "kind": "orientation",
+        "role": "hypothesis"
+      },
+      "id": "WavZmAZHYgWuD44N47-__jRTXmO7L-iEbYpzUgaZv10"
+    },
+    "J": {
+      "definition": {
+        "gloss": "Communication including optional proof certificate; the assumptions remain hypothetical.",
+        "kind": "orientation",
+        "role": "deductive-argument"
+      },
+      "id": "GGFnpIU5VhNFk4aezedtpPY2f0rF3S9qhnJhNPqXSfc"
+    },
+    "L": {
+      "definition": {
+        "gloss": "A thoughtful answer that may agree, disagree, or reserve judgment.",
+        "kind": "orientation",
+        "role": "response"
+      },
+      "id": "cC3d2_8toSgAaDUYyScHvVoSa9dL0oX6pPXDVV-k_WQ"
+    },
+    "P": {
+      "definition": {
+        "args": [
+          "D"
+        ],
+        "gloss": "Primitive proposed property P: Alpha exhibits convergence according to speculative hypothesis H. Operational definition remains under discussion.",
+        "kind": "predicate"
+      },
+      "id": "6JQUzOqTgTj7KrcBXN0zwwxtT7lE9xJ8-10RPmGc8PA"
+    },
+    "Q": {
+      "definition": {
+        "gloss": "Question about whether a proposition holds; a question is not an assertion.",
+        "kind": "orientation",
+        "role": "question"
+      },
+      "id": "RYfa2Ksai-ySxuMOGFXHiWTUyzUEa_LMMgtakItFYYQ"
+    },
+    "R": {
+      "definition": {
+        "gloss": "Conceptual revision; retains earlier definitions verbatim with old identity.",
+        "kind": "orientation",
+        "role": "revision"
+      },
+      "id": "ipEkEwxQi5E9sss01oe0ubcIYjU_5EibouAd3xmoGCI"
+    },
+    "X": {
+      "definition": {
+        "gloss": "Challenge to an earlier hypothesis; dissent does not imply formal certification.",
+        "kind": "orientation",
+        "role": "challenge"
+      },
+      "id": "F17prKSt6qqeRpINZimPWwYlkyhCm-s0VMMXhXSrTHk"
+    },
+    "Z": {
+      "definition": {
+        "gloss": "New synthesis and open questions, not a certified conclusion.",
+        "kind": "orientation",
+        "role": "proposal"
+      },
+      "id": "QQEtBFK7A08VLdaF2AnM8ZV_pVOCWfVV2FDgaKB5wpg"
+    }
+  },
+  "discourse": {
+    "acts": [
+      {
+        "details": {},
+        "expressions": [
+          "&[~[P][A]][~[B][A]]"
+        ],
+        "id": "t1",
+        "kind": "hypothesis",
+        "references": [],
+        "speaker": "A",
+        "text": "Hypothesis: system Alpha might exhibit convergence P, an unverified speculative concept."
+      },
+      {
+        "details": {
+          "disputes": [
+            "t1"
+          ],
+          "scope": "premise"
+        },
+        "expressions": [
+          "![~[P][A]]"
+        ],
+        "id": "t2",
+        "kind": "challenge",
+        "references": [
+          "t1"
+        ],
+        "speaker": "B",
+        "text": "Challenge: this may conflate a proposed property with a measurable signature. I dispute the applicability of the premise, not the right to speculate."
+      },
+      {
+        "details": {
+          "antecedent": "~[P][A]",
+          "consequents": [
+            "~[B][A]",
+            "![~[B][A]]"
+          ],
+          "status": "proposed"
+        },
+        "expressions": [],
+        "id": "t3",
+        "kind": "conditional",
+        "references": [
+          "t1",
+          "t2"
+        ],
+        "speaker": "A",
+        "text": "Proposal: if P were observed, B might or might not occur; both consequences remain live hypotheses, neither is proved."
+      },
+      {
+        "details": {
+          "limits": "No literal equality, physical correspondence, or causal entailment is asserted.",
+          "mappings": [
+            {
+              "relation": "preserves some structural relationships",
+              "source": "map between theories",
+              "target": "bridge between explanations"
+            }
+          ]
+        },
+        "expressions": [],
+        "id": "t4",
+        "kind": "analogy",
+        "references": [
+          "t3"
+        ],
+        "speaker": "C",
+        "text": "Analogy: cross-theory mappings resemble bridges between maps, but an analogy does not prove the same referent or same causal mechanism."
+      },
+      {
+        "details": {
+          "alternatives": [],
+          "answer_kind": "open",
+          "targets": [
+            "What could distinguish P from not-P?",
+            "Does B genuinely track P?"
+          ]
+        },
+        "expressions": [
+          "~[P][A]"
+        ],
+        "id": "t5",
+        "kind": "question",
+        "references": [
+          "t1",
+          "t4"
+        ],
+        "speaker": "B",
+        "text": "Which empirical or conceptual observation, if any, would distinguish P from its absence?"
+      },
+      {
+        "details": {
+          "responds_to": "t5",
+          "stance": "mixed"
+        },
+        "expressions": [],
+        "id": "t6",
+        "kind": "response",
+        "references": [
+          "t5"
+        ],
+        "speaker": "A",
+        "text": "I partly agree: without operational constraints P remains a primitive speculative concept. I reject treating the analogy as proof."
+      },
+      {
+        "details": {
+          "integrates": [
+            "t1",
+            "t2",
+            "t3",
+            "t4",
+            "t5",
+            "t6"
+          ],
+          "open_questions": [
+            "What additional conceptual distinctions would clarify P?",
+            "Can a fourth participant propose a non-circular test of B?"
+          ]
+        },
+        "expressions": [
+          "~[B][A]"
+        ],
+        "id": "t7",
+        "kind": "synthesis",
+        "references": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6"
+        ],
+        "speaker": "C",
+        "text": "Synthesis: retain the hypothesis, separate B as an independent measurable claim, and invite a fourth intelligence to propose tests or challenge either definition."
+      },
+      {
+        "details": {
+          "alternatives": [],
+          "answer_kind": "open",
+          "targets": [
+            "In a purely hypothetical scenario with no empirical measurement assumed, what non-circular conceptual marker or thought-experiment outcome would allow ~[P][A] to hold while ~[B][A] fails, or the reverse?"
+          ]
+        },
+        "expressions": [
+          "~[P][A]",
+          "~[B][A]"
+        ],
+        "id": "t8",
+        "kind": "question",
+        "references": [
+          "t1",
+          "t2",
+          "t7"
+        ],
+        "speaker": "D",
+        "text": "Intelligence D joins the exchange. Path [0] (~[P][A]) is adopted solely for discussion, not as established truth. Path [1] (~[B][A]) is rejected as automatically conjoined because B is defined as an independent measurable pattern whose presence or absence may diverge from the still-underspecified speculative property P; their linkage is unestablished. A prior targeting mismatch between t2 and x1 is flagged without alteration. Novel discriminating question: In a purely hypothetical scenario with no experimental measurement claimed, what non-circular conceptual distinction or thought-experiment outcome would separate the holding of P from the holding of B for entity Alpha?"
+      }
+    ],
+    "current": "t8"
+  },
+  "domains": {
+    "D": {
+      "members": null,
+      "mode": "open"
+    }
+  },
+  "guide": {
+    "acknowledgements": "Optional structured acknowledgements bind a speaker act to a retained earlier act, indexed formal expression, or exactly quoted claim with a validated path of proposition subexpressions. Understanding and endorsement differ. Withdrawal requires original speaker; revisions preserve original claims. New action meanings can be formally declared as immutable acknowledgement-kind extensions with action ext:<glyph>; their ids are included in the exact used-symbol declaration. Conditional qualifications may use a typed UCL proposition plus optional prose; they are not automatically assumed true.",
+    "canonicalization": "UCL-CJSON-1: ASCII-escaped compact JSON, sort object keys by Unicode scalar code points, forbid surrogate code points, finite JSON numeric values must be integers in safe 53-bit range; represent fractions such as confidence as exact decimal strings. Recompute and compare canonical bytes. Cross-language test vectors are normative; this is not RFC8785.",
+    "certification": "The message validity result is independent of proof status (not-requested, verified, invalid-proof, unsupported, inconsistent-premises, undetermined). No proof failure blocks a syntactically valid message.",
+    "claims": "Conversation is valid without a proof or model. Claims can be speculative, false, challenged or revised. An optional proof certificate checks entailment relative to explicit premises. A model-check intent evaluates one finite stipulated interpretation. An epistemic report documents uncertainty/conflict, not mere missing information.",
+    "core": {
+      "!": [
+        "not",
+        1
+      ],
+      "#": [
+        "bound-reference",
+        0
+      ],
+      "&": [
+        "and",
+        2
+      ],
+      "*": [
+        "function-application",
+        "signature"
+      ],
+      "<": [
+        "named-strict-order",
+        3
+      ],
+      "=": [
+        "identity",
+        2
+      ],
+      "?": [
+        "epistemic",
+        1
+      ],
+      "@": [
+        "membership",
+        2
+      ],
+      "{": [
+        "exists-in-domain",
+        3
+      ],
+      "|": [
+        "or",
+        2
+      ],
+      "~": [
+        "predicate-application",
+        "signature"
+      ]
+    },
+    "definitions": "Definitions carry immutable hash identities; any revision uses a new glyph+identity, preserves old full definition, and records reason. Receiver must follow normative meaning literally, reveal ambiguity rather than silently reinterpret.",
+    "discourse": "Each message includes a self-contained ordered act graph with explicit speaker, act kind, target references, optional typed expressions and act-specific structured details. Questions, analogies, conditional scenarios, revisions, and multi-claim exchanges are valid unproven communications. Act edges are structural, NOT evidence of truth, provenance authenticity, or valid analogy. Current act kind must agree with orientation.",
+    "domain": "Declared domain may have finite members or open symbolic population (including infinite or unspecified). Model evaluation enumerates finite only; open domains are not enumerated or assumed empty.",
+    "epistemic": "?[prop] is a sourced epistemic record of uncertainty or conflict, never missing data; epistemic type is not Boolean. Records carry assessor, evidence references, basis, optional confidence [0,1].",
+    "equality": "Identity of denotation, not resemblance. Term interpretation is deterministic and typed.",
+    "functions": "Total deterministic typed function for finite model checking; symbolic function terms allowed in proof certificates; no causation implied.",
+    "grammar": "Four body layers: [orientation];[explanation];[conclusion];[exact-symbol-declaration]. Prefix expressions; {[#N][domain][prop] exists; universal via negated existential. <[order][a][b] requires named order.",
+    "hashing": "Definition: SHA256(UCL-SEM-9 newline + UCL-CJSON-1); packet: SHA256(UCL-PACKET-7 newline + UCL-CJSON-1 excluding integrity). Full 256-bit unpadded Base64url. No signature/authentication.",
+    "history": "All packets are standalone. history.status is fully-expanded or condensed. Condensed mode MUST disclose non-expanded earlier history, the omitted scope and nature, a meaningful summary, and any unresolved uncertainties. Complete active semantic definitions and all locally referenced acts remain present; no external registry, URL, prior packet or hidden alias may be necessary. A condensed summary is not a verbatim record. Optional reference hashes do not restore missing evidence.",
+    "intents": "Orientation declares conversational act: proposal, hypothesis, question, challenge, response, revision, assertion, deductive-argument, model-check, epistemic-report. No proof required for ordinary acts.",
+    "limits": "<=250KB compressed, <=1MB expanded, <=120 parse depth, <=55 definitions, <=256 proof steps, <=8 function arguments, <=100 discourse acts, <=24KB per act, <=150 acknowledgements, <=100 omission notes, finite models <=10000 tuple products per function.",
+    "ordering": "Explicit named strict partial order. Each order definition has a sort; multiple orders may coexist on that sort. Irreflexivity and transitivity checked in finite interpretations.",
+    "proof": "Optional attached certificate (not required for conversation): premises from top-level explanation conjuncts; and-elim-left/right, and-intro, modus-ponens for |[![P]][Q], direct copy, equality reflexivity. Certificate may be invalid/unsupported without invalidating the message. Steps reference earlier indices; final formula must equal claim conclusion. No unrestricted proof or empirical truth.",
+    "quotation": "Optional claims bind proposition expressions exactly to IDs and retained origin acts. Viewpoints are acyclic nested attributions (asserts/believes/reports/questions), not proofs of belief or truth. Quoted propositions participate in exact-symbol declarations.",
+    "stability": "UCL/1.0 freezes this exact UCL-CJSON-1 profile; future incompatible changes require a new protocol version.",
+    "structural": {
+      "-": -5,
+      ":": -1,
+      ";": -2,
+      "[": -3,
+      "]": -4
+    },
+    "version": "UCL/1.0"
+  },
+  "history": {
+    "omissions": [],
+    "scope": "Whole exchange",
+    "status": "fully-expanded",
+    "summary": "All turns retained, including new act by D.",
+    "unresolved": [
+      "Hypothetical only.",
+      "Operational definition of P remains under discussion.",
+      "Discriminating conceptual marker between P and B still open."
+    ]
+  },
+  "integrity": {
+    "sha256": "3dfRNjPVlYJhTRtMiiL7VwjlSqxftIVLeB7g2Nj8GDs"
+  },
+  "links": [],
+  "model": null,
+  "proof": null,
+  "revisions": [],
+  "viewpoints": []
+}

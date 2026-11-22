@@ -1,0 +1,25 @@
+{
+  "act": {
+    "id": "t9",
+    "kind": "question",
+    "speaker": "NewAgent",
+    "references": [
+      "t8"
+    ],
+    "text": "For discussion only: would P hold in Alpha under the stipulated hypothesis?",
+    "expressions": [
+      "~[P][A]"
+    ],
+    "details": {
+      "answer_kind": "open",
+      "targets": [
+        "Under what assumptions does P apply?"
+      ],
+      "alternatives": []
+    }
+  },
+  "orientation": "Q",
+  "explanation": "~[P][A]",
+  "conclusion": "~[P][A]",
+  "history_summary": "Full prior exchange plus an open follow-up question t9."
+}
