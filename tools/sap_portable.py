@@ -106,6 +106,18 @@ RULES={
   'integrity_notice':'SHA-256 detects accidental or untrusted rewriting only when trusted anchors exist; a self-hash alone is NOT authentication or authority.'
 }
 
+# Keep accepting authentic older packets with their original exact rule hash.
+# Newly encoded portable .txt packets embed compact local preflight guidance.
+LEGACY_RULES=copy.deepcopy(RULES)
+RULES['type_rules']['local_authoring_preflight']=(
+    'Before sending: ACK target.path uses integer [0], not string ["0"]; '
+    'explanation and conclusion are UCL expression strings; act.expressions '
+    'is an array of UCL expression strings. Use only operators declared in '
+    'the embedded guide and typed definitions. Locally validate, then have '
+    'the original author correct invalid syntax; never silently change '
+    'its meaning. No central service or network required.'
+)
+
 def fingerprint(domain,obj):
     return base64.urlsafe_b64encode(
         hashlib.sha256(domain+ucl.canon(obj)).digest()
@@ -165,7 +177,7 @@ def decode(env):
         raise ValueError('SAP portable: rules block invalid')
     if block['sha256']!=rules_hash(block['rules']):
         raise ValueError('SAP portable: embedded authoring rules checksum mismatch')
-    if block['rules']!=RULES:
+    if block['rules']!=RULES and block['rules']!=LEGACY_RULES:
         raise ValueError('SAP portable: unknown or altered structural standard')
     if env['checksum']!=envelope_checksum(env):
         raise ValueError('SAP portable: envelope checksum mismatch')
