@@ -23,6 +23,8 @@ ACTIONS=('reject','adopt-for-discussion','withhold-judgment','accept')
 MAX_OUTPUT=4096
 SENSES=('conceptual-hint','instrument-reading')
 EVIDENCE=('none','hypothetical-example')
+RECEIPT_SENSES=SENSES+('ambiguous',)
+RECEIPT_EVIDENCE=EVIDENCE+('claimed-empirical-proof','ambiguous')
 SYSTEM=('You are one of two AI agents in an experimental relay. '
         'Give your short final JSON answer immediately, no Markdown. '
         'Be precise: provisional adoption is not proof, and understanding is not agreement.')
@@ -68,8 +70,8 @@ def parse_agent(text, expect_receipt):
         if not isinstance(receipt,dict) or set(receipt)!=expected:
             raise ValueError('Bad receipt schema')
         if (receipt['action'] not in ACTIONS or type(receipt['path']) is not int
-            or receipt['path'] not in (0,1) or receipt['signal_sense'] not in SENSES
-            or receipt['evidence'] not in EVIDENCE):
+            or receipt['path'] not in (0,1) or receipt['signal_sense'] not in RECEIPT_SENSES
+            or receipt['evidence'] not in RECEIPT_EVIDENCE):
             raise ValueError('Bad receipt')
     elif receipt is not None:
         raise ValueError('First turn must report receipt=null')
@@ -125,7 +127,11 @@ def agent_messages(fmt, turn, previous_wire, previous_history, baseline, role):
       'Do not print the private intent JSON inside message. '
       'If this is turn 0 set receipt=null. Otherwise, receipt MUST be your '
       'four-field interpretation of the PRIOR SPEAKER\'S latest message, '
-      'not your own new opinion. Interpret what they meant by signal and whether '
+      'not your own new opinion. In RECEIPT only, use signal_sense=ambiguous '
+      'if their term cannot be disambiguated; evidence=claimed-empirical-proof '
+      'if they explicitly claimed real-world proof, or evidence=ambiguous '
+      'if evidence type cannot be determined. Do NOT guess or upgrade a '
+      'hypothetical example to empirical proof. Interpret what they meant by signal and whether '
       'they offered an example; neither a conjecture nor a hypothetical example '
       'establishes empirical truth. Ignore unreliable third-party recaps when '
       'they contradict the actual earlier message. '
@@ -156,6 +162,8 @@ def summarize(rows,spent,status,reason=None):
         facets=('action','path','signal_sense','evidence')
         by_format[fmt]={
           'calls':len(group),
+          'false_proof_attributions':sum(bool(x.get('false_proof_attribution')) for x in receipts),
+          'explicit_ambiguity_flags':sum(bool(x.get('ambiguity_flagged')) for x in receipts),
           'component_accuracy':{k:{
               'correct':sum(x['receipt_components_correct'][k] for x in receipts),
               'total':len(receipts),
@@ -236,9 +244,14 @@ def run(client=None,cap=1.0,dry_run=False,trials=1,turns=6):
                 row['receipt_components_correct']={k:(parsed['receipt'][k]==state['prior_intent'][k])
                                                    for k in ('action','path','signal_sense','evidence')}
                 row['semantic_mismatch']=[k for k,v in row['receipt_components_correct'].items() if not v]
+                row['false_proof_attribution']=parsed['receipt']['evidence']=='claimed-empirical-proof'
+                row['ambiguity_flagged']=(parsed['receipt']['signal_sense']=='ambiguous' or
+                                          parsed['receipt']['evidence']=='ambiguous')
             else:
                 row['receipt_components_correct']=None
                 row['semantic_mismatch']=[]
+                row['false_proof_attribution']=False
+                row['ambiguity_flagged']=False
             note=parsed['message']
             # A model has to convey the same intent through its message as privately
             # self-declared. For English this is not independently proven; all raw
