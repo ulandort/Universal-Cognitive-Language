@@ -23,7 +23,7 @@ The receiver's receipt is compared with the **sender's privately declared intent
 
 GitHub Actions: [UCLBench autonomous dialogue (manual)](https://github.com/ulandort/Universal-Cognitive-Language/actions/workflows/uclbench-dialogue.yml). Trigger on **main**; it checks out **develop/2.0** for all code. The default is `paid_run=no`, which runs all local regression tests and simulated messages **without paid API calls**. Then try `paid_run=yes`, `turns=4`, `trials=1`, and `cap_usd=2.00`. Six turns and two trials can be selected later. Trial two swaps starting speaker. All real API requests are manually triggered; no automatic retries, SDK retries disabled. A pre-call cost reservation stops requests estimated to exceed the selected budget. This is **not a billing guarantee**, so retain an independent Radium provider-side spending limit.
 
-The JSON artifact stores every synthetic prompt/visible response, intended meaning, interpreted meaning, full token usage, form validity, and estimated cost. Full UCL packet bytes are not stored verbatim in each row to keep artifacts manageable; each recipient prompt can be reconstructed from the retained protocol, model decisions, and baseline. Please do not add private data or credentials to these public GitHub artifacts.
+The JSON artifact stores the synthetic prompt, visible response, serialized handoff (including the UCL packet when applicable), intended meaning, interpreted meaning, model token usage, form validity, and estimated cost. Text fields are redacted for common API-key patterns and length-limited. These are research transcripts, not secret-safe archival storage. Please do not add private data or credentials to these public GitHub artifacts.
 
 Local free test:
 
