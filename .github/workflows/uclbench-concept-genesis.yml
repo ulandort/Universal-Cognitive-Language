@@ -1,0 +1,72 @@
+name: UCLBench Concept Genesis CG-1 (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      paid_run:
+        description: 'Run real Clarke/Hal API calls? no = free tests only'
+        type: choice
+        required: true
+        default: 'no'
+        options: ['no', 'yes']
+      turns:
+        description: 'Native CG-1 dialogue turns'
+        type: choice
+        required: true
+        default: '6'
+        options: ['4', '6', '8']
+      max_repairs:
+        description: 'Model-authored corrective attempts per turn'
+        type: choice
+        required: true
+        default: '2'
+        options: ['0', '1', '2']
+      cap_usd:
+        description: 'Estimated cost cap only; provider spending limit is separate'
+        type: choice
+        required: true
+        default: '4.00'
+        options: ['2.00', '4.00', '6.00', '10.00']
+
+permissions:
+  contents: read
+concurrency:
+  group: uclbench-concept-genesis-manual
+  cancel-in-progress: false
+
+jobs:
+  concept_genesis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop/2.0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Free actual new-definition CG-1 regressions and oracle
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_concept_genesis.py' -v
+          python benchmarks/concept_genesis.py --dry-run --turns 6 --output cg1-dry.json
+      - name: Install provider client only for explicitly approved paid run
+        if: inputs.paid_run == 'yes'
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Clarke-Hal native new-concept research (bounded paid trial)
+        if: inputs.paid_run == 'yes'
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+          TURNS: ${{ inputs.turns }}
+          REPAIRS: ${{ inputs.max_repairs }}
+          CAP: ${{ inputs.cap_usd }}
+        run: python benchmarks/concept_genesis.py --turns "$TURNS" --max-repairs "$REPAIRS" --cap-usd "$CAP" --output cg1-live.json
+      - name: Preserve every response and validated self-contained handoff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uclbench-concept-genesis-cg1-results
+          path: |
+            cg1-dry.json
+            cg1-live.json
+          retention-days: 14
