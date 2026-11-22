@@ -21,6 +21,14 @@ This is not a synthetic reconstruction; every receiver gets the entire independe
 5. **Every tenth new turn** invites a reference to a substantially earlier message. These are *advisory reasoning/recall probes*, not artificial validation gates; invalid formal references are still disallowed by UCL itself. Responses are preserved for independent semantic review.
 6. The initial 43 acts plus 50 additional delivered acts would be **93**, below the current 100-act limit; 39 initial acknowledgements plus 50 would be **89**, below the current 150-ACK limit.
 
+## Zero-service, low-overhead authoring guidance in the `.txt`
+
+The Portable envelope already carries its complete language guide, full definitions and structural rules in ordinary UTF-8 JSON. The next encoded envelope embeds an **additional short preflight instruction in the existing `structural_rules.rules.type_rules` block**: JSON integer ACK paths (`[0]`, not `["0"]`), expression string types, defined operators, and author-owned correction. No central API, schema registry, authority server or mandatory third-party library is involved. A recipient can read and implement these directions from the file itself.
+
+The original embedded authoring contract remains the same profile; new encoders add the guidance, while updated decoders accept **either exact known ruleset**, verifying its own SHA-256 rules hash and envelope checksum. Unknown/modified rules remain rejected. This instruction is **advisory model guidance**, not an automatic fixer or a substitute for local `ucl.check()` and the deterministic standalone validation algorithm. It cannot guarantee that every model follows the template. The 11 core glyphs and the semantics of existing fields are unchanged.
+
+The prompt example now uses a correctly typed integer ACK index instead of a misleading string placeholder; the AI still independently decides which old claim to address, its stance and its expressions. The live L50 experiment was already executing when this subsequent packaging improvement was committed and therefore should **not** be reported as having tested these new embedded instructions unless its exact checkout SHA confirms that.
+
 ## Boundaries and reporting
 
 - Completion token ceiling: **16,384 per model request**, including any tokens counted as hidden reasoning by the provider.
