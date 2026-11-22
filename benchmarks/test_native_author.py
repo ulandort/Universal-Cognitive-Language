@@ -65,13 +65,27 @@ class TestNativeAuthor(unittest.TestCase):
         self.assertEqual(p['acknowledgements'][-1]['action'],'reject')
         self.assertEqual(p['acknowledgements'][-1]['target']['path'],[0])
         self.assertIn('ucl',wire.lower())
-        obj['acknowledgements'][0]['target']['path']=[1]
-        with self.assertRaises(ValueError):
-            n.normalise_sender('ucl_native',json.dumps(obj),self.base,sender)
-        obj['acknowledgements'][0]['target']['path']=[0]
+        obj['explanation']='![~[P][A]]'
+        obj['conclusion']='![~[P][A]]'
+        obj['act']['expressions']=['![~[P][A]]']
+        _,negated_packet,negmeta=n.normalise_sender('ucl_native',json.dumps(obj),self.base,sender)
+        self.assertTrue(negmeta['formula_differs_from_positive_atom'])
+        self.assertEqual(negated_packet['discourse']['acts'][-1]['expressions'],['![~[P][A]]'])
+        self.assertEqual(negated_packet['acknowledgements'][-1]['target']['path'],[0])
         obj['acknowledgements'][0]['action']='made-up-action'
         with self.assertRaises(ValueError):
             n.normalise_sender('ucl_native',json.dumps(obj),self.base,sender)
+
+    def test_failure_types_reported_without_claiming_semantic_errors(self):
+        self.assertEqual(n.classify_failure('', 'length', ValueError('bad')),
+                         'output_token_exhaustion')
+        self.assertEqual(n.classify_failure('{', 'stop',
+                         json.JSONDecodeError('incomplete','{',0)), 'invalid_json')
+        self.assertEqual(n.classify_failure('{}', 'stop',
+                         n.NativeValidationError('invalid UCL')),
+                         'ucl_validator_rejection')
+        self.assertEqual(n.classify_failure('{}', 'stop',ValueError('shape')),
+                         'author_schema_rejection')
 
     def test_strict_grade_rejects_forged_integrity_and_missing_history(self):
         case,sender,_=n.fixture(0,0)
