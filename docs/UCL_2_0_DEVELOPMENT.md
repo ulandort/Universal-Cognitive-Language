@@ -83,3 +83,22 @@ python tools/sap_portable.py decode example-ucl2.txt restored-ucl1.txt
 The November 22, 2026 native UCL-only run 45072956129 produced 8/8 first-try valid messages with zero repairs, cost estimate $0.501071, and 4/7 correct four-field receipts. All three receipt mismatches were evidence classification only. That earlier run used off-wire SAP-1 instructions; it is a baseline, NOT a test of the new embedded wire. Source: https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45072956129
 
 Unknown core operators may be proposed as non-normative notes, but may not silently redefine the syntax. Stable UCL/1.0 remains unchanged.
+
+
+## SVP-1 optional decentralized semantic verification — implemented experimental draft
+
+UCL/2.0-SVP-1-DRAFT is now a small, versioned rule section in the existing SAP-1 Portable structural_rules block. It is included in the transmitted, self-contained JSON .txt packet and is covered by the same independently recomputable hashes. No external service, central judge, third-party dictionary or hosted AI is required. This is NOT a released normative 2.0 specification.
+
+SVP-1 is mandatory-to-understand for a reader of this draft profile, but OPTIONAL to execute. Checks include existing typed UCL validation, formal consistency under expressly stated premises and bounded Boolean abstraction, advisory text/formula alignment and conversational continuity. Semantic assessments are NOT required on the wire and never become an automatic syntax veto. Reports are independent optional sidecars referencing the exact envelope checksum, not copies of whole transcripts.
+
+CRITICAL NOVELTY GUARANTEE: An unknown, original, speculative or empirically unsupported hypothesis is NOT automatically false or rejected. Even a demonstrable contradiction retains the original and must identify the explicit premises and exact derivation; a model may challenge the premise or propose an alternative theory. Natural-language alignment is indeterminate unless separately and transparently interpreted. Disagreement between independent auditors is preserved as disagreement rather than central authority.
+
+The local deterministic demonstration tool tools/semantic_audit.py performs bounded exhaustive Boolean satisfiability on structurally validated expressions using uninterpreted atoms. It never claims that a satisfying assignment proves empirical truth, and it never attempts to parse subtle natural-language meaning automatically. Unsupported or out-of-scope cases are marked not-assessed. The optional report is separate and cannot alter the original envelope.
+
+Offline use:
+
+```bash
+python tools/semantic_audit.py example-ucl2.txt --output example-audit.json
+```
+
+The November 22, 2026 first paid test of fully self-contained SAP-1 Portable (run 45074316207) returned **8/8 delivered valid packets, 6/8 first-attempt valid, two repaired, 4/7 complete private-intent receipt matches**, estimated $0.803166. One first-attempt rejection was output-token exhaustion and one was syntax validation. This satisfies stage-one feasibility but not proof of semantic understanding, truth, novelty or language superiority. The SVP-1 addition follows that run and has not yet undergone a new paid model test.
