@@ -64,7 +64,7 @@ class TestUclOnlyConversation(unittest.TestCase):
         self.assertEqual(r['cases'][0]['attempts'][0]['failure_type'],'structural_profile_rejection')
         self.assertTrue(r['cases'][0]['attempts'][1]['valid'])
         self.assertIn('Exact error:',calls[1]['messages'][-1]['content'])
-        self.assertEqual(r['api_calls_attempted'],3)
+        self.assertEqual(r['api_calls_attempted'],4)  # turn 2 also exhausts its own repair allowance
     def test_stable_profile_permits_novel_formulas_but_not_unknown_glyphs(self):
         base=u.ucl.load_json(n.BASELINE.read_text())
         state={'packet':base,'last_intent':None}
