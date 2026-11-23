@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Experimental self-contained UCL 2.0 SAP-1 Portable draft envelope.
+"""Self-contained UCL/2.0 Portable wire envelope and validation.
 
 An ordinary UTF-8 JSON (.txt or .json) file embeds BOTH the entire checked
 UCL/1.0 conversation packet/guide and the complete human-readable SAP-1
@@ -20,7 +20,7 @@ sys.path[:0]=[str(ROOT/'src'),str(ROOT/'benchmarks')]
 import ucl
 import structural_authoring as sap
 
-FORMAT='UCL/2.0-SAP1-PORTABLE-DRAFT'
+FORMAT='UCL/2.0-SAP1-PORTABLE'
 RULE_DOMAIN=b'UCL-SAP1-RULES-DRAFT-1\n'
 ENVELOPE_DOMAIN=b'UCL-SAP1-ENVELOPE-DRAFT-1\n'
 ROLES=frozenset(('hypothesis','example','counterexample','quotation','question'))
@@ -33,7 +33,7 @@ ROLE_GUIDE=('FR-1 draft: act/index identifies an exact expression in packet.disc
 # extension policy, types and reply-authoring procedure appear inline.
 RULES={
   'id':sap.PROFILE,
-  'status':'experimental-draft',
+  'status':'stable-2.0',
   'language_guide_location':'packet.guide (fully embedded)',
   'complete_history_location':'packet.discourse + packet.history',
   'core_glyphs':['@','#','=','~','&','|','!','?','<','*','{'],
@@ -106,10 +106,7 @@ RULES={
   'integrity_notice':'SHA-256 detects accidental or untrusted rewriting only when trusted anchors exist; a self-hash alone is NOT authentication or authority.'
 }
 
-# Keep accepting authentic older packets with their original exact rule hash.
-# Newly encoded portable .txt packets embed compact local preflight guidance.
-LEGACY_RULES=copy.deepcopy(RULES)
-RULES['type_rules']['local_authoring_preflight']=(
+# Portable 2.0 embeds a compact offline authoring preflight.\nRULES['type_rules']['local_authoring_preflight']=(
     'Offline preflight: ACK target.path=[0] (integer), never ["0"] (string); '
     'act.expressions is a list of UCL strings; explanation and conclusion '
     'are UCL strings; use only defined operators. For action=qualify, '
@@ -177,7 +174,7 @@ def decode(env):
         raise ValueError('SAP portable: rules block invalid')
     if block['sha256']!=rules_hash(block['rules']):
         raise ValueError('SAP portable: embedded authoring rules checksum mismatch')
-    if block['rules']!=RULES and block['rules']!=LEGACY_RULES:
+    if block['rules']!=RULES:
         raise ValueError('SAP portable: unknown or altered structural standard')
     if env['checksum']!=envelope_checksum(env):
         raise ValueError('SAP portable: envelope checksum mismatch')
