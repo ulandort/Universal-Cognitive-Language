@@ -25,10 +25,10 @@
 
 ## Release validation and publication
 
-- [ ] Final exact release-candidate core and full offline CI runs green at the selected commit.
-- [ ] Independent Python/JavaScript parity checks for stable Portable envelope pass on exact release SHA.
-- [ ] Merge the inspected release candidate into `main` and verify public README and actual code on `main`.
-- [ ] Record version reference and publish a GitHub release/tag where tooling supports it.
-- [ ] Run a small post-release independent Concept Genesis smoke check against `main`; count original authoring and repair attempts honestly.
+- [x] Final exact release-candidate core and full offline CI runs green at the selected commit (verified by [publication workflow](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45088402215)).
+- [x] Independent Python/JavaScript parity checks for stable Portable envelope pass on the published release build.
+- [x] Merge the inspected release candidate into `main` ([PR #1](https://github.com/ulandort/Universal-Cognitive-Language/pull/1)) and verify public README and stable wire on `main`.
+- [x] Publish the [full stable GitHub release v2.0.0](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.0.0), not a prerelease, with a downloadable validated `.txt` packet.
+- [x] Run the **four-turn offline** post-release Concept Genesis smoke check against `main` ([successful automatic run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45088332367)); live four-turn paid verification is tracked separately from release correctness.
 
 **Not certified:** no third-party security audit, comprehensive semantic-proof guarantee, superiority over English, or complete JS proof/model engine parity. These are not claimed to be complete stable-release conditions for the core Portable interchange profile; unsupported capability claims must be explicit.
