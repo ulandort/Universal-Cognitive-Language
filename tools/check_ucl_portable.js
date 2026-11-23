@@ -11,7 +11,7 @@ const {hash,semantic}=require('./check_ucl.js');
 const FORMAT='UCL/2.0-SAP1-PORTABLE-DRAFT';
 const RULE_DOMAIN='UCL-SAP1-RULES-DRAFT-1\n';
 const ENVELOPE_DOMAIN='UCL-SAP1-ENVELOPE-DRAFT-1\n';
-const PROFILE_SHA='__PINNED_RULES_SHA__';
+const PROFILE_SHA='GHK-r8wXD5p9Q2GA6zab6K01YubPPdwSFA6A0vyfQKI';
 const ROLE_GUIDE=('FR-1 draft: act/index identifies an exact expression in packet.discourse.acts; '+
 'role is an author-declared purpose (hypothesis, example, counterexample, '+
 'quotation, question), NOT proof or truth. Missing role is unspecified. '+
