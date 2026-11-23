@@ -115,7 +115,11 @@ RULES['type_rules']['local_authoring_preflight']=(
     'is an array of UCL expression strings. Use only operators declared in '
     'the embedded guide and typed definitions. Locally validate, then have '
     'the original author correct invalid syntax; never silently change '
-    'its meaning. No central service or network required.'
+    'its meaning. For action qualify, qualification MUST be a nonempty '
+    'string or a valid qualification object; null is invalid. Other ACK '
+    'actions require qualification=null. If a generated UCL formula is '
+    'malformed, show the exact grammar error for model-authored revision. '
+    'No central service or network required.'
 )
 
 def fingerprint(domain,obj):
