@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Optional incremental authoring tool for UCL/1.0.
+"""Optional incremental authoring for UCL/2.0 inner typed packets.
 Usage: python tools/author.py existing_packet.txt contribution.json next_packet.txt
 Inputs never need to include the previous full discourse. This helper does NOT
 silently rewrite earlier definitions, choose a stance, or infer truth.
