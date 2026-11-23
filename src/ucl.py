@@ -45,7 +45,7 @@ def main(args):
         raise ValueError('Usage: python src/ucl.py check file.txt | encode inner.json portable.txt | decode portable.txt inner.json | build/canonicalize/draft ...')
     command=args[1]
     if command=='check' and len(args)==3:
-        data=_core.load_json(Path(args[2]).read_text(encoding='utf-8'))
+        data=json.loads(Path(args[2]).read_text(encoding='utf-8'))
         if isinstance(data,dict) and data.get('format')==PORTABLE_FORMAT:
             print(json.dumps(check_portable(data),indent=2))
         else:
@@ -56,7 +56,7 @@ def main(args):
         Path(args[3]).write_bytes(_core.canon(result))
         print('VALID UCL/2.0 Portable',args[3])
     elif command=='decode' and len(args)==4:
-        source=_core.load_json(Path(args[2]).read_text(encoding='utf-8'))
+        source=json.loads(Path(args[2]).read_text(encoding='utf-8'))
         result=decode_portable(source)
         Path(args[3]).write_bytes(_core.canon(result))
         print('VALID UCL/2.0 Portable',args[3])
