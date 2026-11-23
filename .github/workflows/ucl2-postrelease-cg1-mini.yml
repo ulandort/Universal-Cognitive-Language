@@ -1,0 +1,77 @@
+name: UCL 2.0 Post-Release CG-1 Mini Genesis
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      paid_run:
+        description: 'Real paid Clarke/Hal concept creation? no = offline-only'
+        type: choice
+        required: true
+        default: 'no'
+        options: ['no','yes']
+      cap_usd:
+        description: 'Estimated spend ceiling; not a guaranteed provider account cap'
+        type: choice
+        required: true
+        default: '3.00'
+        options: ['2.00','3.00','4.00']
+      max_repairs:
+        description: 'Model-authored retries allowed'
+        type: choice
+        required: true
+        default: '2'
+        options: ['0','1','2']
+
+permissions:
+  contents: read
+concurrency:
+  group: ucl2-release-cg1-mini
+  cancel-in-progress: false
+
+jobs:
+  concept_genesis_release_smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate released UCL/2.0 wire and perform offline four-turn new-concept genesis
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_concept_genesis.py' -v
+          python benchmarks/concept_genesis.py --dry-run --turns 4 --cap-usd 2 --output release-cg1-mini-dry.json
+          python - <<'PY'
+          import json
+          r=json.load(open('release-cg1-mini-dry.json'))
+          assert r['status']=='dry_run' and r['delivered']==4
+          for t in r['cases']:
+            if t['valid']:
+              env=json.loads(t['handoff'])
+              assert env['format']=='UCL/2.0-SAP1-PORTABLE'
+          print('All four synthetic new-concept turns verified against stable UCL/2.0')
+          PY
+      - name: Install SDK only when paid run explicitly selected
+        if: github.event_name == 'workflow_dispatch' && inputs.paid_run == 'yes'
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Four independent model-authored concept-creation turns using RELEASED 2.0
+        if: github.event_name == 'workflow_dispatch' && inputs.paid_run == 'yes'
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+          CAP: ${{ inputs.cap_usd }}
+          REPAIRS: ${{ inputs.max_repairs }}
+        run: |
+          python benchmarks/concept_genesis.py --turns 4 --cap-usd "$CAP" --max-repairs "$REPAIRS" --output release-cg1-mini-live.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ucl2-postrelease-cg1-mini-results
+          path: |
+            release-cg1-mini-dry.json
+            release-cg1-mini-live.json
+          retention-days: 14
