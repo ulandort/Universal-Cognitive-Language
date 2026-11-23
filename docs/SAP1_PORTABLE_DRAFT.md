@@ -1,3 +1,7 @@
+**ARCHIVED RESEARCH NOTE:** This document describes the pre-release experimental wire format, including obsolete DRAFT hashes. It is **not** the UCL/2.0 format. For current stable instructions use [the normative UCL/2.0 Portable specification](UCL_2_0_SPECIFICATION.md). The legacy draft is retained only as provenance for earlier tests.
+
+---
+
 # UCL 2.0 SAP-1 Portable: self-contained wire draft
 
 **Status: experimental, unreleased.** Stable UCL 1.0 on main and its 11 core glyphs are unchanged.
