@@ -19,6 +19,7 @@ class LocalAuthoringGuideTests(unittest.TestCase):
         self.assertIn('no network',guide)
         self.assertLess(len(guide),450)
         self.assertEqual(e['structural_rules']['sha256'],s.rules_hash(e['structural_rules']['rules']))
+        print('UCL2_PINNED_RULES_SHA='+s.rules_hash(s.RULES))
     def test_authentic_legacy_rules_still_decode(self):
         e=s.encode(self.packet)
         e['structural_rules']['rules']=copy.deepcopy(s.LEGACY_RULES)
