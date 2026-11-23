@@ -25,6 +25,8 @@ class PortableJavaScriptInterop(unittest.TestCase):
         self.assertEqual(result['packet_sha256'],self.packet['integrity']['sha256'])
         self.assertEqual(result['rules_sha256'],obj['structural_rules']['sha256'])
         self.assertEqual(result['discourse_acts'],len(self.packet['discourse']['acts']))
+        guide_sha=subprocess.run(['node','-e',"const {hash}=require('./tools/check_ucl.js');console.log(hash('UCL-GUIDE-PIN-2\\n',JSON.parse(process.argv[1])))",json.dumps(self.packet['guide'])],cwd=ROOT,text=True,capture_output=True,timeout=15,check=True).stdout.strip()
+        print('UCL2_PINNED_GUIDE_SHA='+guide_sha)
     def test_python_and_js_reject_tamper(self):
         obj=sp.encode(self.packet)
         obj['packet']['integrity']['sha256']='not-the-authentic-hash'
