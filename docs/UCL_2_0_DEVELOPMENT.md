@@ -1,3 +1,7 @@
+**Historical research record (not the release specification).** Experimental drafts, outcomes and proposed work below are retained for reproducibility. **UCL/2.0 Portable is the current public profile**; its normative standard is [UCL/2.0 specification](UCL_2_0_SPECIFICATION.md). Statements below about a future or unreleased 2.0 reflect the state when experiments were originally recorded and are not current release status.
+
+---
+
 # UCL 2.0 development track (not yet a released specification)
 
 UCL 1.0 remains the stable public specification on `main`. Features below are *experimental* on `develop/2.0`; they are not a new official wire standard and do not weaken or change the 11 core glyphs.
