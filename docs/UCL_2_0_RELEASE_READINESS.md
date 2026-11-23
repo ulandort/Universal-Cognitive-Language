@@ -1,6 +1,6 @@
-# UCL/2.0 release readiness — working checklist
+# UCL/2.0 release evidence and historical readiness audit
 
-Status: experimental development checklist, not a claim of UCL/2.0 conformance or release approval. UCL/1.0 on `main` remains stable. Each gate needs reproducible evidence, recorded failure analysis, and an explicit go/no-go decision. Do not equate syntax correctness, self-reported intent matching, or an oracle dry run with independently validated comprehension.
+**Stable release published:** [UCL/2.0 v2.0.0](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.0.0) on November 22, 2026 (Toronto time; November 23 UTC). The verified stable profile is `UCL/2.0-SAP1-PORTABLE`, with Python and independently implemented Node checks for its documented scope. Standalone 1.0 is retired as the default public transport; its inner grammar and original 11 glyphs remain unchanged. This document preserves historical development gates, including optional research tasks not required for the bounded stable Portable release. **Do not confuse a release with a claim of universal semantic understanding or truth.**
 
 ## Public benchmark reporting policy — disagreement is not a protocol failure
 
@@ -128,10 +128,11 @@ In particular, [native UCL-only run 45077733957](https://github.com/ulandort/Uni
 - [ ] Publish durable reproducibility records, finalize AI-facing README and example 2.0 packet, and review actual package installation examples.
 - [ ] Only then merge approved release candidate into `main` and tag/publish UCL/2.0, never infer a released version from green experimental stress tests.
 
-## Release rule — full 2.0 launch target
+## Release decision — v2.0.0 stable published
 
-**User-approved launch designation: UCL/2.0 full public release, not a beta.** CG-1, RR-1 and the 25-turn trial have completed, with documented successes and limits. Review the completed 50-turn stress test, finalize versioned documentation and the portable `.txt` format, complete Python/JavaScript interoperability checks and negative conformance tests, and disclose reproducible benchmark strengths and limitations. Record explicit go/no-go decisions for unresolved issues before tagging `2.0`.
-
-This is a **target designation, not a declaration that the necessary checks have already passed**. If a release-blocking issue remains, fix it or transparently scope the feature; do not disguise it to meet the full-release label. Functional disagreement among AIs is not a language failure. No claim of semantic superiority or flawless comprehension without evidence.
-
-Keep stable UCL/1.0 intact until intentional release steps; maintain the unchanged 11 core glyphs, self-contained messages, immutable definition identities and optional extensions. Paid trials require separate manual authorization and a guarded estimated cap.
+- **GO:** The stable self-contained Portable wire, locally validated embedded rules and definition identities, Python reference and Node Portable conformance subset, published specification, READMEs, changelog, measured L25/L50 results, and clean CI are present on the public default branch. [Merge PR #1](https://github.com/ulandort/Universal-Cognitive-Language/pull/1), [release workflow](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45088402215), [full release](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.0.0).
+- The released source includes the complete self-contained UCL/2.0 JSON `.txt` validator and a downloadable independently verified example packet. The public release is not a beta, draft or prerelease.
+- **Explicit scope:** JavaScript independently verifies the pinned Portable envelope and a documented subset of inner packet semantics. Python remains the full reference validator. FR-1 roles and SVP-1 semantic analysis are optional and not a promise of truth, formal proof or security certification. Encryption stays experimental.
+- **Open research, not hidden blockers:** independent blinded interpretation assessment, full JS optional proof/model parity, external security audits, matched English/UCL comparisons and genuinely large-context condensation optimization. These are documented limitations and future work rather than implied completed claims.
+- **Follow-on:** the postrelease four-turn CG-1 **offline** smoke test passed on the stable public branch. Its optional real model-authored trial is a separate, bounded experiment and must not be described as having been part of the stable release's pre-merge validation.
+- Productive intellectual disagreement is not a language failure. No claim of flawless comprehension, semantic superiority, novel empirical discoveries, or correctness of the models' philosophical counterexamples.
