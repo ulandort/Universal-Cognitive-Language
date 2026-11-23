@@ -1,0 +1,48 @@
+name: UCL 2.0 One-Time Matched Baseline Study
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ucl2-matched-baseline-once.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ucl2-one-time-matched-baseline
+  cancel-in-progress: false
+
+jobs:
+  matched_baseline:
+    if: github.repository == 'ulandort/Universal-Cognitive-Language' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline identical-fact tests, frozen 2.0 validation and 16-case oracle
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_ucl2_vs_structured.py' -v
+          python benchmarks/ucl2_vs_structured.py --dry-run --repetitions 2 --cap-usd 3.50 --output comparison-dry.json
+      - name: Install provider SDK after free checks
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Live matched Clarke/Hal, stable UCL2 vs structured English, max estimated $3.50
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+        run: |
+          python benchmarks/ucl2_vs_structured.py --repetitions 2 --cap-usd 3.50 --output comparison-live.json
+      - name: Archive original model responses, item scores, token costs and failure categories
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ucl2-structured-english-matched-study
+          path: |
+            comparison-dry.json
+            comparison-live.json
+          retention-days: 14
