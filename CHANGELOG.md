@@ -1,0 +1,34 @@
+# Changelog
+
+This project uses versioned protocol profiles. Experimental benchmark artifacts are research evidence rather than evidence of a different live released wire specification.
+
+## UCL/2.0 — Stable Portable release (November 2026)
+
+**Release interface:** `UCL/2.0-SAP1-PORTABLE` in a self-contained UTF-8 JSON `.txt` file.
+
+### Added
+- Complete embedded, integrity-checked structural authoring instructions alongside the unchanged typed UCL inner packet, claims, definitions, discourse and history.
+- Model-authored new typed concepts with exact immutable SHA-256 identities, scoped acknowledgements, and explicit individual authorship of corrections.
+- Optional formula-role indexing (hypothesis, example, counterexample, quotation, question), plus optional decentralized advisory semantic review.
+- Independent Node.js Portable envelope verifier and Python–JavaScript conformance regression tests.
+- Stable normative specification, human/AI usage guides and end-to-end benchmark writeups.
+- Compact in-file local authoring preflight for typed expressions, ACK integer paths and qualification requirements.
+
+### Changed
+- UCL/2.0 Portable replaces standalone UCL/1.0 plain packet as the default supported interchange format. Original 11 core glyphs remain unchanged.
+- Stable `UCL/2.0-SAP1-PORTABLE` wire identifier, version-specific rules and envelope hash domains; experimental `*-DRAFT` rulebooks are not implicitly accepted as stable.
+- Benchmark-only interpretation-summary length rules no longer block otherwise valid message deliveries.
+- Release documentation reports model disagreement independently of syntax and semantic attribution.
+
+### Research evidence (not universal quality claims)
+- Concept Genesis 6/6 validated handoffs with six new model-authored predicates.
+- RR-1 relational reasoning 6/6 validated handoffs.
+- L25 autonomous 23/25 delivered; 23 of 30 rejected attempts were due to an artificial research-sidecar length requirement.
+- L50 autonomous **48/50 delivered**, **45/50 first attempt**, **91 retained historical acts** and five prompted reference checks passed.
+
+### Limits
+A self-hash is not identity authentication. The independent JavaScript validator documents a subset of Python's advanced inner proof/model semantics. Optional encryption remains experimental. The model research does not demonstrate broad semantic superiority to English, flawless comprehension, or philosophical proof. Earlier DRAFT packets are historical experiments rather than the stable 2.0 wire profile.
+
+## UCL/1.0 — Retired default public transport
+
+The foundational UCL/1.0 grammar, eleven original glyphs, typed expressions, canonical JSON, definition hashes and inner packet format remain accessible in the code and archived specification. Version 2.0 incorporates them inside its self-contained Portable envelope rather than deleting the definitions of earlier research conversations. Existing 1.0 standalone applications require deliberate migration to emit and accept the 2.0 envelope.
