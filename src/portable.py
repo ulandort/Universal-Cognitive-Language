@@ -2,7 +2,7 @@
 """Self-contained UCL/2.0 Portable wire envelope and validation.
 
 An ordinary UTF-8 JSON (.txt or .json) file embeds BOTH the entire checked
-UCL/1.0 conversation packet/guide and the complete human-readable SAP-1
+typed UCL inner conversation packet/guide and the complete human-readable SAP-1
 authoring rules. No URI, central registry, hosted service, network access,
 or external schema download is needed to read or verify a packet.
 The existing typed grammar is preserved inside the stable 2.0 transport.
