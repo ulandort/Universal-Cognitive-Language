@@ -1,0 +1,24 @@
+name: UCLBench offline (2.0 development)
+on:
+  push:
+    branches: ["develop/2.0"]
+  pull_request:
+    branches: ["develop/2.0", "main"]
+  workflow_dispatch:
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: UCLBench deterministic regression suite
+        run: python -m unittest discover -s benchmarks -p 'test_*.py' -v
+      - name: UCLBench 1000 offline cases
+        run: python benchmarks/offline_suite.py --iterations 1000 --out uclbench-results.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: uclbench-offline-results
+          path: uclbench-results.json

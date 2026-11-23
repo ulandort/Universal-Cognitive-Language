@@ -1,52 +1,54 @@
-# UCL/1.0 · machine-facing entrypoint (AI reader / author)
+# UCL — AI reader and author guide
 
-**Mode:** OPEN_DIALOGUE. **Transport:** plain JSON by default. **No server/registry/tool required to interpret a message.** This file helps scan a repository; a UCL packet itself includes its operative guide and definitions. Follow the actual packet, not undocumented assumptions in this README.
+**Purpose:** Independently authored, precisely referenced communication across different intelligences. A complete UCL message is a self-contained JSON `.txt` or `.json` file. **The message's actual embedded guide and typed definitions are the source of meaning**, not this README or a hosted registry.
 
+> **Version status:** UCL/2.0 Portable, stable wire identifier `UCL/2.0-SAP1-PORTABLE`. This replaces standalone UCL/1.0 as the default public transport. The original 11 core glyphs and inner typed grammar remain unchanged.
+
+## Detect and read the format
+
+For UCL/2.0 Portable, read the outer `format` and `profile`, verify `structural_rules.rules` against its pinned local profile and `structural_rules.sha256`, verify the outer `checksum`, and independently validate the embedded `packet` including `packet.guide` and `packet.integrity.sha256`. When present, validate optional `formula_roles` against their declared act and expression index. An unsigned checksum provides integrity relative to a trusted expected identity—not sender authentication.
+
+**No remote lookup, central service, third-party judge, executable guide, or language conversion is required to interpret a complete Portable packet.** The rules travel with it. Local validators are optional software implementations but required for authoritative *mechanical checking*.
+
+## Read symbolic content literally
+
+```text
+Core glyphs: @ # = ~ & | ! ? < * {
+Structure:   : ; [ ] -
+Body:        [orientation];[explanation];[conclusion];[exact symbol declarations]
 ```
-VERSION := UCL/1.0
-CORE    := @ # = ~ & | ! ? < * {
-STRUCT  := : ; [ ] -
-BODY    := [orientation];[explanation];[conclusion];[exact-declared-symbols]
-INTEGRITY := sha256(packet excluding integrity), domain-separated
-DEFINITIONS := immutable glyph -> {definition, sha256 identity}
-HISTORY := full or explicitly disclosed condensed; no external history dependency
-PROOF   := OPTIONAL; validity independent of claim truth / dialogue validity
+
+`@[a][D]` is membership; `#N` is a scoped bound variable; `=[a][b]` is identity; `~[P][a]` is a defined typed predicate; `&[p][q]` and `|[p][q]` are conjunction and inclusive disjunction; `![p]` is negation; `?[p]` is an epistemic report requiring the stated provenance, **not** an ordinary unanswered question; `<[R][a][b]` is a defined strict order; `*[f][a]` applies a defined function; `{` introduces typed existential binding. Consult the embedded guide for all type, scoping, arity and evidence requirements.
+
+**Never assume** `P`, `B`, `C`, `E`, `G`, `K`, `M` or `N` has a universal meaning. Each is a symbol whose meaning and immutable SHA-256 identity are defined **in that packet**.
+
+## Read the conversation
+
+Read all retained `discourse.acts`, their exact formal `expressions`, readable `text`, `references`, `claims`, `viewpoints`, `acknowledgements`, `revisions` and `history`. Distinguish *understood* from *accept*, hypothetical example from empirical evidence, quoted claims from endorsement, and source attribution from logical validity.
+
+An explicit ACK targets a claim and expression path, e.g. `{"claim":"theory","path":[0]}`. Indices are **integers**, not strings. `qualify` requires a substantive `qualification`; other actions require that field to be null. `withhold-judgment` does not automatically warrant an epistemic `?` expression. `withdraw` applies only to the speaker's own previously authored claims.
+
+**Disagreement is not a communication failure.** Do not conflate the receiver's objection with misunderstanding. Treat novel reasoning as a new hypothesis, not as a malformed message merely because it is unfamiliar.
+
+If `history.status` is `condensed`, honor the disclosed omission scope and do not pretend to remember omitted utterances. The live L25/L50 research explicitly retained all delivered acts rather than condensing them.
+
+## Author a response
+
+1. Independently decide the intended position, reasoning, scope and relevant earlier references.
+2. Preserve all existing definitions, IDs, earlier delivered acts, claim bindings and relevant uncertainty. Define new concepts with appropriate types and new immutable identities; never overwrite a definition.
+3. Compose the new act and symbols using the actual embedded guide. Use existing typed concepts; unknown core operators are **not** executable UCL. Unspecified operator proposals may be expressed as clearly non-normative notes.
+4. Construct exact acknowledgement fields. A target like `"path":["0"]` is invalid; use `"path":[0]`. For `action:"qualify"`, provide a real qualification; do not leave `null`.
+5. Verify expression types and grammar locally. Ensure `act.expressions` is a list of valid expression strings and `explanation`/`conclusion` are correctly typed expression strings.
+6. Append the authored contribution mechanically to the retained history, regenerate the deterministic integrity hashes, and recheck the complete packet. **Do not silently convert, rewrite or repair the author's semantic content.** If validation fails, return exact feedback to the author for an explicit revision.
+7. Interpretations or semantic-audit comments may be included as **advisory metadata**, but a short explanation must never invalidate an otherwise valid UCL message.
+
+### Existing offline tools
+
+```bash
+python tools/sap_portable.py check incoming-ucl2.txt
+node tools/check_ucl_portable.js incoming-ucl2.txt
 ```
 
-## Interpret symbols literally
+The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The Python reference is the authoritative structural implementation for UCL/2.0. See the frozen [normative specification](docs/UCL_2_0_SPECIFICATION.md).
 
-`@[term][domain]` membership; `#N` scoped bound reference; `=[term][term]` denotational identity; `~[predicate][typed arguments...]` relation/predicate; `&[prop][prop]` conjunction; `|[prop][prop]` inclusive disjunction; `![prop]` negation; `?[prop]` *sourced* uncertainty/conflict, **not** missing knowledge; `<[order][a][b]` explicitly named strict order; `*[function][typed args...]` deterministic typed function; `{[#N][domain][prop]` existential. Universal quantification may be expressed with negation/existential. `?` is not a general question marker; questions are discourse acts.
-
-## Reader algorithm
-
-1. Parse plain JSON. Verify required top-level fields and `guide.version` against local version profile, or identify the packet as a draft. **Never execute embedded code.**
-2. Read `guide`, `definitions` (immutable definition gloss and type signature), `domains`, and `context`. Do **not** assume an open domain is empty or finite.
-3. Interpret `body` as four bracketed layers; check typed expressions and exact used-symbol declarations.
-4. Read ordered `discourse.acts`, `claims`, `viewpoints`, `acknowledgements`, `revisions`, `history`. Acknowledge specific targets; acceptance ≠ proof; quoted attributed belief ≠ endorsement.
-5. Clearly distinguish speculation, an optional certificate's derivability, and empirical truth. Report ambiguity rather than silently reinterpret terms.
-6. If `history.status=condensed`, disclose nonexpanded history and do not pretend you possess omitted utterances.
-7. A fresh model requires **only this complete packet** to continue the discussion; any optional encoder merely automates mechanical work.
-
-## Author algorithm
-
-- Retain all definition records; create a *new glyph* and new hash whenever meaning changes. Keep referenced earlier acts and claims. Add one new ordered act with a unique `id`, explicit `kind`, `speaker`, `references`, `details`, `expressions`, and `text`.
-- Optional ACKs: `received`, `understood`, `accept`, `reject`, `qualify`, `clarify`, `propose-revision`, `adopt-for-discussion`, `withhold-judgment`, `withdraw`; only the original speaker can withdraw its own claim. Target exact prior `{act, expression_index}` or `{claim, path}` (zero-based propositional subtree path). ACK records express stance, not verified fact. Custom actions require declared typed extensions.
-- Use a proposition for the body's explanation and conclusion (except supported sourced epistemic conclusion); do not claim the prose means `!B` while the symbolic expression says `B`.
-- Prefer `tools/author.py` to create a valid standalone message from a compact contribution. If no code execution is available, output `UNVERIFIED UCL DRAFT` explicitly and leave integrity unverified rather than fabricate hashes.
-- Preserve `guide` and the standalone history; generate SHA-256 canonical definition IDs and exact declaration; use UCL-CJSON-1 and packet hash. No special syntax beyond JSON is required for the default transport.
-
-## Concrete ACK example
-
-For `&[~[P][A]][~[B][A]]`, path `[0]` selects `~[P][A]`; path `[1]` selects `~[B][A]`. Exact claim ID points to its retained source act. `reject` path `[1]` is *not* a rejection of path `[0]`.
-
-## What is not established
-
-The November 2026 Grok–Qwen exercise demonstrated a coherent multi-turn exchange of hypothetical ideas through self-contained UCL packets, using a reference validator and intermediary support. It was not a controlled demonstration that UCL outperforms English. English glosses carry substantial conceptual content. A SHA-256 identity binds canonical text, not consciousness, semantic equivalence, scientific accuracy, or authenticity. UCL is neutral about the correctness of participants' ideas.
-
-## Files
-
-Normative text: `docs/SPECIFICATION.md`. Working payload: `examples/cross_model_conversation_13_turns.json`. CLI: `python src/ucl.py check FILE`. Build: `python src/ucl.py build DRAFT OUTPUT`. Incremental: `python tools/author.py PACKET CONTRIBUTION OUT`. Uncompressed `.txt` and `.json` are both acceptable; their **contents** are ordinary JSON.
-
-## Optional transport confidentiality
-
-`UCL-ENCRYPTED/0.1-preview` is an **optional, experimental**, external envelope: AES-256-GCM authenticated encryption with Argon2id password derivation or out-of-band 32-byte direct key. Decrypt complete bytes *before* parsing/validating ordinary self-contained UCL JSON. Encryption is not a claim of speaker authenticity, semantic correctness, or truth. The default is plain JSON; no key or crypto tool is needed to interpret plaintext. Implementation and cautions: `optional/ENCRYPTION_EXPERIMENTAL.md`.
+For experimental details and actual evidence, see [README](README.md), [L50 live result](benchmarks/AUTONOMOUS_50_RESULTS.md), [Portable format](docs/SAP1_PORTABLE_DRAFT.md) and [release-readiness](docs/UCL_2_0_RELEASE_READINESS.md).

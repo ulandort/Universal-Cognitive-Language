@@ -1,14 +1,34 @@
-# UCL/1.0 publishing checklist
+# Release checklist — UCL/2.0 Portable
 
-- [x] Frozen UCL/1.0 version guide and default plain JSON transport
-- [x] Eleven core symbols retained; optional proof remains separate
-- [x] Python reference and independent JS subset validator packaged
-- [x] Optional incremental authoring tool included
-- [x] Explicitly separate optional Brotli and experimental encryption
-- [x] Human README, AI-facing README, project explanation and normative specification
-- [x] Apache-2.0, governance and branding/conformance statement
-- [x] Example cross-model test with limitations and attribution caveats
-- [ ] Public GitHub repository created by owner and remote set
-- [ ] GitHub Actions run on public repo
-- [ ] Independent external conformance/security audit (recommended, not asserted)
-- [ ] Maintainer identity and logo/brand owner decision recorded by publisher
+**Target:** full public stable UCL/2.0, not beta. The stable Portable envelope replaces the standalone 1.0 packet as the recommended interchange format. The inner core glyphs, grammar and definition hashing are preserved. The historical research record is retained, but draft formats are not accepted as the 2.0 standard.
+
+## Protocol and implementation
+
+- [x] Freeze exact wire identifier `UCL/2.0-SAP1-PORTABLE` and independent 2.0 checksum domains.
+- [x] Include fully self-contained language guide, typed definitions, claims, acts, acknowledgements, provenance and local authoring instructions in ordinary `.txt` JSON.
+- [x] Retain all 11 core glyphs and immutable definition identities; do not silently alter meaning, history, or scoped ACKs.
+- [x] Verify exact pinned embedded rules, original inner guide, inner packet checksum and envelope checksum offline; unknown or modified profiles fail closed.
+- [x] Provide standard-library Python reference checker and zero-dependency independent JavaScript Portable verifier (documented subset of full inner semantics).
+- [x] Include negative vectors for altered guide, rehashed unknown rules, tampering, duplicate FR-1 references, and malformed fields; use tests and CI for further regressions.
+- [x] Keep FR-1 roles, SVP-1 opinions and encryption separate and optional; do not imply any is proof, authentication or required central authority.
+- [x] Preserve concrete validation failures and model-authored retry provenance without equating philosophical disagreement with communication failure.
+
+## Public documentation
+
+- [x] Human-facing README with first-use walkthrough, capabilities, live research evidence and limitations.
+- [x] AI-facing reading/authoring README with exact ACK and UCL syntax.
+- [x] Frozen [UCL/2.0 normative specification](docs/UCL_2_0_SPECIFICATION.md).
+- [x] Public [release notes](RELEASE_NOTES_2_0.md) and [changelog](CHANGELOG.md).
+- [x] UCLBench methodology and L25/L50 actual results with exact errors, costs and authentic lineage.
+- [x] Archive prior experimental draft documentation without presenting it as the supported release.
+- [x] Include Apache-2.0 licence, conformance/branding notices, governance and attribution.
+
+## Release validation and publication
+
+- [ ] Final exact release-candidate core and full offline CI runs green at the selected commit.
+- [ ] Independent Python/JavaScript parity checks for stable Portable envelope pass on exact release SHA.
+- [ ] Merge the inspected release candidate into `main` and verify public README and actual code on `main`.
+- [ ] Record version reference and publish a GitHub release/tag where tooling supports it.
+- [ ] Run a small post-release independent Concept Genesis smoke check against `main`; count original authoring and repair attempts honestly.
+
+**Not certified:** no third-party security audit, comprehensive semantic-proof guarantee, superiority over English, or complete JS proof/model engine parity. These are not claimed to be complete stable-release conditions for the core Portable interchange profile; unsupported capability claims must be explicit.

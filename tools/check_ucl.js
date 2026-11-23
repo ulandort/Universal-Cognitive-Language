@@ -155,10 +155,13 @@ function semantic(packet){
  assert(packet.integrity.sha256===hash('UCL-PACKET-7\n',Object.fromEntries(Object.entries(packet).filter(([k])=>k!=='integrity'))),'packet hash');
  return {valid:true,acts:acts.length,acknowledgements:packet.acknowledgements.length,definitions:Object.keys(defs).length,mode:packet.history.status,claims:Object.keys(claims).length,viewpoints:viewpoints.size};
 }
-try{
+if(require.main===module)try{
  const raw=fs.readFileSync(process.argv[2],'utf8'), p=JSON.parse(raw);
  const cb=canonical(p);
  assert(cb===raw,'input must already use exact UCL-CJSON-1 canonical bytes');
  if(process.argv[3]==='--canonical'){process.stdout.write(cb);}
  else process.stdout.write(JSON.stringify(semantic(p))+'\n');
 }catch(e){console.error('INVALID:',e.message);process.exit(1)}
+
+// Allow independent offline UCL/2.0 Portable wrappers to reuse this JS checker.
+module.exports={canonical,hash,semantic};
