@@ -14,10 +14,10 @@ class LocalAuthoringGuideTests(unittest.TestCase):
         e=s.encode(self.packet)
         self.assertEqual(s.decode(json.loads(json.dumps(e))),self.packet)
         guide=e['structural_rules']['rules']['type_rules']['local_authoring_preflight']
-        self.assertIn('integer [0]',guide)
-        self.assertIn('expression strings',guide)
-        self.assertIn('No central service',guide)
-        self.assertLess(len(guide),500)
+        self.assertIn('target.path=[0] (integer)',guide)
+        self.assertIn('UCL strings',guide)
+        self.assertIn('no network',guide)
+        self.assertLess(len(guide),450)
         self.assertEqual(e['structural_rules']['sha256'],s.rules_hash(e['structural_rules']['rules']))
     def test_authentic_legacy_rules_still_decode(self):
         e=s.encode(self.packet)
