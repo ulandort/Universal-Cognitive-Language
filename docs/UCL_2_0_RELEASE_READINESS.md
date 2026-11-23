@@ -104,6 +104,7 @@ In particular, [native UCL-only run 45077733957](https://github.com/ulandort/Uni
 ## Gate 4 — Cross-language interoperability and adversarial conformance
 
 - [x] Existing Python reference validation and JavaScript subset checker establish a starting point.
+- [x] Implement standalone zero-dependency JavaScript UCL/2.0 Portable envelope verifier (`tools/check_ucl_portable.js`) and cross-language Python/Node vectors (`benchmarks/test_portable_js_interop.py`) for exact embedded rules hashes, envelope checksums, retained inner packets and optional formula-role metadata. This is an **initial parity subset**; broader conformance must still be checked before a stable release.
 - [ ] Write a complete normative UCL/2.0 specification distinguishing the outer envelope and its stable 1.0 inner packet.
 - [ ] Verify an independently written **full** JS/TypeScript implementation against Python using shared canonical vectors (hashes, Unicode, numeric bounds, complete guide, nested expressions, role indices, ACKs, full history).
 - [ ] Test malformed packets, tampered checksums, duplicate roles, missing guides, unknown extensions, contradictory annotations, oversized messages, and adversarial content; ensure fail-closed validation without covert semantic rewriting.
@@ -116,6 +117,16 @@ In particular, [native UCL-only run 45077733957](https://github.com/ulandort/Uni
 - [ ] Score authored-task compliance separately from valid transmission, receiver comprehension, recovery, and end-to-end correct intent; report confidence and sample sizes.
 - [ ] Report all token and byte overhead, pricing, false proof attributions, and format failures; compare against structured English, not just unstructured prose.
 - [ ] Publish raw reproducible artifacts and a limitations statement before any performance or superiority claim.
+
+### Release packaging underway
+
+- [x] Rewrite root README for new readers, with compact feature overview, self-contained `.txt` quickstart, actual L25/L50 evidence, explicit no-server design and measured limitations.
+- [x] Document every L50 delivery, first-try versus repaired results, nine rejected attempts and genuine reasoning caveats in [L50 results](../benchmarks/AUTONOMOUS_50_RESULTS.md).
+- [x] Add tiny in-packet local preflight explaining correct ACK paths, required qualify values and expression types; maintain strict error feedback without silent rewriting.
+- [ ] Freeze the complete normative 2.0 profile and remove experimental draft naming from release-facing transport after matched Python/Node tests.
+- [ ] Expand cross-language negative vectors for exact inner guide, provenance, revisions, history, qualifications and malformed packets; verify beyond the already passing subset.
+- [ ] Publish durable reproducibility records, finalize AI-facing README and example 2.0 packet, and review actual package installation examples.
+- [ ] Only then merge approved release candidate into `main` and tag/publish UCL/2.0, never infer a released version from green experimental stress tests.
 
 ## Release rule — full 2.0 launch target
 
