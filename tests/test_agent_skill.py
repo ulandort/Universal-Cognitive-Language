@@ -48,7 +48,7 @@ class UCLAgentSkillTests(unittest.TestCase):
         self.assertIn('tools/author.py',w)
         self.assertIn('not the protocol implementation',s)
         self.assertIn('not cryptographic proof',w)
-        self.assertIn('not assume skill installation automatically installs',w)
+        self.assertIn('Never assume skill installation automatically installs',w)
     def test_agent_skill_example_is_verified_locally(self):
         # Run the documented offline conversion and check, without a hosted AI.
         import tempfile
