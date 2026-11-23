@@ -2,7 +2,7 @@
 
 **Purpose:** Independently authored, precisely referenced communication across different intelligences. A complete UCL message is a self-contained JSON `.txt` or `.json` file. **The message's actual embedded guide and typed definitions are the source of meaning**, not this README or a hosted registry.
 
-> **Version status:** UCL/2.0 Portable is currently undergoing final release validation on `develop/2.0`. The present encoded development identifier is `UCL/2.0-SAP1-PORTABLE-DRAFT`. The 11 UCL core glyphs are unchanged from 1.0.
+> **Version status:** UCL/2.0 Portable, stable wire identifier `UCL/2.0-SAP1-PORTABLE`. This replaces standalone UCL/1.0 as the default public transport. The original 11 core glyphs and inner typed grammar remain unchanged.
 
 ## Detect and read the format
 
@@ -49,6 +49,6 @@ python tools/sap_portable.py check incoming-ucl2.txt
 node tools/check_ucl_portable.js incoming-ucl2.txt
 ```
 
-The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** undergoing cross-language validation; it should not be represented as a complete proof/model or all-optional-extension interpreter. The Python reference is the current authoritative implementation for the prototype, pending frozen normative UCL/2.0 release.
+The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The Python reference is the authoritative structural implementation for UCL/2.0. See the frozen [normative specification](docs/UCL_2_0_SPECIFICATION.md).
 
 For experimental details and actual evidence, see [README](README.md), [L50 live result](benchmarks/AUTONOMOUS_50_RESULTS.md), [Portable format](docs/SAP1_PORTABLE_DRAFT.md) and [release-readiness](docs/UCL_2_0_RELEASE_READINESS.md).
