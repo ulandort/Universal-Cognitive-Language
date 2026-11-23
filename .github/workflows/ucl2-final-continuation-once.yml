@@ -1,0 +1,59 @@
+name: UCL 2.0 Final Cold Continuation Study
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ucl2-final-continuation-once.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ucl2-final-continuation-once
+  cancel-in-progress: false
+
+jobs:
+  cold_continuation:
+    if: github.repository == 'ulandort/Universal-Cognitive-Language' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch genuine paid CG-2 history without alteration
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p source
+          gh run download 45089101962 --repo "$GITHUB_REPOSITORY" -n ucl2-cg2-eight-turn-challenge --dir source
+          test -s source/cg2-live.json
+      - name: Run free exact-hash, adversarial and eight-case deterministic UCL/2.0 validation
+        env:
+          CG2_SOURCE_PATH: source/cg2-live.json
+        run: |
+          python -m unittest discover -s benchmarks -p 'test_cold_continuation.py' -v
+          python benchmarks/cold_continuation.py --source "$CG2_SOURCE_PATH" --dry-run --cap-usd 3.75 --output ccr1-dry.json
+      - name: Install provider client only after free tests succeed
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Eight genuine independent author continuations with estimated total cap $3.75
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+        run: |
+          python benchmarks/cold_continuation.py --source source/cg2-live.json --cap-usd 3.75 --max-repairs 1 --output ccr1-live.json
+      - name: Preserve raw model attempts, original CG-2 context and full validated UCL packets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ucl2-final-cold-continuation-ccr1
+          path: |
+            source/cg2-live.json
+            ccr1-dry.json
+            ccr1-live.json
+          retention-days: 14
