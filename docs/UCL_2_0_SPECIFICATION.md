@@ -2,7 +2,7 @@
 
 **Status:** UCL/2.0 stable release profile. **Wire identifier:** `UCL/2.0-SAP1-PORTABLE`. **Encoding:** UTF-8 JSON in a local `.txt` or `.json` file. No network, schema server, centralized authority, mandatory remote registry or interpreter is required to receive and parse a message.
 
-The normative algorithm is implemented in `tools/sap_portable.py`, which validates the embedded typed expression packet using `src/ucl.py`. The independently written JavaScript implementation `tools/check_ucl_portable.js` validates the outer envelope, exact pinned guides and the supported subset of inner packet semantics. Its known scope limitations do not silently relax Python's requirements.
+The canonical implementation lives in `src/portable.py`, which validates the embedded typed packet using the unchanged internal grammar in `src/core.py`. The public versioned Python interface is `src/ucl.py`; `tools/sap_portable.py` is a forwarding compatibility CLI, not a second implementation. The independently written JavaScript implementation `tools/check_ucl_portable.js` validates the outer envelope, exact pinned guides and the supported subset of inner packet semantics. Its known scope limitations do not silently relax Python's requirements.
 
 ## 1. Envelope
 
@@ -63,9 +63,9 @@ A model may author a new typed expression and an exact-response object. The Port
 Standard local commands from the repository root:
 
 ```bash
-python tools/sap_portable.py encode examples/cross_model_conversation_8_turns.json portable.txt
-python tools/sap_portable.py check portable.txt
-python tools/sap_portable.py decode portable.txt reconstructed-inner.json
+python src/ucl.py encode examples/cross_model_conversation_8_turns.json portable.txt
+python src/ucl.py check portable.txt
+python src/ucl.py decode portable.txt reconstructed-inner.json
 node tools/check_ucl_portable.js portable.txt
 ```
 
