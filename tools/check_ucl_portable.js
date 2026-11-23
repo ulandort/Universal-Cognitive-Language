@@ -12,6 +12,7 @@ const FORMAT='UCL/2.0-SAP1-PORTABLE-DRAFT';
 const RULE_DOMAIN='UCL-SAP1-RULES-DRAFT-1\n';
 const ENVELOPE_DOMAIN='UCL-SAP1-ENVELOPE-DRAFT-1\n';
 const PROFILE_SHA='GHK-r8wXD5p9Q2GA6zab6K01YubPPdwSFA6A0vyfQKI';
+const FROZEN_GUIDE_SHA='ZFIZCtsxvrSp7PH12QlsH2re08Xd_kS78JKFunwYO_M';
 const ROLE_GUIDE=('FR-1 draft: act/index identifies an exact expression in packet.discourse.acts; '+
 'role is an author-declared purpose (hypothesis, example, counterexample, '+
 'quotation, question), NOT proof or truth. Missing role is unspecified. '+
@@ -37,6 +38,8 @@ function validate(envelope){
   'inner packet field shape');
  requireThat(packet.guide&&typeof packet.guide==='object'&&!Array.isArray(packet.guide),
   'embedded inner guide missing');
+ requireThat(hash('UCL-GUIDE-PIN-2\n',packet.guide)===FROZEN_GUIDE_SHA,
+  'unknown or altered inner language guide');
  const checked=semantic(packet);
  if(Object.hasOwn(envelope,'formula_roles')){
    requireThat(envelope.formula_role_guide===ROLE_GUIDE,'role guide mismatch');
