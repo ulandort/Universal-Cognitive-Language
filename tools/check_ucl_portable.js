@@ -8,9 +8,9 @@
 'use strict';
 const fs=require('fs');
 const {hash,semantic}=require('./check_ucl.js');
-const FORMAT='UCL/2.0-SAP1-PORTABLE-DRAFT';
-const RULE_DOMAIN='UCL-SAP1-RULES-DRAFT-1\n';
-const ENVELOPE_DOMAIN='UCL-SAP1-ENVELOPE-DRAFT-1\n';
+const FORMAT='UCL/2.0-SAP1-PORTABLE';
+const RULE_DOMAIN='UCL-SAP1-RULES-2.0\n';
+const ENVELOPE_DOMAIN='UCL-SAP1-ENVELOPE-2.0\n';
 const PROFILE_SHA='GHK-r8wXD5p9Q2GA6zab6K01YubPPdwSFA6A0vyfQKI';
 const FROZEN_GUIDE_SHA='ZFIZCtsxvrSp7PH12QlsH2re08Xd_kS78JKFunwYO_M';
 const ROLE_GUIDE=('FR-1 draft: act/index identifies an exact expression in packet.discourse.acts; '+
