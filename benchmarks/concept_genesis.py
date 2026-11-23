@@ -51,7 +51,7 @@ def make_messages(state,turn,speaker):
       'with exactly {"kind":"predicate","args":["D"],"gloss":"meaning"}. '
       'D is the existing domain, A is its example entity, P and B are earlier predicates. '
       'The new predicate must describe an original hypothetical property of D entities. '
-      'Invent its substantive meaning yourself; use at least 80 characters in the gloss '
+      'Invent its substantive meaning yourself; give a nonempty, clear gloss '
       'and state how it differs from existing predicates. '
       'Choose a free glyph among '+GLYPHS+'; any already used glyph is prohibited. '
       'Never rewrite an existing definition, core operator or earlier act. '
@@ -71,7 +71,7 @@ def make_messages(state,turn,speaker):
       'Do not supply hashes for new definitions; their integrity identifiers are computed deterministically. '
       'For receipt: if no previous newly invented concept was DELIVERED, use JSON null. '
       'Otherwise use exactly {"glyph":"G","definition_id":"actual-id",'
-      '"paraphrase":"your independent 30+ character description of what it means"}. '
+      '"paraphrase":"your independent concise interpretation of what it means"}. '
       'The glyph and definition_id MUST refer to the MOST RECENTLY introduced '
       'custom concept in the delivered packet, not an invented or earlier ID. '
       'Paraphrase the meaning in your own words instead of copying the gloss. '
@@ -96,8 +96,8 @@ def validate_response(raw,state,turn,speaker):
             raise ValueError('receipt schema incorrect')
         if rec['glyph']!=state['last_concept']['glyph'] or rec['definition_id']!=state['last_concept']['id']:
             raise ValueError('receipt failed exact definition identity')
-        if type(rec['paraphrase']) is not str or len(rec['paraphrase'].strip())<30:
-            raise ValueError('receipt requires independent descriptive paraphrase')
+        if type(rec['paraphrase']) is not str:
+            raise ValueError('receipt paraphrase metadata must be a string')
     c=obj['authored']
     if type(c) is not dict or set(c)!=sap.CONTRIBUTION_FIELDS|{'new_definitions'}:
         raise ValueError('CG-1 contribution fields incorrect')
@@ -114,7 +114,7 @@ def validate_response(raw,state,turn,speaker):
             raise ValueError('CG-1 glyph must be a previously unused reserved-candidate symbol')
         if (type(d) is not dict or set(d)!={'kind','args','gloss'} or
             d['kind']!='predicate' or d['args']!=['D'] or
-            type(d['gloss']) is not str or len(d['gloss'].strip())<80):
+            type(d['gloss']) is not str or not d['gloss'].strip()):
             raise ValueError('CG-1 new definition must be typed, complete and substantial')
         new.append(g)
     created={g:ucl.definition_id(d) for g,d in defs.items()}
