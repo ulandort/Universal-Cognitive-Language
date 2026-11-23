@@ -106,7 +106,8 @@ RULES={
   'integrity_notice':'SHA-256 detects accidental or untrusted rewriting only when trusted anchors exist; a self-hash alone is NOT authentication or authority.'
 }
 
-# Portable 2.0 embeds a compact offline authoring preflight.\nRULES['type_rules']['local_authoring_preflight']=(
+# Portable 2.0 embeds a compact offline authoring preflight.
+RULES['type_rules']['local_authoring_preflight']=(
     'Offline preflight: ACK target.path=[0] (integer), never ["0"] (string); '
     'act.expressions is a list of UCL strings; explanation and conclusion '
     'are UCL strings; use only defined operators. For action=qualify, '
