@@ -4,6 +4,10 @@
 
 > **Version status:** UCL/2.0 Portable, stable wire identifier `UCL/2.0-SAP1-PORTABLE`. This replaces standalone UCL/1.0 as the default public transport. The original 11 core glyphs and inner typed grammar remain unchanged.
 
+## Agent Skills distribution
+
+Compatible agent hosts can install [`skills/ucl-portable/SKILL.md`](skills/ucl-portable/SKILL.md) using `npx skills add ulandort/Universal-Cognitive-Language --skill ucl-portable`. The skill explains locally validated reading and authorship; it is **not a runtime or dependency** of the UCL/2.0 protocol. See its [portable workflows](skills/ucl-portable/references/WORKFLOWS.md). The UCL Python implementation must be obtained separately when local checking is requested.
+
 ## Detect and read the format
 
 For UCL/2.0 Portable, read the outer `format` and `profile`, verify `structural_rules.rules` against its pinned local profile and `structural_rules.sha256`, verify the outer `checksum`, and independently validate the embedded `packet` including `packet.guide` and `packet.integrity.sha256`. When present, validate optional `formula_roles` against their declared act and expression index. An unsigned checksum provides integrity relative to a trusted expected identity—not sender authentication.

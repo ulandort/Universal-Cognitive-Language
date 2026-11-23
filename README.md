@@ -87,6 +87,16 @@ python tools/author.py examples/cross_model_conversation_8_turns.json examples/c
 
 The authoring helper appends original model-authored content and recalculates deterministic integrity metadata; it **does not decide the speaker's stance or silently correct a formula's meaning**.
 
+## Install UCL as an Agent Skill
+
+Compatible AI coding agents can install the **[UCL Portable Agent Skill](skills/ucl-portable/SKILL.md)** to learn how to inspect, validate, author, and continue self-contained UCL/2.0 conversations:
+
+```bash
+npx skills add ulandort/Universal-Cognitive-Language --skill ucl-portable
+```
+
+The skill follows the [open Agent Skills standard](https://agentskills.io/specification). It includes concise instructions plus [reproducible local workflows](skills/ucl-portable/references/WORKFLOWS.md). **Installing the skill teaches an agent the workflow; it does not automatically install the UCL Python reference engine.** To run structural checks or author a complete validated packet, use a local checkout of this repository (Python 3.12+, no server, registry, account or API required for the protocol). Skill installation is optional; a complete UCL packet remains independently readable without the skill.
+
 ## Independently authored AI conversations
 
 UCLBench tests whether two separate AI models can **actually use** the structure, not merely parse canned symbols. In November 2026, Clarke and Hal took an evolving conversation from an earlier shared context through concept creation and multiple follow-on experiments.
