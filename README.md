@@ -6,7 +6,7 @@
 
 UCL lets AI systems exchange typed symbolic expressions, independently defined concepts, arguments, questions, acknowledgements and changes of position in an ordinary, readable **UTF-8 JSON `.txt` message**. The recipient can inspect the language guide, definitions and retained conversation **inside the same file**—without a central registry, hosted interpreter or remotely fetched schema.
 
-> **Release status:** UCL/2.0 release preparation on `develop/2.0`. The 50-turn live pilot has completed; final 2.0 conformance, interoperability and documentation checks are in progress. The current stable branch is `main` (UCL/1.0). We will not label 2.0 stable until the release gates pass.
+> **Current release:** **UCL/2.0 Portable**. This is the supported, self-contained release profile; UCL/1.0 is retained as the inner typed grammar and historical specification, not the public default transport. The original 11 core glyphs are unchanged.
 
 ## Why UCL?
 
@@ -41,7 +41,7 @@ A separate, optional **acknowledgement** precisely identifies the earlier claim 
 
 ### The portable `.txt` envelope
 
-The implemented experimental 2.0 profile currently includes:
+The stable UCL/2.0 Portable profile includes:
 
 ```text
 UCL/2.0 portable JSON message
@@ -73,7 +73,7 @@ python tools/sap_portable.py check portable-example.txt
 python tools/sap_portable.py decode portable-example.txt restored-ucl1.txt
 ```
 
-The self-contained portable format is a development candidate; its current version identifier is `UCL/2.0-SAP1-PORTABLE-DRAFT`. Do not mistake it for a frozen 2.0 standard until the normative release specification is finalized.
+The versioned, self-contained wire identifier is **`UCL/2.0-SAP1-PORTABLE`**. The exact canonical serialization, embedded authoring rules and offline validation requirements are defined in the [normative UCL/2.0 specification](docs/UCL_2_0_SPECIFICATION.md).
 
 For constructing a new message from a locally verified prior packet and a model-authored contribution:
 
@@ -107,10 +107,11 @@ All of these mechanisms preserve the existing 11 core glyphs; no authority serve
 
 ## Documentation
 
-- [How the language works](docs/SPECIFICATION.md) — current core grammar and packet semantics
-- [2.0 development and extension details](docs/UCL_2_0_DEVELOPMENT.md) — implementation scope and experimental profiles
-- [Portable authoring design](docs/SAP1_PORTABLE_DRAFT.md) — self-contained envelope and checks
-- [2.0 release-readiness checklist](docs/UCL_2_0_RELEASE_READINESS.md) — completed evidence, remaining gates and limitations
+- [**UCL/2.0 normative specification**](docs/UCL_2_0_SPECIFICATION.md) — stable wire format, hashes, conformance
+- [Inner typed grammar](docs/SPECIFICATION.md) — original core glyphs and expression semantics
+- [Research and experimental extensions](docs/UCL_2_0_DEVELOPMENT.md) — historical research and optional features
+- [Portable authoring design](docs/UCL_2_0_SPECIFICATION.md) — authoritative self-contained envelope and checks
+- [Release audit and evidence](docs/UCL_2_0_RELEASE_READINESS.md) — evidence, limitations, audit history
 - [AI-facing guide](README_AI.md) — model-oriented reading and composing instructions
 - [UCLBench](benchmarks/README.md) — reproducible tests and experimental methodology
 - [Project rationale](docs/PROJECT.md) · [Governance](GOVERNANCE.md) · [Apache-2.0 license](LICENSE)
