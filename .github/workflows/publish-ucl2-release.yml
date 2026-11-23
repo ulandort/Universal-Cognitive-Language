@@ -1,0 +1,80 @@
+name: Publish UCL 2.0 stable release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-ucl2-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ucl-2-0-stable-release
+  cancel-in-progress: false
+
+jobs:
+  verify_and_publish:
+    if: github.repository == 'ulandort/Universal-Cognitive-Language' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Confirm stable version and release documentation
+        run: |
+          python - <<'PY'
+          import sys
+          sys.path.insert(0,'tools')
+          import sap_portable as p
+          assert p.FORMAT=='UCL/2.0-SAP1-PORTABLE'
+          assert p.RULE_DOMAIN==b'UCL-SAP1-RULES-2.0\n'
+          assert p.ENVELOPE_DOMAIN==b'UCL-SAP1-ENVELOPE-2.0\n'
+          assert p.RULES['status']=='stable-2.0'
+          from pathlib import Path
+          for file in ['README.md','README_AI.md','docs/UCL_2_0_SPECIFICATION.md','RELEASE_NOTES_2_0.md','CHANGELOG.md']:
+              assert Path(file).is_file(),file
+          print('Stable UCL/2.0 identity and documentation present')
+          PY
+      - name: Core release and adversarial Python tests
+        run: |
+          python -m unittest discover -s tests -p 'test_release.py' -v
+          python -m unittest discover -s benchmarks -p 'test_*.py' -v
+      - name: Deterministic 1000-case offline UCLBench
+        run: python benchmarks/offline_suite.py --iterations 1000 --seed 2026 --out uclbench-release-2.0-results.json
+      - name: Produce and independently validate downloadable UCL 2.0 text example
+        run: |
+          python tools/sap_portable.py encode examples/cross_model_conversation_8_turns.json ucl2-portable-example.txt
+          python tools/sap_portable.py check ucl2-portable-example.txt
+          node tools/check_ucl_portable.js ucl2-portable-example.txt
+      - name: Create official immutable v2.0.0 tag and GitHub release only once
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v2.0.0 >/dev/null 2>&1; then
+            echo 'v2.0.0 already published; refusing to overwrite it'
+            exit 0
+          fi
+          gh release create v2.0.0 ucl2-portable-example.txt \
+            --target "$GITHUB_SHA" \
+            --title 'UCL/2.0 — Portable Stable' \
+            --notes-file RELEASE_NOTES_2_0.md \
+            --latest
+          gh release view v2.0.0 --json tagName,isDraft,isPrerelease,url
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ucl2-release-verification
+          path: |
+            uclbench-release-2.0-results.json
+            ucl2-portable-example.txt
+          retention-days: 14
