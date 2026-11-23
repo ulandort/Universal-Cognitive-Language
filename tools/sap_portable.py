@@ -110,16 +110,12 @@ RULES={
 # Newly encoded portable .txt packets embed compact local preflight guidance.
 LEGACY_RULES=copy.deepcopy(RULES)
 RULES['type_rules']['local_authoring_preflight']=(
-    'Before sending: ACK target.path uses integer [0], not string ["0"]; '
-    'explanation and conclusion are UCL expression strings; act.expressions '
-    'is an array of UCL expression strings. Use only operators declared in '
-    'the embedded guide and typed definitions. Locally validate, then have '
-    'the original author correct invalid syntax; never silently change '
-    'its meaning. For action qualify, qualification MUST be a nonempty '
-    'string or a valid qualification object; null is invalid. Other ACK '
-    'actions require qualification=null. If a generated UCL formula is '
-    'malformed, show the exact grammar error for model-authored revision. '
-    'No central service or network required.'
+    'Offline preflight: ACK target.path=[0] (integer), never ["0"] (string); '
+    'act.expressions is a list of UCL strings; explanation and conclusion '
+    'are UCL strings; use only defined operators. For action=qualify, '
+    'qualification must be nonempty string or valid object; other actions '
+    'require null. Validate locally; return precise errors for author-owned '
+    'corrections. Never silently rewrite semantic intent; no network.'
 )
 
 def fingerprint(domain,obj):
