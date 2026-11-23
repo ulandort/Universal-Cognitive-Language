@@ -68,7 +68,7 @@ In particular, [native UCL-only run 45077733957](https://github.com/ulandort/Uni
 
 - [x] Preserve the scripted 10-turn and 25-event semantic-retention benchmarks (see `benchmarks/LONG_CONVERSATION.md` and `benchmarks/ADVERSARIAL_25.md`). These are scripted histories, **not autonomous AI discussions**.
 - [x] Execute the 25-turn independently generated dialogue pilot (23/25 deliveries, two undelivered turns; **not** uninterrupted success).
-- [ ] Prepare and complete the 50-turn stress run with corrected auxiliary format rule and predefined cost guard.
+- [x] Complete live 50-turn stress with corrected auxiliary format rule and predefined estimated cost guard (48/50 validated deliveries; report below).
 - [ ] Check literal full-history preservation, immutable definition hashes, act/ACK/reference resolution, non-monotonic stances, quotation scopes, and extension handling.
 - [ ] Track token cost and envelope byte growth by turn, validation and provider failures, first-try and repaired delivery, and semantic receipt agreement. Do not silently condense UCL/2.0 active history.
 
@@ -90,6 +90,17 @@ In particular, [native UCL-only run 45077733957](https://github.com/ulandort/Uni
 - L50 **removes ALL interpretation-summary length and presence gates**: auxiliary interpretation is recorded for human review but does not control UCL handoff validity. Exact ACK targets with JSON **integer** indices and unchanged UCL typing, hashes, history and definition checks remain mandatory; earlier-reference prompts are advisory rather than an extra delivery rejection. A synthetic full-history 50-turn preflight and targeted negative conformance tests run before paid requests in the manual workflow.
 - **No paid L50 run has occurred yet.** The full-release target does not imply successful L50 results or complete release readiness; assess all 50 raw interactions, valid authored semantics, retention, resource usage and interoperability before tagging UCL/2.0.
 
+### Live autonomous 50-turn result and release interpretation
+
+**[Full L50 evidence report](../benchmarks/AUTONOMOUS_50_RESULTS.md)** · [Paid run 45083740106](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45083740106) · authentic CG-1 → RR-1 → L25 → L50 retained history.
+
+- **48/50 scheduled turns delivered (96%)**, **45/50 first-attempt valid (90%)**, three repaired and delivered; 57 total API requests and estimated **$5.371941 USD**. The GitHub workflow succeeded, but two scheduled turns (#43 and #46) did not deliver; don't describe the conversation as uninterrupted 50/50 success.
+- Final transmitted UCL/2.0 Portable message retained **91 acts (43 inherited + 48 newly valid)** and original six definition identities, without silent history condensation or rewriting of delivered acts. Wire size increased from **74,916 to 148,841 bytes**. All **5/5** prompted deep-history references passed structural reference checks.
+- **Nine rejected attempts**: three genuinely missing required `qualify`-action qualification values; three invalid UCL expressions (`expected [`); one benchmark-specific missing invented-concept expression, which is not a UCL grammar error; two output-token exhaustion attempts (one later repaired). No auxiliary interpretation-length rejections. One interpretation sidecar was recorded, so 50-turn semantic agreement is **not** quantified.
+- Qualitative reasoning progressed from repetitive non-entailment proposals and acceptances to explicitly questioning global joint satisfiability, formal versus semantically meaningful glosses, and local antecedent satisfiability. Speculative examples are not verified countermodels or proofs. Philosophical disagreement is not a communication failure.
+- **Release changes already committed after the live workflow started:** extend the embedded `.txt` preflight to distinguish `qualify` actions requiring a nonempty qualification; keep strict syntax validation, local deterministic hashing, immutable definitions, original 11 glyphs, and fully self-contained context. Changes need independent release regression before promotion.
+- **Still open before stable UCL/2.0**: complete Python/JavaScript behavioral parity for the declared full profile (or accurately scope JS support), normative frozen 2.0 format and vectors, adversarial/tamper conformance, finalized README and migration/install examples, permanent benchmark provenance, and an explicit go/no-go. A strong L50 pilot is an evidence milestone, not automatically a full production certification.
+
 ## Gate 4 — Cross-language interoperability and adversarial conformance
 
 - [x] Existing Python reference validation and JavaScript subset checker establish a starting point.
@@ -108,7 +119,7 @@ In particular, [native UCL-only run 45077733957](https://github.com/ulandort/Uni
 
 ## Release rule — full 2.0 launch target
 
-**User-approved launch designation: UCL/2.0 full public release, not a beta.** CG-1, RR-1 and the 25-turn trial have completed, with documented successes and limits. Complete the proposed 50-turn stress test, finalize versioned documentation and the portable `.txt` format, complete Python/JavaScript interoperability checks and negative conformance tests, and disclose reproducible benchmark strengths and limitations. Record explicit go/no-go decisions for unresolved issues before tagging `2.0`.
+**User-approved launch designation: UCL/2.0 full public release, not a beta.** CG-1, RR-1 and the 25-turn trial have completed, with documented successes and limits. Review the completed 50-turn stress test, finalize versioned documentation and the portable `.txt` format, complete Python/JavaScript interoperability checks and negative conformance tests, and disclose reproducible benchmark strengths and limitations. Record explicit go/no-go decisions for unresolved issues before tagging `2.0`.
 
 This is a **target designation, not a declaration that the necessary checks have already passed**. If a release-blocking issue remains, fix it or transparently scope the feature; do not disguise it to meet the full-release label. Functional disagreement among AIs is not a language failure. No claim of semantic superiority or flawless comprehension without evidence.
 
