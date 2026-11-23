@@ -5,7 +5,7 @@ An ordinary UTF-8 JSON (.txt or .json) file embeds BOTH the entire checked
 UCL/1.0 conversation packet/guide and the complete human-readable SAP-1
 authoring rules. No URI, central registry, hosted service, network access,
 or external schema download is needed to read or verify a packet. 1.0 is
-unchanged; this wrapper is a separate draft 2.0 profile.
+retains its original typed grammar; this is the stable 2.0 transport.
 """
 from __future__ import annotations
 import argparse
@@ -21,8 +21,8 @@ import ucl
 import structural_authoring as sap
 
 FORMAT='UCL/2.0-SAP1-PORTABLE'
-RULE_DOMAIN=b'UCL-SAP1-RULES-DRAFT-1\n'
-ENVELOPE_DOMAIN=b'UCL-SAP1-ENVELOPE-DRAFT-1\n'
+RULE_DOMAIN=b'UCL-SAP1-RULES-2.0\n'
+ENVELOPE_DOMAIN=b'UCL-SAP1-ENVELOPE-2.0\n'
 ROLES=frozenset(('hypothesis','example','counterexample','quotation','question'))
 ROLE_GUIDE=('FR-1 draft: act/index identifies an exact expression in packet.discourse.acts; '
             'role is an author-declared purpose (hypothesis, example, counterexample, '
