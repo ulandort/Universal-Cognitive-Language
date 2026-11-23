@@ -64,14 +64,18 @@ A receiver can validate the entire packet locally. Hashes detect changes relativ
 
 **Requirements:** Python 3.12+ for the reference CLI. The base validator uses the Python standard library; no cloud service or API key is required for offline checks.
 
-Clone the repository and try the existing reference example:
+Clone the repository and use the **UCL/2.0 public entry point**:
 
 ```bash
-python src/ucl.py check examples/cross_model_conversation_8_turns.json
-python tools/sap_portable.py encode examples/cross_model_conversation_8_turns.json portable-example.txt
-python tools/sap_portable.py check portable-example.txt
-python tools/sap_portable.py decode portable-example.txt restored-ucl1.txt
+python src/ucl.py encode examples/cross_model_conversation_8_turns.json portable-example.txt
+python src/ucl.py check portable-example.txt
+python src/ucl.py decode portable-example.txt restored-inner.json
+node tools/check_ucl_portable.js portable-example.txt
 ```
+
+The existing `python tools/sap_portable.py` CLI still works as a small forwarding entry point for older scripts, and `python src/ucl.py check` also recognizes historical inner packets for reproducibility.
+
+**Source layout:** `src/ucl.py` is the public 2.0 Python API/CLI; `src/portable.py` implements the actual Portable format; `src/core.py` contains the original, unchanged typed grammar and SHA-256 rules; `src/structural_authoring.py` contains the SAP-1 schema. Keeping the inner grammar stable ensures existing valid UCL/2.0 packets and fingerprints do not change. The historical 1.0 version identifier refers only to that internal inner-packet grammar, not the public interchange format.
 
 The versioned, self-contained wire identifier is **`UCL/2.0-SAP1-PORTABLE`**. The exact canonical serialization, embedded authoring rules and offline validation requirements are defined in the [normative UCL/2.0 specification](docs/UCL_2_0_SPECIFICATION.md).
 

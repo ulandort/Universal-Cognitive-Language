@@ -2,6 +2,17 @@
 
 This project uses versioned protocol profiles. Experimental benchmark artifacts are research evidence rather than evidence of a different live released wire specification.
 
+## UCL/2.0.1 — Source-layout maintenance (November 2026)
+
+**No UCL wire, grammar, hashing, or semantic changes.** Consolidates the stable UCL/2.0 Portable Python implementation under `src/`:
+
+- `src/ucl.py` is now the documented UCL/2.0 CLI and importable public API, including `encode`, `decode`, and automatic Portable-versus-inner-packet `check`.
+- `src/portable.py` is the single canonical Portable envelope implementation, using `src/core.py` for the original validated typed grammar and `src/structural_authoring.py` for the embedded authoring schema.
+- Existing `tools/sap_portable.py` and `benchmarks/structural_authoring.py` become tiny compatibility forwarders so saved scripts, command lines and benchmarks continue to work.
+- Added exact canonical-byte, hash, history, CLI and Python/Node interoperability regressions; retained the original 11 glyphs, original inner packet version identifier and the full `UCL/2.0-SAP1-PORTABLE` wire identity.
+
+The previous inner `UCL/1.0` identifier still appears *inside* the original typed grammar for fingerprint and history compatibility. It is not a separate supported external transport. The v2.0.0 tag remains preserved for reproducibility.
+
 ## UCL/2.0 — Stable Portable release (November 2026)
 
 **Release interface:** `UCL/2.0-SAP1-PORTABLE` in a self-contained UTF-8 JSON `.txt` file.

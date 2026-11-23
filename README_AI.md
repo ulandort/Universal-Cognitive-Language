@@ -45,10 +45,10 @@ If `history.status` is `condensed`, honor the disclosed omission scope and do no
 ### Existing offline tools
 
 ```bash
-python tools/sap_portable.py check incoming-ucl2.txt
+python src/ucl.py check incoming-ucl2.txt
 node tools/check_ucl_portable.js incoming-ucl2.txt
 ```
 
-The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The Python reference is the authoritative structural implementation for UCL/2.0. See the frozen [normative specification](docs/UCL_2_0_SPECIFICATION.md).
+The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The public Python entry point is `src/ucl.py`, backed by `src/portable.py` and the unchanged inner grammar in `src/core.py`. The Python reference remains the authoritative structural implementation for UCL/2.0. See the frozen [normative specification](docs/UCL_2_0_SPECIFICATION.md).
 
 For experimental details and actual evidence, see [README](README.md), [L50 live result](benchmarks/AUTONOMOUS_50_RESULTS.md), [Portable format](docs/SAP1_PORTABLE_DRAFT.md) and [release-readiness](docs/UCL_2_0_RELEASE_READINESS.md).
