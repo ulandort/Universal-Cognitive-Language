@@ -20,12 +20,13 @@ class LocalAuthoringGuideTests(unittest.TestCase):
         self.assertLess(len(guide),450)
         self.assertEqual(e['structural_rules']['sha256'],s.rules_hash(e['structural_rules']['rules']))
         print('UCL2_PINNED_RULES_SHA='+s.rules_hash(s.RULES))
-    def test_authentic_legacy_rules_still_decode(self):
+    def test_experimental_rules_are_not_accidentally_accepted_as_stable(self):
         e=s.encode(self.packet)
-        e['structural_rules']['rules']=copy.deepcopy(s.LEGACY_RULES)
-        e['structural_rules']['sha256']=s.rules_hash(s.LEGACY_RULES)
+        e['structural_rules']['rules']['status']='experimental-draft'
+        e['structural_rules']['sha256']=s.rules_hash(e['structural_rules']['rules'])
         e['checksum']=s.envelope_checksum(e)
-        self.assertEqual(s.decode(e),self.packet)
+        with self.assertRaisesRegex(ValueError,'unknown or altered'):
+            s.decode(e)
     def test_modified_rules_rejected_even_with_recomputed_hashes(self):
         e=s.encode(self.packet)
         e['structural_rules']['rules']['type_rules']['local_authoring_preflight']='not the authentic guide'
