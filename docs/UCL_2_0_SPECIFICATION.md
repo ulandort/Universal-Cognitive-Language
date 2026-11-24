@@ -1,6 +1,6 @@
 # Universal Cognitive Language — UCL/2.0 normative Portable specification
 
-**Status:** Archived UCL/2.0 release specification. See [UCL/2.2](UCL_2_2_SPECIFICATION.md) for the current release. **Wire identifier:** `UCL/2.0-SAP1-PORTABLE`. **Encoding:** UTF-8 JSON in a local `.txt` or `.json` file. No network, schema server, centralized authority, mandatory remote registry or interpreter is required to receive and parse a message.
+**Status:** Archived UCL/2.0 release specification. See [UCL/2.3](UCL_2_3_SPECIFICATION.md) for the current release. **Wire identifier:** `UCL/2.0-SAP1-PORTABLE`. **Encoding:** UTF-8 JSON in a local `.txt` or `.json` file. No network, schema server, centralized authority, mandatory remote registry or interpreter is required to receive and parse a message.
 
 The canonical implementation lives in `src/portable.py`, which validates the embedded typed packet using the unchanged internal grammar in `src/core.py`. The public versioned Python interface is `src/ucl.py`; `tools/sap_portable.py` is a forwarding compatibility CLI, not a second implementation. The independently written JavaScript implementation `tools/check_ucl_portable.js` validates the outer envelope, exact pinned guides and the supported subset of inner packet semantics. Its known scope limitations do not silently relax Python's requirements.
 

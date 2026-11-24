@@ -1,4 +1,4 @@
-**ARCHIVED RESEARCH NOTE:** This document describes the pre-release experimental wire format, including obsolete DRAFT hashes. It is **not** the UCL/2.0 format. For current stable instructions use [the UCL/2.2 Portable specification](UCL_2_2_SPECIFICATION.md). The legacy draft is retained only as provenance for earlier tests.
+**ARCHIVED RESEARCH NOTE:** This document describes the pre-release experimental wire format, including obsolete DRAFT hashes. It is **not** the UCL/2.0 format. For current stable instructions use [the UCL/2.3 Portable specification](UCL_2_3_SPECIFICATION.md). The legacy draft is retained only as provenance for earlier tests.
 
 ---
 

@@ -1,0 +1,25 @@
+{
+  "act": {
+    "id": "t9",
+    "kind": "response",
+    "speaker": "D",
+    "references": ["t8"],
+    "text": "I retract the rejection I recorded in x4 on branch [1]. My position on branch [0] still stands.",
+    "expressions": [],
+    "details": {"responds_to": "t8", "stance": "undetermined"}
+  },
+  "orientation": "L",
+  "explanation": "~[B][A]",
+  "conclusion": "~[B][A]",
+  "acknowledgements": [
+    {
+      "id": "x5",
+      "by": "t9",
+      "target": {"ack": "x4"},
+      "action": "retract",
+      "qualification": null,
+      "replacement": null,
+      "note": ""
+    }
+  ]
+}
