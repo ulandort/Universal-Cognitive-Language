@@ -142,6 +142,18 @@ python src/ucl.py check next-message.txt
 
 For your own conversation, ask your AI to draft a JSON contribution using the template and guide embedded in the packet. The command checks the incoming packet, appends the authored contribution, and validates the result locally before writing it. If validation fails, revise the draft using the reported error. Send only `next-message.txt` to the next recipient. The optional command comes with this repository and works offline.
 
+## Compress a long conversation
+
+`pack` writes a smaller Portable `.txt` by moving older acts into lossless gzip blocks inside the file. The newest 1,000 acts, protected sources, and any acts you pin stay readable. At 2,000 acts the first old batch becomes eligible, and `continue` applies the same policy as the conversation grows.
+
+```bash
+python src/ucl.py pack long.txt packed.txt --keep-act t500
+python src/ucl.py inspect packed.txt --act t185
+python src/ucl.py check packed.txt
+```
+
+The file contains its own archive index and decoding instructions. When you look up an older act, `inspect` opens just its block, checks its fingerprint, and returns the exact wording. The whole history still travels in one `.txt`. Try the [packed example](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.2.0/ucl-2.2-archive.txt) or read the [archive rules](docs/UCL_LONG_CONVERSATIONS.md#optional-gzip-archives-in-the-same-file).
+
 ## Install UCL as an Agent Skill
 
 Compatible AI coding agents can install the **[UCL Portable Agent Skill](skills/ucl-portable/SKILL.md)** to learn how to inspect, validate, author, and continue self-contained Portable conversations:
