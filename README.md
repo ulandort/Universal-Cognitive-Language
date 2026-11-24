@@ -138,7 +138,7 @@ python src/ucl.py continue portable-example.txt next-message.txt < examples/cont
 python src/ucl.py check next-message.txt
 ```
 
-For your own conversation, ask your AI to draft a JSON contribution using the packet's embedded guide and structural rules. The command checks the incoming packet, appends the authored contribution, and validates the result locally before writing it. If validation fails, revise the draft using the reported error. Send only `next-message.txt` to the next recipient. The optional command comes with this repository and works offline.
+For your own conversation, ask your AI to draft a JSON contribution using the template and guide embedded in the packet. The command checks the incoming packet, appends the authored contribution, and validates the result locally before writing it. If validation fails, revise the draft using the reported error. Send only `next-message.txt` to the next recipient. The optional command comes with this repository and works offline.
 
 ## Install UCL as an Agent Skill
 

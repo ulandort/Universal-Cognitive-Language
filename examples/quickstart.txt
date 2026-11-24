@@ -1,5 +1,5 @@
 {
-  "checksum": "RHd-mCblAzRHAsn0NdOEpDu2KxDKjBgeXhrSx8fYF2U",
+  "checksum": "cjdA169HEUWvICuEivLEB0mnIDK9CkN-KLk-Aj7AJVg",
   "format": "UCL/2.1-SAP1-PORTABLE",
   "packet": {
     "acknowledgements": [
@@ -295,6 +295,72 @@
         "references": "array of earlier existing act IDs; no forward references",
         "responds_to": "ID of an existing earlier discourse act"
       },
+      "reply_template": {
+        "contribution": {
+          "acknowledgements": [
+            {
+              "action": "qualify",
+              "by": "t10",
+              "id": "x6",
+              "note": "Describe the scope of your qualification.",
+              "qualification": {
+                "explanation": "Explain when this qualification applies.",
+                "expression": "~[$example_predicate][A]"
+              },
+              "replacement": null,
+              "target": {
+                "claim": "theory",
+                "path": [
+                  1
+                ]
+              }
+            }
+          ],
+          "act": {
+            "details": {
+              "responds_to": "t9",
+              "stance": "mixed"
+            },
+            "expressions": [
+              "~[$example_predicate][A]"
+            ],
+            "id": "t10",
+            "kind": "response",
+            "references": [
+              "t9",
+              "t1"
+            ],
+            "speaker": "Your speaker name",
+            "text": "Explain your concept and why it addresses the earlier claim.",
+            "vocabulary": [
+              {
+                "action": "example",
+                "definition": "$example_predicate",
+                "expression_index": 0
+              },
+              {
+                "action": "retire",
+                "definition": "$previous_alias",
+                "successor": "$example_predicate"
+              }
+            ]
+          },
+          "conclusion": "~[$example_predicate][A]",
+          "explanation": "~[$example_predicate][A]",
+          "history_summary": "Summarize the new act and retained history.",
+          "new_definitions": {
+            "$example_predicate": {
+              "args": [
+                "D"
+              ],
+              "gloss": "Define your predicate.",
+              "kind": "predicate"
+            }
+          },
+          "orientation": "L"
+        },
+        "instructions": "Author only the contribution object below. Use it as a template, not as conversation data. Replace sample IDs, speaker, references, claim path, aliases, expressions, and prose with values from your task and this packet. JSON path and expression indexes are integers. Use your own definition, reasoning, and stance. Include retire only when retiring a declared definition for your own use. Omit vocabulary or new_definitions when unneeded. The local tool carries forward history and computes IDs and checksums."
+      },
       "required_ack_fields": [
         "action",
         "by",
@@ -381,6 +447,6 @@
       },
       "vocabulary_authoring": "Use a fresh single-character alias or a name such as $background_sync in new_definitions. An act may record a retirement or attach a typed example or counterexample to a definition using the vocabulary shapes in packet.guide.vocabulary. Preserve every previous definition, including one a speaker retires."
     },
-    "sha256": "r25PD3nu6aLh1wmkVarFujdVJ2vudu7qUhZyVlRT_-Y"
+    "sha256": "IwfCnyR6owRSz6XBEGi1er4u_4Zksy1DrlgyiB7XvmI"
   }
 }

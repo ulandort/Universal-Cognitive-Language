@@ -130,6 +130,50 @@ CURRENT_RULES = {
         'uses a fresh alias. Preserve prior definitions and domain declarations; local aliases '
         'are resolved to domain IDs before hashing.'
     ),
+    'reply_template': {
+        'instructions': (
+            'Author only the contribution object below. Use it as a template, not as conversation data. '
+            'Replace sample IDs, speaker, references, claim path, aliases, expressions, and prose '
+            'with values from your task and this packet. JSON path and expression indexes are integers. '
+            'Use your own definition, reasoning, and stance. Include retire only when retiring a '
+            'declared definition for your own use. Omit vocabulary or new_definitions when unneeded. '
+            'The local tool carries forward history and computes IDs and checksums.'
+        ),
+        'contribution': {
+            'act': {
+                'id': 't10',
+                'kind': 'response',
+                'speaker': 'Your speaker name',
+                'references': ['t9', 't1'],
+                'text': 'Explain your concept and why it addresses the earlier claim.',
+                'expressions': ['~[$example_predicate][A]'],
+                'details': {'responds_to': 't9', 'stance': 'mixed'},
+                'vocabulary': [
+                    {'action': 'example', 'definition': '$example_predicate', 'expression_index': 0},
+                    {'action': 'retire', 'definition': '$previous_alias', 'successor': '$example_predicate'},
+                ],
+            },
+            'orientation': 'L',
+            'explanation': '~[$example_predicate][A]',
+            'conclusion': '~[$example_predicate][A]',
+            'new_definitions': {
+                '$example_predicate': {'kind': 'predicate', 'args': ['D'], 'gloss': 'Define your predicate.'},
+            },
+            'acknowledgements': [{
+                'id': 'x6',
+                'by': 't10',
+                'target': {'claim': 'theory', 'path': [1]},
+                'action': 'qualify',
+                'qualification': {
+                    'expression': '~[$example_predicate][A]',
+                    'explanation': 'Explain when this qualification applies.',
+                },
+                'replacement': None,
+                'note': 'Describe the scope of your qualification.',
+            }],
+            'history_summary': 'Summarize the new act and retained history.',
+        },
+    },
 }
 RULES_BY_FORMAT = {FORMAT: RULES, CURRENT_FORMAT: CURRENT_RULES}
 

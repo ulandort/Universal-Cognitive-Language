@@ -34,13 +34,17 @@ The packet hash still uses `UCL-PACKET-7` plus LF over the canonical packet with
 
 The [quickstart packet](../examples/quickstart.txt) provides a reproducible example. Domain `D` has ID `xkW6osZLx9x59iCwGHZt6OZKTkPyhP8_5yQoZNc1kjw`. Predicate `P` keeps `"args":["D"]` on the wire and substitutes that ID in its hash payload. Its resulting ID is `vNk20qtiNpJ9tnP1T--03t__NCyFVKWQGISzY-ENM5E`.
 
+## Embedded reply template
+
+Every 2.1 packet carries `structural_rules.rules.reply_template`. Its example contribution shows a named predicate, an attributed example, an optional retirement with successor, and a scoped qualification. Sample IDs, aliases, expressions, references, and prose are placeholders to replace using the active conversation. Authors can omit vocabulary records and new definitions when their reply does not need them. The author returns the contribution object and the local `continue` command assembles the next complete packet.
+
 ## Guide and rules fingerprints
 
 | Object | Unpadded base64url SHA-256 |
 |---|---|
 | Inner guide, canonical bytes | `yT1x1BpqfS9bbv55O7hrG6VVpNYA3YCxX4Cxmn7-R3A` |
 | Inner guide, Node checker pin with `UCL-GUIDE-PIN-2` and LF | `y9nzzEGsMLesvWT5qAyaugxXnlMCXHtuj3PweHvYFkc` |
-| SAP-1 rules with `UCL-SAP1-RULES-2.0` and LF | `r25PD3nu6aLh1wmkVarFujdVJ2vudu7qUhZyVlRT_-Y` |
+| SAP-1 rules with `UCL-SAP1-RULES-2.0` and LF | `IwfCnyR6owRSz6XBEGi1er4u_4Zksy1DrlgyiB7XvmI` |
 
 ## Working with archived files
 

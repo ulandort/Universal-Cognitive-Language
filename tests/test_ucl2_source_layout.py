@@ -365,6 +365,22 @@ class SourceLayoutTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'expression must use its definition'):
             ucl.continue_portable(portable.encode(prior), retiring)
 
+    def test_embedded_template_can_author_a_complete_contribution(self):
+        starter = json.loads((ROOT / 'examples/challenge.txt').read_bytes())
+        draft = json.loads((ROOT / 'examples/challenge_reply.json').read_bytes())
+        incoming = ucl.continue_portable(starter, draft)
+        rules = incoming['structural_rules']['rules']
+        template = copy.deepcopy(rules['reply_template']['contribution'])
+        template['act']['speaker'] = 'Template reader'
+        template['act']['vocabulary'][1]['definition'] = '$control_sensitive'
+        result = ucl.continue_portable(incoming, template)
+        packet = portable.decode(result)
+        self.assertEqual(packet['discourse']['current'], 't10')
+        self.assertIn('$example_predicate', packet['definitions'])
+        self.assertEqual(packet['acknowledgements'][-1]['target'], {'claim': 'theory', 'path': [1]})
+        self.assertNotIn('reply_template', portable.encode(self.packet)['structural_rules']['rules'])
+        self._check_node_portable(result)
+
     def _check_node_portable(self, envelope):
         if not shutil.which('node'):
             return

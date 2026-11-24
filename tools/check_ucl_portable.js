@@ -16,7 +16,7 @@ const VERSIONS=new Map([
   guide:'ZFIZCtsxvrSp7PH12QlsH2re08Xd_kS78JKFunwYO_M',
  }],
  ['UCL/2.1-SAP1-PORTABLE',{
-  rules:'r25PD3nu6aLh1wmkVarFujdVJ2vudu7qUhZyVlRT_-Y',
+  rules:'IwfCnyR6owRSz6XBEGi1er4u_4Zksy1DrlgyiB7XvmI',
   guide:'y9nzzEGsMLesvWT5qAyaugxXnlMCXHtuj3PweHvYFkc',
  }],
 ]);
