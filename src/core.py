@@ -362,6 +362,18 @@ def validate_discourse(discourse,defs,parser):
 ACK_ACTIONS={'received','understood','accept','reject','qualify','clarify',
              'propose-revision','adopt-for-discussion','withhold-judgment','withdraw'}
 
+def resolve_claim_path(parser, expression, path):
+    tree = parser.parse(expression)
+    for index in path:
+        parts = tree[2]
+        need(type(parts) is tuple and index < len(parts) and
+             type(parts[index]) is tuple and len(parts[index]) == 3,
+             'acknowledgement path not an expression node')
+        tree = parts[index]
+    need(tree[1] in ('prop', 'epistemic'),
+         'acknowledgement subclaim must be a proposition or epistemic expression')
+    return tree
+
 def validate_acknowledgements(acks,discourse,defs,parser,claims):
     need(isinstance(acks,list) and len(acks)<=150,'acknowledgement list size')
     acts=discourse['acts']; byid={a['id']:a for a in acts}
@@ -388,13 +400,7 @@ def validate_acknowledgements(acks,discourse,defs,parser,claims):
                  binding['expression']==byid[dest]['expressions'][binding['expression_index']],
                  'acknowledgement claim binding not exact')
             path=target['path'];need(type(path) is list and len(path)<=32 and all(type(i) is int and 0<=i<=15 for i in path),'acknowledgement subclaim path invalid')
-            tree=parser.parse(binding['expression'])
-            for index in path:
-                parts=tree[2]
-                need(type(parts) is tuple and index<len(parts) and type(parts[index]) is tuple and len(parts[index])==3,
-                     'acknowledgement path not an expression node')
-                tree=parts[index]
-            need(tree[1] in ('prop','epistemic'),'acknowledgement subclaim must be a proposition or epistemic expression')
+            resolve_claim_path(parser, binding['expression'], path)
             # The path identifies the exact subtree, not an unverified prose description.
         else:raise ValueError('acknowledgement target shape')
         need(positions[dest]<positions[author],'acknowledgement must target earlier retained act')

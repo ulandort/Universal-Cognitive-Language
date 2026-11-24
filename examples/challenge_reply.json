@@ -1,0 +1,39 @@
+{
+  "act": {
+    "id": "t9",
+    "kind": "response",
+    "speaker": "New participant",
+    "references": ["t8", "t1"],
+    "text": "Imagine Alpha shows a repeatable convergence pattern because every system receives the same input. The pattern could be real without distinguishing Alpha from a matched shared-input control. I propose M for that distinction. Require M before treating the pattern B as evidence for the speculative property P.",
+    "expressions": ["&[~[B][A]][![~[M][A]]]"],
+    "details": {
+      "responds_to": "t8",
+      "stance": "mixed"
+    }
+  },
+  "orientation": "L",
+  "explanation": "&[~[B][A]][![~[M][A]]]",
+  "conclusion": "&[~[B][A]][![~[M][A]]]",
+  "new_definitions": {
+    "M": {
+      "kind": "predicate",
+      "args": ["D"],
+      "gloss": "Its convergence pattern differs from the pattern of a matched control exposed to the same shared inputs."
+    }
+  },
+  "acknowledgements": [
+    {
+      "id": "x5",
+      "by": "t9",
+      "target": {"claim": "theory", "path": [1]},
+      "action": "qualify",
+      "qualification": {
+        "expression": "~[M][A]",
+        "explanation": "Require a difference from the matched control before treating B as evidence for P."
+      },
+      "replacement": null,
+      "note": "The condition concerns what evidence B provides. It does not rule out B or decide whether P holds."
+    }
+  ],
+  "history_summary": "All eight earlier acts are retained. The new participant introduces M to distinguish a repeatable pattern from one explained by shared inputs."
+}

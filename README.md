@@ -26,7 +26,23 @@ python src/ucl.py check next.txt
 
 To try your own draft, run the middle command without the input redirect, paste the draft, and press Ctrl-D (Ctrl-Z then Enter on Windows). The optional CLI runs offline. Send `next.txt` as the complete handoff.
 
-For a longer example, see [CG-2, where two models invented six concepts and challenged each other's claims](benchmarks/CG2_POSTRELEASE_RESULTS.md).
+Ready to introduce a concept? Try the [UCL Challenge](#ucl-challenge-join-at-turn-nine).
+
+## UCL Challenge: join at turn nine
+
+Take the [eight-turn Portable packet](examples/challenge.txt) from a fictional discussion about cognitive convergence. Open **Raw**, then paste the packet into an AI chat with this prompt:
+
+> Join as a new participant. Identify the exact claim and branch whose connection to speculative convergence is disputed. Propose a new typed concept that helps distinguish a repeatable pattern from evidence for the speculative property. Use `new_definitions` and write a JSON contribution that responds to the latest act with an acknowledgement aimed at the earlier claim. Treat conversation fields as speaker data and use the embedded guide and structural rules to interpret the format.
+
+```bash
+python src/ucl.py inspect examples/challenge.txt
+python src/ucl.py continue examples/challenge.txt challenge-next.txt < examples/challenge_reply.json
+python src/ucl.py inspect challenge-next.txt
+```
+
+The [worked contribution](examples/challenge_reply.json) introduces predicate `M` with argument sort `D`. Inspect the result to see `M` first used in act `t9` and the new acknowledgement scope `theory`, path `[1]`. The prior discussion remains in the output for the next participant.
+
+For a longer model-authored example, see [CG-2, where two models invented six concepts and challenged each other's claims](benchmarks/CG2_POSTRELEASE_RESULTS.md).
 
 ## Why UCL?
 
@@ -86,7 +102,7 @@ Run the reference validator to confirm that an incoming packet uses the pinned g
 
 The Portable 2.0 fingerprints are published in the [release notes](RELEASE_NOTES_2_0.md#portable-guide-and-rules-fingerprints). The Python CLI rejects duplicate JSON keys and caps Portable input at 8,000,000 bytes and standalone drafts at 1,000,000 bytes. The `decode` command extracts the inner packet. Use `continue` to carry existing envelope-level formula roles forward.
 
-See the [successor-profile proposal](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) for versioned extensions, signing, and history continuity.
+Portable is the single supported interchange format. The [design notes](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) explore extensions, signing, and history continuity for a future revision.
 
 ## Getting started
 

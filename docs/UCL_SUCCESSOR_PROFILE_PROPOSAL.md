@@ -1,6 +1,6 @@
 # UCL Portable successor profile proposal
 
-Status: design draft. The profile has no assigned wire identifier. The current UCL/2.0 Portable specification remains the interchange standard.
+Status: design draft for a possible future Portable revision. UCL/2.0 Portable is the single supported interchange format. This document defines no alternate format.
 
 ## Rule modules
 
@@ -24,12 +24,12 @@ For a signed handoff, commit to a conversation identifier, sequence number, and 
 
 Start with fully retained history. A future explicit condensation profile should identify omitted act IDs or ranges, preserve the exact retained claims and their dependencies, and state how the recipient can obtain the originals. An act hash can verify an original supplied later. The hash alone cannot reproduce omitted content. Packet size and act-count limits remain independent of chain design.
 
-## Definition identities and compact delivery
+## Definition identities and local inspection
 
 Use a new hash domain for dependency-closed identities. Bind each reference in a definition to the ID of the definition it resolves to in that packet. For example, predicate argument sort D must bind the identity of D. Specify whether domain membership is part of domain identity or separate instance data. Define the handling of cycles before permitting recursive dependencies. Keep legacy IDs resolvable as legacy IDs and version any migration mapping.
 
-Keep full Portable delivery as the default. A separate opt-in profile for known peers may refer to exact guide or module hashes. A receiver missing a required object must request a fully embedded version before interpreting the message. A local context view can reduce model input independently while retaining a complete source packet for verification.
+Keep the guide and required rule modules embedded in every delivered packet. Local tools may derive a concept index or a shorter view for a particular reply from the complete packet. These views are for inspection within the recipient's workflow. The canonical handoff remains the complete Portable packet.
 
 ## Requirements before implementation
 
-Publish cross-language vectors for canonical signing bytes, attachment and forwarding of advisory extensions, critical-extension rejection, signature removal, re-signed snapshots with changed prior acts, role attribution, dependency changes, and missing-guide fallback. Include old Portable packets as compatibility fixtures. Agree on the attestation and dependency schemes before assigning a wire identifier.
+Publish cross-language vectors for canonical signing bytes, attachment and forwarding of advisory extensions, critical-extension rejection, signature removal, re-signed snapshots with changed prior acts, role attribution, dependency changes, and required embedded guides. Include existing Portable packets as compatibility fixtures. Agree on the attestation and dependency schemes before assigning a wire identifier.

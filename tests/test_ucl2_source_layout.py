@@ -113,4 +113,29 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertIn("REJECTED: draft on stdin: duplicate JSON key: 'act'", result.stderr)
             self.assertFalse(output.exists())
 
+    def test_inspect_challenge_reports_new_definition_and_exact_acknowledgement(self):
+        cli = [sys.executable, str(ROOT / 'src/ucl.py')]
+        incoming = ROOT / 'examples/challenge.txt'
+        draft = (ROOT / 'examples/challenge_reply.json').read_text(encoding='utf-8')
+        with tempfile.TemporaryDirectory() as directory:
+            outgoing = Path(directory) / 'next.txt'
+            continued = subprocess.run(
+                [*cli, 'continue', str(incoming), str(outgoing)],
+                input=draft, text=True, capture_output=True, timeout=20,
+            )
+            self.assertEqual(continued.returncode, 0, continued.stderr)
+            inspected = subprocess.run(
+                [*cli, 'inspect', str(outgoing)], text=True, capture_output=True, timeout=20,
+            )
+            self.assertEqual(inspected.returncode, 0, inspected.stderr)
+            self.assertIn('9 retained acts | 12 defined symbols', inspected.stdout)
+            self.assertIn('M (predicate)', inspected.stdout)
+            self.assertIn('first retained act expression: t9', inspected.stdout)
+            self.assertIn('theory path [1] (from t1) ~[B][A] | condition: ~[M][A]', inspected.stdout)
+            before = portable.decode(json.loads(incoming.read_bytes()))
+            after = portable.decode(json.loads(outgoing.read_bytes()))
+            self.assertEqual(after['discourse']['acts'][:-1], before['discourse']['acts'])
+            self.assertEqual({glyph: after['definitions'][glyph] for glyph in before['definitions']},
+                             before['definitions'])
+
 if __name__=='__main__':unittest.main()
