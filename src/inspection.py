@@ -131,11 +131,11 @@ def _format_acknowledgement(entry):
             f' → {scope}{suffix} | ACK {_display(entry["acknowledgement"])}')
 
 
-def describe_packet(packet):
+def describe_packet(packet, label):
     ledger = derive_ledger(packet)
     acts = packet['discourse']['acts']
     lines = [
-        f'UCL/2.0 Portable | {len(acts)} retained acts | {len(ledger["symbols"])} defined symbols',
+        f'{label} | {len(acts)} retained acts | {len(ledger["symbols"])} defined symbols',
         f'Packet SHA-256: {ledger["packet_sha256"]}',
         f'History: {ledger["history_status"]} ({len(ledger["omissions"])} omission records)',
         'Speaker names and statements are unauthenticated.',

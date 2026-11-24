@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Self-contained UCL/2.0 Portable wire envelope and validation.
+"""Self-contained UCL Portable wire envelope and validation.
 
 An ordinary UTF-8 JSON (.txt or .json) file embeds BOTH the entire checked
 typed UCL inner conversation packet/guide and the complete human-readable SAP-1
 authoring rules. No URI, central registry, hosted service, network access,
 or external schema download is needed to read or verify a packet.
-The existing typed grammar is preserved inside the stable 2.0 transport.
+Current and historical versions carry their respective pinned guides.
 """
 from __future__ import annotations
 import argparse
@@ -17,7 +17,9 @@ from pathlib import Path
 import ucl
 import structural_authoring as sap
 
-FORMAT='UCL/2.0-SAP1-PORTABLE'
+FORMAT=ucl.LEGACY_PORTABLE_FORMAT  # Retained for archived release tooling.
+CURRENT_FORMAT=ucl.PORTABLE_FORMAT
+FORMAT_BY_VERSION={ucl.INNER_GRAMMAR_VERSION: CURRENT_FORMAT, 'UCL/1.0': FORMAT}
 RULE_DOMAIN=b'UCL-SAP1-RULES-2.0\n'
 ENVELOPE_DOMAIN=b'UCL-SAP1-ENVELOPE-2.0\n'
 ROLES=frozenset(('hypothesis','example','counterexample','quotation','question'))
@@ -113,6 +115,22 @@ RULES['type_rules']['local_authoring_preflight']=(
     'corrections. Never silently rewrite semantic intent; no network.'
 )
 
+CURRENT_RULES = {
+    **RULES,
+    'status': 'stable-2.1',
+    'definition_identity': (
+        'Use packet.guide.hashing for dependency-aware definition IDs. A new typed definition '
+        'uses a fresh alias. Preserve prior definitions and domain declarations; local aliases '
+        'are resolved to domain IDs before hashing.'
+    ),
+}
+RULES_BY_FORMAT = {FORMAT: RULES, CURRENT_FORMAT: CURRENT_RULES}
+
+
+def label(format_id):
+    return format_id.split('-')[0] + ' Portable'
+
+
 def fingerprint(domain,obj):
     return base64.urlsafe_b64encode(
         hashlib.sha256(domain+ucl.canon(obj)).digest()
@@ -150,8 +168,9 @@ def _validate_formula_roles(packet,roles):
 
 def encode(packet,formula_roles=None):
     ucl.check(packet)
-    rules=copy.deepcopy(RULES)
-    env={'format':FORMAT,'profile':'portable',
+    format_id = FORMAT_BY_VERSION[ucl.packet_version(packet)]
+    rules = copy.deepcopy(RULES_BY_FORMAT[format_id])
+    env={'format':format_id,'profile':'portable',
          'structural_rules':{'rules':rules,'sha256':rules_hash(rules)},
          'packet':copy.deepcopy(packet)}
     if formula_roles is not None:
@@ -165,22 +184,24 @@ def decode(env):
     required={'format','profile','structural_rules','packet','checksum'}
     if type(env) is not dict or set(env) not in (required,required|{'formula_roles','formula_role_guide'}):
         raise ValueError('SAP portable: envelope fields invalid')
-    if env['format']!=FORMAT or env['profile']!='portable':
+    format_id = env['format']
+    if not isinstance(format_id, str) or format_id not in RULES_BY_FORMAT or env['profile']!='portable':
         raise ValueError('SAP portable: unsupported profile')
     block=env['structural_rules']
     if type(block) is not dict or set(block)!={'rules','sha256'}:
         raise ValueError('SAP portable: rules block invalid')
-    if block['rules']!=RULES:
+    expected_rules = RULES_BY_FORMAT[format_id]
+    if block['rules']!=expected_rules:
         raise ValueError('SAP portable: unknown or altered structural standard')
-    expected_hash = rules_hash(RULES)
+    expected_hash = rules_hash(expected_rules)
     if block['sha256'] != expected_hash or rules_hash(block['rules']) != expected_hash:
         raise ValueError('SAP portable: embedded authoring rules checksum mismatch')
     if env['checksum']!=envelope_checksum(env):
         raise ValueError('SAP portable: envelope checksum mismatch')
     pkt=copy.deepcopy(env['packet'])
     ucl.check(pkt)
-    if type(pkt.get('guide')) is not dict:
-        raise ValueError('SAP portable: missing full embedded UCL guide')
+    if FORMAT_BY_VERSION[ucl.packet_version(pkt)] != format_id:
+        raise ValueError('SAP portable: inner guide version does not match the envelope format')
     if 'formula_roles' in env:
         if env['formula_role_guide']!=ROLE_GUIDE:
             raise ValueError('SAP portable: unknown formula role profile')

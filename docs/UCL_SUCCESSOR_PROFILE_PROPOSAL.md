@@ -1,6 +1,6 @@
 # UCL Portable successor profile proposal
 
-Status: design draft for a possible future Portable revision. UCL/2.0 Portable is the single supported interchange format. This document defines no alternate format.
+Status: design draft for a possible future Portable revision. Portable is the single interchange format. This document defines no alternate format.
 
 ## State-first export
 
@@ -34,7 +34,7 @@ Start with fully retained history and leave hash-only stubs out of the first rev
 
 ## Definition identities and local inspection
 
-Use a new hash domain for dependency-closed identities. Bind each reference in a definition to the ID of the definition it resolves to in that packet. For example, predicate argument sort D must bind the identity of D. Specify whether domain membership is part of domain identity or separate instance data. Define the handling of cycles before permitting recursive dependencies. Keep legacy IDs resolvable as legacy IDs and version any migration mapping.
+[Portable 2.1](UCL_2_1_SPECIFICATION.md) binds every typed domain dependency into the definition ID. Domain mode and membership are part of domain identity. The current dependency graph has domains as leaves. Define the handling of cycles before permitting recursive dependencies.
 
 Record retirement as a new act with the retired ID and an optional successor ID. Keep the original definition and alias bindings for replay. A successor is a proposed replacement and carries its own identity. Specify who can retire a definition and the effect of retirement on later use before adding it to the wire. A future multi-character alias scheme needs unambiguous token boundaries in expressions and the exact symbol declaration. Preserve the 11 core operators and four body layers. Keep finite resource limits even if the alias syntax can express an arbitrarily large vocabulary across conversations.
 

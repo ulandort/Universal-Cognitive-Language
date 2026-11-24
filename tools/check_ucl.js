@@ -1,4 +1,4 @@
-/* Independent, from-scratch JavaScript subset semantic validator for UCL/1.0.
+/* Independent JavaScript subset semantic validator for UCL inner packets.
    Does not import Python source. Validates definitions, type checking, discussion
    graph, acknowledgement targets, 4-layer declaration, and content hashes.
    Limitations: not a complete proof/model interpreter, no Brotli here.
@@ -32,11 +32,13 @@ const RESERVED=new Set(' @ # = ~ & | ! ? < * { : ; [ ] -'.trim().split(' '));
 function layers(body){let out=[],depth=0,start=0;for(let i=0;i<body.length;i++){if(body[i]==='[')depth++;if(body[i]===']')depth--;assert(depth>=0,'brackets');if(body[i]===';'&&depth===0){out.push(body.slice(start,i));start=i+1}}out.push(body.slice(start));assert(depth===0&&out.length===4,'layers');return out.map(x=>{assert(x[0]=='['&&x.at(-1)==']','outer layers');return x.slice(1,-1)})}
 function semantic(packet){
  const defs=packet.definitions, domains=packet.domains;
+ const dependent=packet.guide.version==='UCL/1.1';
+ assert(dependent||packet.guide.version==='UCL/1.0','inner version');
  assert(Object.keys(defs).length>=1&&Object.keys(defs).length<=55,'definition count');
  const ids=new Set();
  for(const [g,rec] of Object.entries(defs)){
   assert(g.length===1&&!RESERVED.has(g)&&g.charCodeAt(0)>=33&&g.charCodeAt(0)<=126,'bad glyph');
-  assert(rec.id===hash('UCL-SEM-9\n',rec.definition),'definition hash');assert(!ids.has(rec.id),'duplicate id');ids.add(rec.id);
+  assert(!ids.has(rec.id),'duplicate id');ids.add(rec.id);
   const d=rec.definition;assert(typeof d.gloss==='string'&&d.gloss.length>0,'gloss');
   const fields={orientation:['kind','role','gloss'],domain:['kind','role','gloss'],value:['kind','sort','denotes','gloss'],predicate:['kind','args','gloss'],function:['kind','args','returns','gloss'],order:['kind','sort','role','gloss'],acknowledgement:['kind','role','gloss']}[d.kind];
   assert(fields&&canonical(Object.keys(d).sort())===canonical(fields.sort()),'definition fields');
@@ -51,6 +53,31 @@ function semantic(packet){
   if(d.kind==='order')assert(defs[d.sort]?.definition.kind==='domain','ordering sort');
  }
  assert(canonical(Object.keys(domains).sort())===canonical(Object.keys(defs).filter(g=>defs[g].definition.kind==='domain').sort()),'domain set');
+ const domainIds=new Map();
+ if(dependent){
+  for(const [alias, declaration] of Object.entries(domains)){
+   assert(declaration&&canonical(Object.keys(declaration).sort())===canonical(['members','mode']),'domain declaration shape');
+   const {mode,members}=declaration;
+   assert(mode==='open'?members===null:mode==='finite'&&Array.isArray(members)&&
+    members.every(member=>typeof member==='string')&&new Set(members).size===members.length,'domain membership');
+   const domain={mode,members:members===null?null:members.slice().sort(cpCompare)};
+   domainIds.set(alias,hash('UCL-SEM-10\n',{definition:defs[alias].definition,domain}));
+  }
+ }
+ for(const [alias,rec] of Object.entries(defs)){
+  let expected;
+  if(!dependent)expected=hash('UCL-SEM-9\n',rec.definition);
+  else if(domainIds.has(alias))expected=domainIds.get(alias);
+  else{
+   const definition={...rec.definition};
+   for(const field of ['sort','returns']){
+    if(Object.hasOwn(definition,field))definition[field]=domainIds.get(definition[field]);
+   }
+   if(Object.hasOwn(definition,'args'))definition.args=definition.args.map(sort=>domainIds.get(sort));
+   expected=hash('UCL-SEM-10\n',{definition});
+  }
+  assert(rec.id===expected,'definition hash '+alias);
+ }
  let used=new Set();const src=layers(packet.body);let domainSet=new Set(Object.keys(domains));
  function parse(s){let i=0;function one(scope={},depth=0){assert(depth<120,'depth');assert(i<s.length,'eof');const g=s[i++];used.add(g);
   if(g==='#'){const m=/^(0|[1-9][0-9]*)/.exec(s.slice(i));assert(m,'variable');i+=m[0].length;assert(scope[m[0]]!==undefined,'unbound');return scope[m[0]];}

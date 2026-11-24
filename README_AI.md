@@ -2,15 +2,15 @@
 
 **Purpose:** Independently authored, precisely referenced communication across different intelligences. A complete UCL message is a self-contained JSON `.txt` or `.json` file. **The message's actual embedded guide and typed definitions are the source of meaning**, not this README or a hosted registry.
 
-> **Version status:** UCL/2.0 Portable, stable wire identifier `UCL/2.0-SAP1-PORTABLE`. This replaces standalone UCL/1.0 as the default public transport. The original 11 core glyphs and inner typed grammar remain unchanged.
+> **Current development version:** UCL/2.1 Portable (`UCL/2.1-SAP1-PORTABLE`). Follow the embedded guide for definition hashing. The CLI can verify and continue archived 2.0 conversations using their original IDs.
 
 ## Agent Skills distribution
 
-Compatible agent hosts can install [`skills/ucl-portable/SKILL.md`](skills/ucl-portable/SKILL.md) using `npx skills add ulandort/Universal-Cognitive-Language --skill ucl-portable`. The skill explains locally validated reading and authorship; it is **not a runtime or dependency** of the UCL/2.0 protocol. See its [portable workflows](skills/ucl-portable/references/WORKFLOWS.md). The UCL Python implementation must be obtained separately when local checking is requested.
+Compatible agent hosts can install [`skills/ucl-portable/SKILL.md`](skills/ucl-portable/SKILL.md) using `npx skills add ulandort/Universal-Cognitive-Language --skill ucl-portable`. The skill explains locally validated reading and authorship; it is **not a runtime or dependency** of the Portable protocol. See its [portable workflows](skills/ucl-portable/references/WORKFLOWS.md). The UCL Python implementation must be obtained separately when local checking is requested.
 
 ## Detect and read the format
 
-For UCL/2.0 Portable, read the outer `format` and `profile`, verify `structural_rules.rules` against its pinned local profile and `structural_rules.sha256`, verify the outer `checksum`, and independently validate the embedded `packet` including `packet.guide` and `packet.integrity.sha256`. When present, validate optional `formula_roles` against their declared act and expression index. An unsigned checksum provides integrity relative to a trusted expected identity—not sender authentication.
+For UCL Portable, read the outer `format` and `profile`, verify `structural_rules.rules` against its pinned local profile and `structural_rules.sha256`, verify the outer `checksum`, and independently validate the embedded `packet` including `packet.guide` and `packet.integrity.sha256`. When present, validate optional `formula_roles` against their declared act and expression index. An unsigned checksum provides integrity relative to a trusted expected identity—not sender authentication.
 
 **No remote lookup, central service, third-party judge, executable guide, or language conversion is required to interpret a complete Portable packet.** The rules travel with it. Local validators are optional software implementations but required for authoritative *mechanical checking*.
 
@@ -53,6 +53,6 @@ python src/ucl.py check incoming-ucl2.txt
 node tools/check_ucl_portable.js incoming-ucl2.txt
 ```
 
-The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The public Python entry point is `src/ucl.py`, backed by `src/portable.py` and the unchanged inner grammar in `src/core.py`. The Python reference remains the authoritative structural implementation for UCL/2.0. See the frozen [normative specification](docs/UCL_2_0_SPECIFICATION.md).
+The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The public Python entry point is `src/ucl.py`, backed by `src/portable.py` and the unchanged inner grammar in `src/core.py`. The Python reference is the authoritative structural implementation. See the [2.1 specification](docs/UCL_2_1_SPECIFICATION.md).
 
 For experimental details and actual evidence, see [README](README.md), [L50 live result](benchmarks/AUTONOMOUS_50_RESULTS.md), [Portable format](docs/SAP1_PORTABLE_DRAFT.md) and [release-readiness](docs/UCL_2_0_RELEASE_READINESS.md).

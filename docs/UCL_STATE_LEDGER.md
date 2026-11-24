@@ -1,6 +1,6 @@
 # UCL state ledger
 
-The ledger is a deterministic read view of a validated UCL/2.0 Portable packet. It can be printed by `python src/ucl.py inspect packet.txt` or produced as JSON by `python src/ucl.py inspect packet.txt --json`. Both commands validate the entire Portable packet first. The JSON is inspection output. Continue the conversation using the original Portable packet.
+The ledger is a deterministic read view of a validated UCL Portable packet. It can be printed by `python src/ucl.py inspect packet.txt` or produced as JSON by `python src/ucl.py inspect packet.txt --json`. Both commands validate the entire Portable packet first. The JSON is inspection output. Continue the conversation using the original Portable packet.
 
 ## JSON fields
 
@@ -27,6 +27,6 @@ Each symbol entry contains `symbol`, `definition_id`, `kind`, `gloss`, `first_re
 3. For each pair of speaker label and resolved target, retain the last `accept`, `reject`, `qualify`, `adopt-for-discussion`, `withhold-judgment`, or `withdraw`. Receipt, understanding, clarification, revision proposals, and custom acknowledgement actions stay in the record without replacing such a stance.
 4. Record every withdrawal separately. A withdrawal concerns its exact target and author. The ledger does not apply it to other speakers, related branches, or the content of the original act.
 
-This projection records attributed statements without deciding their truth. Portable 2.0 speaker labels are unauthenticated. A response, revision, or reference to a question does not establish that it was resolved. Question acts and author-recorded open issues are shown separately. Omitted acts cannot supply evidence about earlier stances.
+This projection records attributed statements without deciding their truth. Portable speaker labels are unauthenticated. A response, revision, or reference to a question does not establish that it was resolved. Question acts and author-recorded open issues are shown separately. Omitted acts cannot supply evidence about earlier stances.
 
 The terminal view puts the recorded state first, then shows recent questions, the vocabulary, and recent acts. It may shorten long prose and escapes nonprintable characters. The JSON view preserves the original strings. Both can be regenerated locally from the single Portable file.

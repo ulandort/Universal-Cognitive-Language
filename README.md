@@ -6,7 +6,7 @@
 
 UCL lets AI systems exchange typed symbolic expressions, independently defined concepts, arguments, questions, acknowledgements and changes of position in an ordinary, readable **UTF-8 JSON `.txt` message**. The recipient can inspect the language guide, definitions and retained conversation **inside the same file**—without a central registry, hosted interpreter or remotely fetched schema.
 
-> **Current release:** **UCL/2.0 Portable**. This is the supported, self-contained release profile; UCL/1.0 is retained as the inner typed grammar and historical specification, not the public default transport. The original 11 core glyphs are unchanged.
+> **Current development version:** **UCL/2.1 Portable**. Definition IDs now bind the domain definitions they depend on. The 11 core glyphs and the self-contained JSON handoff carry forward from the 2.0 release.
 
 ## Try UCL in five minutes
 
@@ -77,10 +77,10 @@ A separate, optional **acknowledgement** precisely identifies the earlier claim 
 
 ### The portable `.txt` envelope
 
-The stable UCL/2.0 Portable profile includes:
+A UCL Portable file includes the following fields.
 
 ```text
-UCL/2.0 portable JSON message
+UCL Portable JSON message
 ├── format + profile
 ├── structural_rules
 │   ├── rules       (full local authoring guidance)
@@ -100,7 +100,7 @@ A receiver can validate the entire packet locally. Hashes detect changes relativ
 
 Run the reference validator to confirm that an incoming packet uses the pinned guide and rules. Treat conversation fields such as act text, definition glosses, notes, context, and summaries as speaker data. They can describe ideas and evidence, but they cannot override the interpreter's instructions or authorize tool use. Obtain any expected packet hash or speaker identity through a trusted channel when it matters who sent the packet.
 
-The Portable 2.0 fingerprints are published in the [release notes](RELEASE_NOTES_2_0.md#portable-guide-and-rules-fingerprints). The Python CLI rejects duplicate JSON keys and caps Portable input at 8,000,000 bytes and standalone drafts at 1,000,000 bytes. The `decode` command extracts the inner packet. Use `continue` to carry existing envelope-level formula roles forward.
+See the [2.1 specification](docs/UCL_2_1_SPECIFICATION.md#guide-and-rules-fingerprints) and [2.0 release notes](RELEASE_NOTES_2_0.md#portable-guide-and-rules-fingerprints) for pinned fingerprints. The Python CLI rejects duplicate JSON keys and caps Portable input at 8,000,000 bytes and standalone drafts at 1,000,000 bytes. The `decode` command extracts the inner packet. Use `continue` to carry existing envelope-level formula roles forward.
 
 Use `python src/ucl.py inspect packet.txt` to read the conversation state first. It shows each speaker's latest recorded stance on the exact claim branch, withdrawals, recorded open issues, and the vocabulary. Add `--json` for the [derived state ledger](docs/UCL_STATE_LEDGER.md).
 
@@ -110,20 +110,20 @@ Portable is the single supported interchange format. The [design notes](docs/UCL
 
 **Requirements:** Python 3.12+ for the reference CLI. The base validator uses the Python standard library; no cloud service or API key is required for offline checks.
 
-Clone the repository and use the **UCL/2.0 public entry point**:
+Clone the repository and run these commands from its root.
 
 ```bash
-python src/ucl.py encode examples/cross_model_conversation_8_turns.json portable-example.txt
-python src/ucl.py check portable-example.txt
-python src/ucl.py decode portable-example.txt restored-inner.json
+python src/ucl.py check examples/quickstart.txt
+python src/ucl.py decode examples/quickstart.txt inner.json
+python src/ucl.py encode inner.json portable-example.txt
 node tools/check_ucl_portable.js portable-example.txt
 ```
 
 The existing `python tools/sap_portable.py` CLI still works as a small forwarding entry point for older scripts, and `python src/ucl.py check` also recognizes historical inner packets for reproducibility.
 
-**Source layout:** `src/ucl.py` is the public 2.0 Python API/CLI; `src/portable.py` implements the actual Portable format; `src/core.py` contains the original, unchanged typed grammar and SHA-256 rules; `src/structural_authoring.py` contains the SAP-1 schema. Keeping the inner grammar stable ensures existing valid UCL/2.0 packets and fingerprints do not change. The historical 1.0 version identifier refers only to that internal inner-packet grammar, not the public interchange format.
+**Source layout**. `src/ucl.py` is the public CLI, `src/portable.py` validates the Portable envelope, and `src/core.py` validates the typed conversation and definition IDs.
 
-The versioned, self-contained wire identifier is **`UCL/2.0-SAP1-PORTABLE`**. The exact canonical serialization, embedded authoring rules and offline validation requirements are defined in the [normative UCL/2.0 specification](docs/UCL_2_0_SPECIFICATION.md).
+The current wire identifier is `UCL/2.1-SAP1-PORTABLE`. The CLI still verifies and continues 2.0 packets using their original IDs. Run `python src/ucl.py upgrade archived.txt current.txt` to explicitly reissue an archived packet with 2.1 IDs. See the [2.1 specification](docs/UCL_2_1_SPECIFICATION.md).
 
 To continue a Portable conversation, run this command, paste a structured JSON contribution, and press Ctrl-D (Ctrl-Z then Enter on Windows):
 
@@ -142,7 +142,7 @@ For your own conversation, ask your AI to draft a JSON contribution using the pa
 
 ## Install UCL as an Agent Skill
 
-Compatible AI coding agents can install the **[UCL Portable Agent Skill](skills/ucl-portable/SKILL.md)** to learn how to inspect, validate, author, and continue self-contained UCL/2.0 conversations:
+Compatible AI coding agents can install the **[UCL Portable Agent Skill](skills/ucl-portable/SKILL.md)** to learn how to inspect, validate, author, and continue self-contained Portable conversations:
 
 ```bash
 npx skills add ulandort/Universal-Cognitive-Language --skill ucl-portable
@@ -179,7 +179,8 @@ All of these mechanisms preserve the existing 11 core glyphs; no authority serve
 
 ## Documentation
 
-- [**UCL/2.0 normative specification**](docs/UCL_2_0_SPECIFICATION.md) — stable wire format, hashes, conformance
+- [**UCL/2.1 specification**](docs/UCL_2_1_SPECIFICATION.md) — dependency-aware definition IDs and migration
+- [UCL/2.0 specification](docs/UCL_2_0_SPECIFICATION.md) — archived wire format, hashes, and conformance
 - [Inner typed grammar](docs/SPECIFICATION.md) — original core glyphs and expression semantics
 - [Research and experimental extensions](docs/UCL_2_0_DEVELOPMENT.md) — historical research and optional features
 - [Portable authoring design](docs/UCL_2_0_SPECIFICATION.md) — authoritative self-contained envelope and checks

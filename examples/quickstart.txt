@@ -1,6 +1,6 @@
 {
-  "checksum": "0symYs6ybN33zzf2KRtIUUuXIaPIvLLdcCxB3Jdvkmo",
-  "format": "UCL/2.0-SAP1-PORTABLE",
+  "checksum": "uQktgt4MU0ktukr9-lUTs9FV7TXFrTgW-ABvifY7g28",
+  "format": "UCL/2.1-SAP1-PORTABLE",
   "packet": {
     "acknowledgements": [
       {
@@ -32,7 +32,7 @@
         }
       }
     ],
-    "body": "[L];[~[P][A]];[~[P][A]];[& A:cwxHfFFXAbqwZ7tKLfs1QlrL13SQOTCNcsNoWhRvFrM B:1-xNOvDbjC6m3UBuEgOsjRF7_PGOuKyEvwwSQUNpyUE L:cC3d2_8toSgAaDUYyScHvVoSa9dL0oX6pPXDVV-k_WQ P:zwwFIN0BSTtTzgVdwYyWPjwjNwPo_5q-bD-lODzXxRQ ~]",
+    "body": "[L];[~[P][A]];[~[P][A]];[& A:yxpYJjiATn1xTbuXCqC90A7rP_c6XKkoBydt08yZ7ao B:pl1B634dpVYp7pV4-Mn8m6W6Ck7LeSbz_X-3DVQ7HTo L:umeU8Tru3GSW8SmyEtudYIb_Ixo-Q_gITuZkMUsAwdE P:vNk20qtiNpJ9tnP1T--03t__NCyFVKWQGISzY-ENM5E ~]",
     "claims": {
       "notes-design": {
         "act": "t1",
@@ -51,7 +51,7 @@
           "kind": "value",
           "sort": "D"
         },
-        "id": "cwxHfFFXAbqwZ7tKLfs1QlrL13SQOTCNcsNoWhRvFrM"
+        "id": "yxpYJjiATn1xTbuXCqC90A7rP_c6XKkoBydt08yZ7ao"
       },
       "B": {
         "definition": {
@@ -61,7 +61,7 @@
           "gloss": "Syncs notes automatically in the background.",
           "kind": "predicate"
         },
-        "id": "1-xNOvDbjC6m3UBuEgOsjRF7_PGOuKyEvwwSQUNpyUE"
+        "id": "pl1B634dpVYp7pV4-Mn8m6W6Ck7LeSbz_X-3DVQ7HTo"
       },
       "D": {
         "definition": {
@@ -69,7 +69,7 @@
           "kind": "domain",
           "role": "software-systems"
         },
-        "id": "aobCdojAW8Up8gDpTISYZ54KPKXnyIW_8bzF4pIMfw8"
+        "id": "xkW6osZLx9x59iCwGHZt6OZKTkPyhP8_5yQoZNc1kjw"
       },
       "L": {
         "definition": {
@@ -77,7 +77,7 @@
           "kind": "orientation",
           "role": "response"
         },
-        "id": "cC3d2_8toSgAaDUYyScHvVoSa9dL0oX6pPXDVV-k_WQ"
+        "id": "umeU8Tru3GSW8SmyEtudYIb_Ixo-Q_gITuZkMUsAwdE"
       },
       "N": {
         "definition": {
@@ -87,7 +87,7 @@
           "gloss": "Has the user\u2019s explicit opt-in to background sync.",
           "kind": "predicate"
         },
-        "id": "52JY-kDiW5fsZsGggYbFwytHYyz0KVWpE2NvM60MO40"
+        "id": "aet98R9q2VRkJfGbF7sxlhg3MD8JWoBlyaTfDNxMiZw"
       },
       "P": {
         "definition": {
@@ -97,7 +97,7 @@
           "gloss": "Supports editing notes offline.",
           "kind": "predicate"
         },
-        "id": "zwwFIN0BSTtTzgVdwYyWPjwjNwPo_5q-bD-lODzXxRQ"
+        "id": "vNk20qtiNpJ9tnP1T--03t__NCyFVKWQGISzY-ENM5E"
       }
     },
     "discourse": {
@@ -189,21 +189,21 @@
           "signature"
         ]
       },
-      "definitions": "Definitions carry immutable hash identities; any revision uses a new glyph+identity, preserves old full definition, and records reason. Receiver must follow normative meaning literally, reveal ambiguity rather than silently reinterpret.",
+      "definitions": "Definitions have immutable IDs. Single-character aliases are local to the packet; typed dependencies bind to domain IDs, including the domain declaration. Use a fresh alias when introducing a changed definition and preserve the old one.",
       "discourse": "Each message includes a self-contained ordered act graph with explicit speaker, act kind, target references, optional typed expressions and act-specific structured details. Questions, analogies, conditional scenarios, revisions, and multi-claim exchanges are valid unproven communications. Act edges are structural, NOT evidence of truth, provenance authenticity, or valid analogy. Current act kind must agree with orientation.",
       "domain": "Declared domain may have finite members or open symbolic population (including infinite or unspecified). Model evaluation enumerates finite only; open domains are not enumerated or assumed empty.",
       "epistemic": "?[prop] is a sourced epistemic record of uncertainty or conflict, never missing data; epistemic type is not Boolean. Records carry assessor, evidence references, basis, optional confidence [0,1].",
       "equality": "Identity of denotation, not resemblance. Term interpretation is deterministic and typed.",
       "functions": "Total deterministic typed function for finite model checking; symbolic function terms allowed in proof certificates; no causation implied.",
       "grammar": "Four body layers: [orientation];[explanation];[conclusion];[exact-symbol-declaration]. Prefix expressions; {[#N][domain][prop] exists; universal via negated existential. <[order][a][b] requires named order.",
-      "hashing": "Definition: SHA256(UCL-SEM-9 newline + UCL-CJSON-1); packet: SHA256(UCL-PACKET-7 newline + UCL-CJSON-1 excluding integrity). Full 256-bit unpadded Base64url. No signature/authentication.",
+      "hashing": "Definition ID: full unpadded Base64url SHA256 of UCL-SEM-10 plus LF and UCL-CJSON-1 of {\"definition\": normalized_definition}. Replace sort, args entries, and returns aliases by their domain IDs wherever present. A domain adds \"domain\": {\"mode\": mode, \"members\": members} to that payload; sort finite members by Unicode scalar value and use null members for open domains. Packet hashing remains SHA256 of UCL-PACKET-7 plus LF and canonical packet excluding integrity. Checksums do not authenticate speakers.",
       "history": "All packets are standalone. history.status is fully-expanded or condensed. Condensed mode MUST disclose non-expanded earlier history, the omitted scope and nature, a meaningful summary, and any unresolved uncertainties. Complete active semantic definitions and all locally referenced acts remain present; no external registry, URL, prior packet or hidden alias may be necessary. A condensed summary is not a verbatim record. Optional reference hashes do not restore missing evidence.",
       "intents": "Orientation declares conversational act: proposal, hypothesis, question, challenge, response, revision, assertion, deductive-argument, model-check, epistemic-report. No proof required for ordinary acts.",
       "limits": "<=250KB compressed, <=1MB expanded, <=120 parse depth, <=55 definitions, <=256 proof steps, <=8 function arguments, <=100 discourse acts, <=24KB per act, <=150 acknowledgements, <=100 omission notes, finite models <=10000 tuple products per function.",
       "ordering": "Explicit named strict partial order. Each order definition has a sort; multiple orders may coexist on that sort. Irreflexivity and transitivity checked in finite interpretations.",
       "proof": "Optional attached certificate (not required for conversation): premises from top-level explanation conjuncts; and-elim-left/right, and-intro, modus-ponens for |[![P]][Q], direct copy, equality reflexivity. Certificate may be invalid/unsupported without invalidating the message. Steps reference earlier indices; final formula must equal claim conclusion. No unrestricted proof or empirical truth.",
       "quotation": "Optional claims bind proposition expressions exactly to IDs and retained origin acts. Viewpoints are acyclic nested attributions (asserts/believes/reports/questions), not proofs of belief or truth. Quoted propositions participate in exact-symbol declarations.",
-      "stability": "UCL/1.0 freezes this exact UCL-CJSON-1 profile; future incompatible changes require a new protocol version.",
+      "stability": "UCL/1.1 retains the 11 core operators and UCL-CJSON-1; definition IDs bind their domain dependencies.",
       "structural": {
         "-": -5,
         ":": -1,
@@ -211,7 +211,7 @@
         "[": -3,
         "]": -4
       },
-      "version": "UCL/1.0"
+      "version": "UCL/1.1"
     },
     "history": {
       "omissions": [],
@@ -223,7 +223,7 @@
       ]
     },
     "integrity": {
-      "sha256": "Im5NXJUoZeb0YBkCEJsiP5FtqdUhhDkieO2HO9ZI6i4"
+      "sha256": "3CGe2WDYjWMIE0p1riJoYLDA_UhPCo8-LpGDhigSvz4"
     },
     "links": [],
     "model": null,
@@ -261,6 +261,7 @@
         "*",
         "{"
       ],
+      "definition_identity": "Use packet.guide.hashing for dependency-aware definition IDs. A new typed definition uses a fresh alias. Preserve prior definitions and domain declarations; local aliases are resolved to domain IDs before hashing.",
       "id": "UCL/2.0-SAP-1",
       "incremental_authoring_procedure": [
         "Read the complete embedded packet.guide, definitions, history, discourse and claim bindings.",
@@ -349,7 +350,7 @@
           "not-assessed"
         ]
       },
-      "status": "stable-2.0",
+      "status": "stable-2.1",
       "structural_glyphs": [
         ":",
         ";",
@@ -375,6 +376,6 @@
         "property": "~[P][A]"
       }
     },
-    "sha256": "yrac3Zj4lyiGfI6944ZsmFSLdL-VPiXPnVZEPVKEh-k"
+    "sha256": "JJC_P_4nhysFsB-1YOY-m3pWtJR8IBCloH06b4eOsE4"
   }
 }

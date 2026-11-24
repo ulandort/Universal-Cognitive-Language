@@ -25,5 +25,5 @@ def author(parent, contribution):
     hist=draft['history']
     hist['summary']=contribution.get('history_summary',hist['summary']+' New act '+act['id']+' appended.')
     hist['unresolved'].extend(contribution.get('new_unresolved',[]))
-    return core.build(draft)
+    return core.build(draft, version=core.packet_version(parent))
 

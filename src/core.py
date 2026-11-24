@@ -7,6 +7,8 @@ import base64, hashlib, itertools, json, re, sys
 from pathlib import Path
 
 VERSION='UCL/1.0'
+DEPENDENCY_VERSION='UCL/1.1'
+DEPENDENCY_DOMAIN=b'UCL-SEM-10\n'
 SEM_DOMAIN=b'UCL-SEM-9\n'; PACK_DOMAIN=b'UCL-PACKET-7\n'
 CORE={'@':['membership',2],'#':['bound-reference',0],'=':['identity',2],
       '~':['predicate-application','signature'],'&':['and',2],'|':['or',2],
@@ -53,8 +55,9 @@ def unb64(s):
 def definition_id(d):return b64(hashlib.sha256(SEM_DOMAIN+canon(d)).digest())
 def packet_id(p):return b64(hashlib.sha256(PACK_DOMAIN+canon({k:v for k,v in p.items() if k!='integrity'})).digest())
 
-def guide():
-    return {'version':VERSION,'core':CORE,'structural':STRUCT,
+def guide(version=VERSION):
+    need(version in (VERSION, DEPENDENCY_VERSION), 'unknown inner guide version')
+    result = {'version':VERSION,'core':CORE,'structural':STRUCT,
       'grammar':'Four body layers: [orientation];[explanation];[conclusion];[exact-symbol-declaration]. Prefix expressions; {[#N][domain][prop] exists; universal via negated existential. <[order][a][b] requires named order.',
       'domain':'Declared domain may have finite members or open symbolic population (including infinite or unspecified). Model evaluation enumerates finite only; open domains are not enumerated or assumed empty.',
       'equality':'Identity of denotation, not resemblance. Term interpretation is deterministic and typed.',
@@ -74,6 +77,57 @@ def guide():
       'acknowledgements':'Optional structured acknowledgements bind a speaker act to a retained earlier act, indexed formal expression, or exactly quoted claim with a validated path of proposition subexpressions. Understanding and endorsement differ. Withdrawal requires original speaker; revisions preserve original claims. New action meanings can be formally declared as immutable acknowledgement-kind extensions with action ext:<glyph>; their ids are included in the exact used-symbol declaration. Conditional qualifications may use a typed UCL proposition plus optional prose; they are not automatically assumed true.',
       'quotation':'Optional claims bind proposition expressions exactly to IDs and retained origin acts. Viewpoints are acyclic nested attributions (asserts/believes/reports/questions), not proofs of belief or truth. Quoted propositions participate in exact-symbol declarations.',
       'history':'All packets are standalone. history.status is fully-expanded or condensed. Condensed mode MUST disclose non-expanded earlier history, the omitted scope and nature, a meaningful summary, and any unresolved uncertainties. Complete active semantic definitions and all locally referenced acts remain present; no external registry, URL, prior packet or hidden alias may be necessary. A condensed summary is not a verbatim record. Optional reference hashes do not restore missing evidence.'}
+
+    if version == DEPENDENCY_VERSION:
+        result.update(
+            version=version,
+            hashing=(
+                'Definition ID: full unpadded Base64url SHA256 of UCL-SEM-10 plus LF and '
+                'UCL-CJSON-1 of {"definition": normalized_definition}. Replace sort, args entries, and '
+                'returns aliases by their domain IDs wherever present. A domain adds "domain": '
+                '{"mode": mode, "members": members} to that payload; sort finite members by Unicode '
+                'scalar value and use null members for open domains. Packet hashing remains '
+                'SHA256 of UCL-PACKET-7 plus LF and canonical packet excluding integrity. '
+                'Checksums do not authenticate speakers.'
+            ),
+            stability='UCL/1.1 retains the 11 core operators and UCL-CJSON-1; definition IDs bind their domain dependencies.',
+            definitions=(
+                'Definitions have immutable IDs. Single-character aliases are local to the packet; '
+                'typed dependencies bind to domain IDs, including the domain declaration. '
+                'Use a fresh alias when introducing a changed definition and preserve the old one.'
+            ),
+        )
+    return result
+
+def packet_version(packet):
+    header = packet.get('guide')
+    version = header.get('version') if isinstance(header, dict) else None
+    need(version in (VERSION, DEPENDENCY_VERSION) and header == guide(version), 'guide mismatch')
+    return version
+
+def _definition_ids(defs, domains, version):
+    if version == VERSION:
+        return {glyph: definition_id(record['definition']) for glyph, record in defs.items()}
+
+    ids = {}
+    for glyph, declaration in domains.items():
+        members = declaration['members']
+        payload = {
+            'definition': defs[glyph]['definition'],
+            'domain': {'mode': declaration['mode'], 'members': sorted(members) if members is not None else None},
+        }
+        ids[glyph] = b64(hashlib.sha256(DEPENDENCY_DOMAIN + canon(payload)).digest())
+    for glyph, record in defs.items():
+        if glyph in domains:
+            continue
+        normalized = record['definition'].copy()
+        for field in ('sort', 'returns'):
+            if field in normalized:
+                normalized[field] = ids[normalized[field]]
+        if 'args' in normalized:
+            normalized['args'] = [ids[alias] for alias in normalized['args']]
+        ids[glyph] = b64(hashlib.sha256(DEPENDENCY_DOMAIN + canon({'definition': normalized})).digest())
+    return ids
 
 def layers(body):
     need(isinstance(body,str) and body.isascii(),'body must be ASCII')
@@ -154,20 +208,17 @@ def render(t):
 
 def conjuncts(t):return conjuncts(t[2][0])+conjuncts(t[2][1]) if t[0]=='&' else [t]
 
-def validate_defs(defs):
+def _validate_definition_shapes(defs):
     need(isinstance(defs,dict) and 1<=len(defs)<=55,'catalog size')
-    ids=set()
     for g,rec in defs.items():
         need(isinstance(g,str) and len(g)==1 and 33<=ord(g)<=126 and g not in RESERVED,'reserved/invalid extension glyph')
-        need(isinstance(rec,dict) and set(rec)=={'id','definition'},'definition record')
+        need(isinstance(rec,dict) and set(rec) in ({'definition'}, {'id','definition'}),'definition record')
         d=rec['definition'];need(isinstance(d,dict) and isinstance(d.get('gloss'),str) and d['gloss'],'definition gloss')
         kind=d.get('kind')
         signatures={'orientation':{'kind','role','gloss'},'domain':{'kind','role','gloss'},
           'value':{'kind','sort','denotes','gloss'},'predicate':{'kind','args','gloss'},
           'function':{'kind','args','returns','gloss'},'order':{'kind','sort','role','gloss'}, 'acknowledgement':{'kind','role','gloss'}}
         need(kind in signatures and set(d)==signatures[kind],'definition signature')
-        need(rec['id']==definition_id(d),'definition SHA-256 mismatch '+g)
-        need(rec['id'] not in ids,'duplicate definition identity');ids.add(rec['id'])
     doms={g for g,v in defs.items() if v['definition']['kind']=='domain'}
     need(bool(doms),'at least one domain required')
     for g,r in defs.items():
@@ -180,6 +231,16 @@ def validate_defs(defs):
         elif kind=='acknowledgement':need(isinstance(d['role'],str) and bool(d['role'].strip()),'acknowledgement extension role')
         elif kind=='orientation':need(d['role'] in ('proposal','hypothesis','question','challenge','response','revision','assertion','deductive-argument','model-check','epistemic-report'),'orientation role')
     return doms
+
+def validate_defs(defs, domains=None, *, version=VERSION):
+    domain_aliases = _validate_definition_shapes(defs)
+    if version == DEPENDENCY_VERSION:
+        validate_domains(defs, domains)
+    expected = _definition_ids(defs, domains, version)
+    for alias, record in defs.items():
+        need(record.get('id') == expected[alias], 'definition SHA-256 mismatch ' + alias)
+    need(len(set(expected.values())) == len(defs), 'duplicate definition identity')
+    return domain_aliases
 
 def validate_domains(defs,domains):
     domain_glyphs={g for g,x in defs.items() if x['definition']['kind']=='domain'}
@@ -580,9 +641,12 @@ def validate_quotes(claims,viewpoints,discourse,parser):
 
 def check(p):
     need(isinstance(p,dict) and set(p)=={'guide','definitions','domains','model','proof','context','body','links','revisions','discourse','acknowledgements','history','claims','viewpoints','integrity'},'packet schema')
-    need(p['guide']==guide(),'guide mismatch')
+    version = packet_version(p)
     need(p['integrity']=={'sha256':packet_id(p)},'packet integrity')
-    defs=p['definitions'];validate_defs(defs);validate_domains(defs,p['domains'])
+    defs = p['definitions']
+    validate_defs(defs, p['domains'], version=version)
+    if version == VERSION:
+        validate_domains(defs, p['domains'])
     need(isinstance(p['context'],dict) and bool(p['context']) and isinstance(p['links'],list),'context/links missing')
     check_revisions(p['revisions'],defs)
     x=layers(p['body']);parser=Parser(defs);trees=[parser.parse(s) for s in x[:3]]
@@ -610,21 +674,48 @@ def check(p):
     if p['proof'] is not None:
         if trees[2][1]!='prop':result['proof']={'status':'invalid-proof','reason':'epistemic result is not a proposition'}
         else:result['proof']=proof_verdict(trees[1],trees[2],p['proof'],defs)
-    return {'status':'VALID '+VERSION,'mode':role,'definitions':len(defs),'discourse':discourse_result,'acknowledgements':ack_result,'history':history_result,'quotation':quote_result,'result':result,'packet_sha256':p['integrity']['sha256']}
+    return {'status':'VALID '+version,'mode':role,'definitions':len(defs),'discourse':discourse_result,'acknowledgements':ack_result,'history':history_result,'quotation':quote_result,'result':result,'packet_sha256':p['integrity']['sha256']}
 
-def build(draft):
+def draft_version(draft):
+    """Use the current scheme for new drafts and preserve existing archived IDs."""
+    _validate_definition_shapes(draft['definitions'])
+    supplied = [record for record in draft['definitions'].values() if 'id' in record]
+    if supplied and all(record['id'] == definition_id(record['definition']) for record in supplied):
+        return VERSION
+    return DEPENDENCY_VERSION
+
+
+def build(draft, *, version=VERSION):
     required={'definitions','domains','model','proof','context','orientation','explanation','conclusion','links','revisions','discourse','acknowledgements','history','claims','viewpoints'}
     need(isinstance(draft,dict) and set(draft)==required,'draft schema')
-    defs={}
-    for g,record in draft['definitions'].items():
-        need(isinstance(record,dict) and 'definition' in record and set(record)<={'definition','id'},'draft definition record')
-        d=record['definition'];hid=definition_id(d)
-        if 'id' in record:need(record['id']==hid,'supplied hash mismatch')
-        defs[g]={'definition':d,'id':hid}
+    embedded_guide = guide(version)
+    records = draft['definitions']
+    _validate_definition_shapes(records)
+    if version == DEPENDENCY_VERSION:
+        validate_domains(records, draft['domains'])
+    ids = _definition_ids(records, draft['domains'], version)
+    defs = {}
+    for alias, record in records.items():
+        identity = ids[alias]
+        need('id' not in record or record['id'] == identity, 'supplied hash mismatch ' + alias)
+        defs[alias] = {'definition': record['definition'], 'id': identity}
     body=make_body(draft['orientation'],draft['explanation'],draft['conclusion'],defs,draft['discourse'],draft['acknowledgements'],draft['claims'])
-    p={'guide':guide(),'definitions':defs,'domains':draft['domains'],'model':draft['model'],
+    p={'guide':embedded_guide,'definitions':defs,'domains':draft['domains'],'model':draft['model'],
        'proof':draft['proof'],'context':draft['context'],'body':body,'links':draft['links'], 'revisions':draft['revisions'], 'discourse':draft['discourse'], 'acknowledgements':draft['acknowledgements'], 'history':draft['history'], 'claims':draft['claims'], 'viewpoints':draft['viewpoints']}
     p['integrity']={'sha256':packet_id(p)};check(p);return p
+
+def upgrade_packet(packet):
+    draft = draft_from_packet(packet)
+    if packet_version(packet) == DEPENDENCY_VERSION:
+        return packet
+
+    for record in draft['definitions'].values():
+        record.pop('id')
+    identities = _definition_ids(draft['definitions'], draft['domains'], DEPENDENCY_VERSION)
+    for revision in draft['revisions']:
+        revision['old_id'] = identities[revision['old_glyph']]
+        revision['new_id'] = identities[revision['new_glyph']]
+    return build(draft, version=DEPENDENCY_VERSION)
 
 
 # Transport: plain, human-readable JSON by default. Optional Brotli lives in tools/.

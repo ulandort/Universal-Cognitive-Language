@@ -1,5 +1,5 @@
 """UCL/2.0 public-source-layout regression; no wire/semantic migration."""
-import json,subprocess,sys,tempfile,unittest
+import copy,json,shutil,subprocess,sys,tempfile,unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
@@ -9,9 +9,9 @@ class SourceLayoutTests(unittest.TestCase):
     def setUpClass(cls):
         cls.packet=core.load_json((ROOT/'examples/cross_model_conversation_8_turns.json').read_text(encoding='utf8'))
     def test_public_version_and_original_grammar(self):
-        self.assertEqual(ucl.VERSION,'UCL/2.0')
-        self.assertEqual(ucl.PORTABLE_FORMAT,portable.FORMAT)
-        self.assertEqual(ucl.INNER_GRAMMAR_VERSION,'UCL/1.0')
+        self.assertEqual(ucl.VERSION,'UCL/2.1')
+        self.assertEqual(ucl.PORTABLE_FORMAT,portable.CURRENT_FORMAT)
+        self.assertEqual(ucl.INNER_GRAMMAR_VERSION,'UCL/1.1')
         self.assertEqual(ucl.CORE,core.CORE)
         self.assertEqual(ucl.check(self.packet),core.check(self.packet))
         self.assertEqual(ucl.packet_id(self.packet),core.packet_id(self.packet))
@@ -173,7 +173,7 @@ class SourceLayoutTests(unittest.TestCase):
             ack(8, 54, 'qualify', sync_branch, {'expression': '~[N][A]', 'explanation': ''}),
         ])
 
-        envelope = portable.encode(core.build(draft))
+        envelope = portable.encode(core.build(draft, version=core.packet_version(starter['packet'])))
         with tempfile.TemporaryDirectory() as directory:
             incoming = Path(directory) / 'long.txt'
             incoming.write_bytes(core.canon(envelope))
@@ -198,5 +198,107 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertLess(rendered.stdout.index('Latest recorded stances'),
                             rendered.stdout.index('Recent acts (5 of 55)'))
             self.assertEqual(incoming.read_bytes(), core.canon(envelope))
+
+    def test_dependency_ids_follow_domains_across_aliases_and_membership_changes(self):
+        initial = portable.decode(json.loads((ROOT / 'examples/quickstart.txt').read_bytes()))
+        draft = core.draft_from_packet(initial)
+        for entry in draft['definitions'].values():
+            del entry['id']
+        draft['definitions']['F'] = {
+            'definition': {'kind': 'function', 'args': ['D'], 'returns': 'D', 'gloss': 'Transforms a notes app.'},
+        }
+        draft['definitions']['O'] = {
+            'definition': {'kind': 'order', 'sort': 'D', 'role': 'edit latency', 'gloss': 'Orders apps by edit latency.'},
+        }
+        draft['domains']['D'] = {'mode': 'finite', 'members': ['😀', 'notes-app', 'é']}
+        original = core.build(copy.deepcopy(draft), version=core.DEPENDENCY_VERSION)
+        draft['domains']['D']['members'].reverse()
+        reordered = core.build(copy.deepcopy(draft), version=core.DEPENDENCY_VERSION)
+        self.assertEqual(original['definitions'], reordered['definitions'])
+
+        draft['definitions']['Y'] = draft['definitions'].pop('D')
+        draft['domains']['Y'] = draft['domains'].pop('D')
+        draft['definitions']['A']['definition']['sort'] = 'Y'
+        draft['definitions']['O']['definition']['sort'] = 'Y'
+        draft['definitions']['F']['definition']['returns'] = 'Y'
+        for alias in ('B', 'F', 'N', 'P'):
+            draft['definitions'][alias]['definition']['args'] = ['Y']
+        renamed = core.build(copy.deepcopy(draft), version=core.DEPENDENCY_VERSION)
+        self.assertEqual(original['definitions']['D']['id'], renamed['definitions']['Y']['id'])
+        for alias in ('A', 'B', 'F', 'N', 'O', 'P'):
+            self.assertEqual(original['definitions'][alias]['id'], renamed['definitions'][alias]['id'])
+
+        draft['domains']['Y']['members'].append('another-notes-app')
+        expanded = core.build(draft, version=core.DEPENDENCY_VERSION)
+        self.assertNotEqual(renamed['definitions']['Y']['id'], expanded['definitions']['Y']['id'])
+        for alias in ('A', 'B', 'F', 'N', 'O', 'P'):
+            self.assertNotEqual(renamed['definitions'][alias]['id'], expanded['definitions'][alias]['id'])
+        self.assertEqual(renamed['definitions']['L']['id'], expanded['definitions']['L']['id'])
+        wire = portable.encode(expanded)
+        wire['packet']['definitions']['P']['id'] = renamed['definitions']['P']['id']
+        wire['packet']['integrity']['sha256'] = core.packet_id(wire['packet'])
+        wire['checksum'] = portable.envelope_checksum(wire)
+        with self.assertRaisesRegex(ValueError, 'definition SHA-256 mismatch P'):
+            portable.decode(wire)
+
+        if shutil.which('node'):
+            with tempfile.TemporaryDirectory() as directory:
+                packet_file = Path(directory) / 'packet.txt'
+                command = ['node', str(ROOT / 'tools/check_ucl_portable.js'), str(packet_file)]
+                packet_file.write_bytes(core.canon(portable.encode(reordered)))
+                accepted = subprocess.run(command, text=True, capture_output=True, timeout=20)
+                self.assertEqual(accepted.returncode, 0, accepted.stderr)
+                packet_file.write_bytes(core.canon(wire))
+                rejected = subprocess.run(command, text=True, capture_output=True, timeout=20)
+                self.assertNotEqual(rejected.returncode, 0)
+                self.assertIn('definition hash P', rejected.stderr)
+
+    def test_upgrade_preserves_history_and_formula_roles_and_updates_revision_ids(self):
+        sample = ROOT / 'examples/cross_model_conversation_13_turns.json'
+        archived = core.load_json(sample.read_text(encoding='utf-8'))
+        roles = [{'act': 't1', 'index': 0, 'role': 'hypothesis'}]
+        original_wire = portable.encode(archived, formula_roles=roles)
+        with tempfile.TemporaryDirectory() as directory:
+            incoming = Path(directory) / 'archived.txt'
+            outgoing = Path(directory) / 'upgraded.txt'
+            incoming.write_bytes(core.canon(original_wire))
+            command = [sys.executable, str(ROOT / 'src/ucl.py'), 'upgrade', str(incoming), str(outgoing)]
+            result = subprocess.run(command, text=True, capture_output=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            revised_wire = json.loads(outgoing.read_bytes())
+            self.assertEqual(revised_wire['format'], ucl.PORTABLE_FORMAT)
+            self.assertEqual(revised_wire['formula_roles'], roles)
+            current = portable.decode(revised_wire)
+            for field in ('discourse', 'claims', 'acknowledgements', 'history'):
+                self.assertEqual(current[field], archived[field])
+            for revision in current['revisions']:
+                self.assertEqual(revision['old_id'], current['definitions'][revision['old_glyph']]['id'])
+                self.assertEqual(revision['new_id'], current['definitions'][revision['new_glyph']]['id'])
+            self.assertNotEqual(current['revisions'], archived['revisions'])
+            self.assertEqual(core.upgrade_packet(current), current)
+            self.assertEqual(incoming.read_bytes(), core.canon(original_wire))
+
+    def test_cli_build_uses_current_ids_for_fresh_drafts(self):
+        archived_draft = core.draft_from_packet(self.packet)
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'draft.json'
+            output = Path(directory) / 'inner.json'
+            command = [sys.executable, str(ROOT / 'src/ucl.py'), 'build', str(source), str(output)]
+            source.write_bytes(core.canon(archived_draft))
+            archived = subprocess.run(command, text=True, capture_output=True, timeout=20)
+            self.assertEqual(archived.returncode, 0, archived.stderr)
+            self.assertEqual(core.load_json(output.read_bytes()), self.packet)
+            for record in archived_draft['definitions'].values():
+                del record['id']
+            source.write_bytes(core.canon(archived_draft))
+            fresh = subprocess.run(command, text=True, capture_output=True, timeout=20)
+            self.assertEqual(fresh.returncode, 0, fresh.stderr)
+            current = core.load_json(output.read_bytes())
+            self.assertEqual(current, core.upgrade_packet(self.packet))
+            crossed = portable.encode(self.packet)
+            crossed['packet'] = current
+            crossed['checksum'] = portable.envelope_checksum(crossed)
+            with self.assertRaisesRegex(ValueError, 'inner guide version does not match'):
+                portable.decode(crossed)
 
 if __name__=='__main__':unittest.main()

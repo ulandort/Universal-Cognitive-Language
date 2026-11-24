@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Independent offline UCL/2.0 SAP-1 Portable verifier.
+/* Independent offline UCL SAP-1 Portable verifier.
    No registry, network, Python runtime, npm modules or cloud dependencies.
    Checks outer guide fingerprint, authenticated-by-trust-anchor rules identity,
    envelope SHA-256, original UCL 1.0 packet through independent JS checker,
@@ -8,11 +8,18 @@
 'use strict';
 const fs=require('fs');
 const {hash,semantic}=require('./check_ucl.js');
-const FORMAT='UCL/2.0-SAP1-PORTABLE';
 const RULE_DOMAIN='UCL-SAP1-RULES-2.0\n';
 const ENVELOPE_DOMAIN='UCL-SAP1-ENVELOPE-2.0\n';
-const PROFILE_SHA='yrac3Zj4lyiGfI6944ZsmFSLdL-VPiXPnVZEPVKEh-k';
-const FROZEN_GUIDE_SHA='ZFIZCtsxvrSp7PH12QlsH2re08Xd_kS78JKFunwYO_M';
+const VERSIONS=new Map([
+ ['UCL/2.0-SAP1-PORTABLE',{
+  rules:'yrac3Zj4lyiGfI6944ZsmFSLdL-VPiXPnVZEPVKEh-k',
+  guide:'ZFIZCtsxvrSp7PH12QlsH2re08Xd_kS78JKFunwYO_M',
+ }],
+ ['UCL/2.1-SAP1-PORTABLE',{
+  rules:'JJC_P_4nhysFsB-1YOY-m3pWtJR8IBCloH06b4eOsE4',
+  guide:'gwOP2P5TdHQ7ZY92znMm80KFUnN6HJEKxUuyfCWdVKs',
+ }],
+]);
 const ROLE_GUIDE=('FR-1 draft: act/index identifies an exact expression in packet.discourse.acts; '+
 'role is an author-declared purpose (hypothesis, example, counterexample, '+
 'quotation, question), NOT proof or truth. Missing role is unspecified. '+
@@ -25,11 +32,12 @@ function validate(envelope){
  const base=['format','profile','structural_rules','packet','checksum'];
  const extended=[...base,'formula_roles','formula_role_guide'];
  requireThat(keys(envelope,base)||keys(envelope,extended),'envelope fields invalid');
- requireThat(envelope.format===FORMAT&&envelope.profile==='portable','unsupported profile');
+ const pinned=VERSIONS.get(envelope.format);
+ requireThat(pinned&&envelope.profile==='portable','unsupported profile');
  const block=envelope.structural_rules;
  requireThat(keys(block,['rules','sha256']),'rules block invalid');
  requireThat(typeof block.sha256==='string'&&block.sha256===hash(RULE_DOMAIN,block.rules),'rules hash mismatch');
- requireThat(block.sha256===PROFILE_SHA,'unknown or altered structural standard');
+ requireThat(block.sha256===pinned.rules,'unknown or altered structural standard');
  const {checksum,...body}=envelope;
  requireThat(typeof checksum==='string'&&checksum===hash(ENVELOPE_DOMAIN,body),'envelope checksum mismatch');
  const packet=envelope.packet;
@@ -38,7 +46,7 @@ function validate(envelope){
   'inner packet field shape');
  requireThat(packet.guide&&typeof packet.guide==='object'&&!Array.isArray(packet.guide),
   'embedded inner guide missing');
- requireThat(hash('UCL-GUIDE-PIN-2\n',packet.guide)===FROZEN_GUIDE_SHA,
+ requireThat(hash('UCL-GUIDE-PIN-2\n',packet.guide)===pinned.guide,
   'unknown or altered inner language guide');
  const checked=semantic(packet);
  if(Object.hasOwn(envelope,'formula_roles')){
@@ -60,7 +68,7 @@ function validate(envelope){
      seen.add(key);
    }
  }
- return {valid:true,format:FORMAT,packet_sha256:packet.integrity.sha256,
+ return {valid:true,format:envelope.format,packet_sha256:packet.integrity.sha256,
    rules_sha256:block.sha256,discourse_acts:checked.acts,
    acknowledgements:checked.acknowledgements,definitions:checked.definitions};
 }
