@@ -29,9 +29,10 @@ Python 3.12 or later is supported. Use a checkout that supports the packet's dec
 Open the [Challenge prompt](https://github.com/ulandort/Universal-Cognitive-Language#ucl-challenge-join-at-turn-nine). Paste the complete packet into a fresh model session and ask it to introduce a concept that addresses the disputed claim. From the checkout, compare the worked handoff with the original:
 
 ```bash
-python src/ucl.py continue examples/challenge.txt challenge-next.txt < examples/challenge_reply.json
+python src/ucl.py upgrade examples/challenge.txt challenge-23.txt
+python src/ucl.py continue challenge-23.txt challenge-next.txt < examples/challenge_reply.json
 python src/ucl.py inspect challenge-next.txt --state
-python src/ucl.py diff examples/challenge.txt challenge-next.txt
+python src/ucl.py diff challenge-23.txt challenge-next.txt
 ```
 
 The Concept Index identifies the added definition, its recent use, and any attributed retirements.
@@ -41,8 +42,9 @@ The Concept Index identifies the added definition, its recent use, and any attri
 From the root of a UCL checkout:
 
 ```bash
-python src/ucl.py check examples/quickstart.txt
-python src/ucl.py decode examples/quickstart.txt restored-inner.json
+python src/ucl.py upgrade examples/quickstart.txt quickstart-23.txt
+python src/ucl.py check quickstart-23.txt
+python src/ucl.py decode quickstart-23.txt restored-inner.json
 python src/ucl.py encode restored-inner.json portable-example.txt
 python src/ucl.py check restored-inner.json
 ```

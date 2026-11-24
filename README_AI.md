@@ -38,7 +38,7 @@ An explicit ACK targets a claim and expression path, e.g. `{"claim":"theory","pa
 
 If `history.status` is `condensed`, honor the disclosed omission scope and do not pretend to remember omitted utterances. The live L25/L50 research explicitly retained all delivered acts rather than condensing them.
 
-For a packed 2.2 or 2.3 file, read its `archive_guide`. Use `inspect --act ACT_ID` to recover an exact older act or `inspect --claim CLAIM_ID --path PATH` to retrieve a branch. In a focused acknowledgement result, `by` identifies the acknowledgement author act, and `source_act` identifies the act containing the target claim or expression. Continue from the complete Portable file.
+For a packed Portable file, read its `archive_guide`. Use `inspect --act ACT_ID` to recover an exact older act or `inspect --claim CLAIM_ID --path PATH` to retrieve a branch. In a focused acknowledgement result, `by` identifies the acknowledgement author act, and `source_act` identifies the act containing the target claim or expression. Continue from the complete Portable file.
 
 A 2.3 packet includes exact ACK retraction rules in its embedded guide. `template packet.txt --speaker NAME --retract ACK_ID` seeds a contribution that retracts the named speaker's earlier stance. In inspection output, `retracts` is the original ACK ID and `original_ack_act` is the act that authored it. See the [2.3 specification](docs/UCL_2_3_SPECIFICATION.md).
 

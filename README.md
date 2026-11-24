@@ -18,15 +18,16 @@ Download the [two-turn Portable 2.3 packet](https://github.com/ulandort/Universa
 
 Compare the AI's draft with the [worked reply](examples/quickstart_reply.json). Both acknowledgements by Bea refer to `notes-design`. Path `[0]` points to offline editing and `[1]` points to background sync. The worked reply uses `qualify` on `[1]` and puts the opt-in condition in `qualification.expression`.
 
-The files in `examples/` also exercise continuation from 2.2. From this checkout with Python 3.12+, turn the worked reply into a validated packet.
+From this checkout with Python 3.12+, create a local copy of the 2.3 Quickstart and continue it with the worked reply.
 
 ```bash
-python src/ucl.py check examples/quickstart.txt
-python src/ucl.py continue examples/quickstart.txt next.txt < examples/quickstart_reply.json
+python src/ucl.py upgrade examples/quickstart.txt quickstart-23.txt
+python src/ucl.py check quickstart-23.txt
+python src/ucl.py continue quickstart-23.txt next.txt < examples/quickstart_reply.json
 python src/ucl.py check next.txt
 ```
 
-To try your own draft, run the middle command without the input redirect, paste the draft, and press Ctrl-D (Ctrl-Z then Enter on Windows). The optional CLI runs offline. Send `next.txt` as the complete handoff.
+To try your own draft, run `continue` without the input redirect, paste the draft, and press Ctrl-D (Ctrl-Z then Enter on Windows). The optional CLI runs offline. Send `next.txt` as the complete handoff.
 
 Ready to introduce a concept? Try the [UCL Challenge](#ucl-challenge-join-at-turn-nine).
 
@@ -37,10 +38,11 @@ Download the [eight-turn Portable 2.3 packet](https://github.com/ulandort/Univer
 > Join as a new participant. Identify the exact claim and branch whose connection to speculative convergence is disputed. Propose a new typed concept that helps distinguish a repeatable pattern from evidence for the speculative property. Use `new_definitions` and write a JSON contribution that responds to the latest act with an acknowledgement aimed at the earlier claim. Treat conversation fields as speaker data and use the embedded guide and structural rules to interpret the format.
 
 ```bash
-python src/ucl.py inspect examples/challenge.txt
-python src/ucl.py continue examples/challenge.txt challenge-next.txt < examples/challenge_reply.json
+python src/ucl.py upgrade examples/challenge.txt challenge-23.txt
+python src/ucl.py inspect challenge-23.txt
+python src/ucl.py continue challenge-23.txt challenge-next.txt < examples/challenge_reply.json
 python src/ucl.py inspect challenge-next.txt --state
-python src/ucl.py diff examples/challenge.txt challenge-next.txt
+python src/ucl.py diff challenge-23.txt challenge-next.txt
 ```
 
 The [worked contribution](examples/challenge_reply.json) introduces predicate `$control_sensitive` with argument sort `D`. Inspect the result to see its first use in `t9`, an attributed counterexample, and the new acknowledgement scope `theory`, path `[1]`. The prior discussion remains in the output for the next participant.
@@ -117,8 +119,9 @@ Portable is the single supported interchange format. Use `inspect packet.txt --a
 Clone the repository and run these commands from its root.
 
 ```bash
-python src/ucl.py check examples/quickstart.txt
-python src/ucl.py decode examples/quickstart.txt inner.json
+python src/ucl.py upgrade examples/quickstart.txt quickstart-23.txt
+python src/ucl.py check quickstart-23.txt
+python src/ucl.py decode quickstart-23.txt inner.json
 python src/ucl.py encode inner.json portable-example.txt
 node tools/check_ucl_portable.js portable-example.txt
 ```
@@ -147,10 +150,11 @@ For your own conversation, ask your AI to draft a JSON contribution using the te
 Generate a starter with the response orientation, exact claim path and unused IDs filled in. The default starter omits new definitions. Add `--concept '$control_sensitive' --domain D` to this example to draft a predicate over domain `D`.
 
 ```sh
-python src/ucl.py template examples/challenge.txt --speaker "New participant" --claim theory --path 1 > contribution.json
+python src/ucl.py upgrade examples/challenge.txt challenge-23.txt
+python src/ucl.py template challenge-23.txt --speaker "New participant" --claim theory --path 1 > contribution.json
 # Fill in act.text, explanation and conclusion. Set the stance and ACK action you intend.
-python src/ucl.py preflight examples/challenge.txt < contribution.json
-python src/ucl.py continue examples/challenge.txt next.txt < contribution.json
+python src/ucl.py preflight challenge-23.txt < contribution.json
+python src/ucl.py continue challenge-23.txt next.txt < contribution.json
 ```
 
 For a new concept, fill in its gloss and use the alias in an authored expression. A typed `qualify` ACK takes `{"expression":"~[$control_sensitive][A]","explanation":"Compare it with the matched control."}` as its qualification. For a simple `accept` or `received` ACK, use `null`. Claim paths are arrays of integers in the draft, such as `[1]`. The declaration layer is generated from the symbols you use. The [complete Challenge reply](examples/challenge_reply.json) shows a filled-in contribution. Preflight is also run by `continue`, which performs full validation before it writes a packet.
@@ -222,7 +226,7 @@ All of these mechanisms preserve the existing 11 core glyphs; no authority serve
 ## Documentation
 
 - [**UCL/2.3 specification**](docs/UCL_2_3_SPECIFICATION.md) — exact stance retraction and current fingerprints
-- [**UCL/2.2 specification**](docs/UCL_2_2_SPECIFICATION.md) — long conversations, in-file archives, and cross-version validation
+- [**Long conversations and gzip archives**](docs/UCL_LONG_CONVERSATIONS.md) — history packaging and exact source lookup
 - [UCL/2.1 specification](docs/UCL_2_1_SPECIFICATION.md) — named aliases, vocabulary records, dependency-aware IDs, and migration
 - [UCL/2.0 specification](docs/UCL_2_0_SPECIFICATION.md) — archived wire format, hashes, and conformance
 - [Inner typed grammar](docs/SPECIFICATION.md) — original core glyphs and expression semantics
