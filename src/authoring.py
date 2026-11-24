@@ -66,18 +66,29 @@ def preflight(parent, contribution, *, archived=False):
                  version=version, archived=archived, prior_acks=parent['acknowledgements'])
 
 
-def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, retract=None):
+def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, retract=None, seed_formula=False):
     """Seed a reply with exact references and leave its authorship to the participant."""
     core.need(0 < len(speaker) <= 120, 'speaker must contain 1 to 120 characters')
     definitions = parent['definitions']
     acts = parent['discourse']['acts']
     acknowledgements = parent['acknowledgements']
+    formula = ''
     if retract is None:
         binding = parent['claims'].get(claim)
         core.need(binding is not None, f'claim not found: {claim}')
-        core.resolve_claim_path(core.Parser(definitions), binding['expression'], path)
+        parser = core.Parser(definitions)
+        selected = core.resolve_claim_path(parser, binding['expression'], path)
+        if seed_formula:
+            core.need(selected[1] == 'prop', '--seed-formula requires a proposition in the selected branch')
+            formula = core.render(selected)
+            try:
+                parser.parse(formula)
+            except ValueError as exc:
+                raise ValueError(f'Selected branch cannot stand alone: {exc}. '
+                                 'Choose an enclosing claim path or omit --seed-formula.') from exc
         source, target, action = binding['act'], {'claim': claim, 'path': path}, 'received'
     else:
+        core.need(not seed_formula, '--seed-formula requires --claim')
         core.need(core.packet_version(parent) == core.RETRACTION_VERSION,
                   'ACK retraction requires Portable 2.3. Run upgrade first')
         original = next((ack for ack in acknowledgements if ack['id'] == retract), None)
@@ -109,7 +120,7 @@ def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, ret
                 'text': '', 'expressions': [],
                 'details': {'responds_to': current, 'stance': 'undetermined'}},
         'orientation': orientation,
-        'explanation': '', 'conclusion': '',
+        'explanation': formula, 'conclusion': formula,
         'acknowledgements': [{
             'id': next_id(acknowledgements, 'x'), 'by': act_id,
             'target': target, 'action': action,
