@@ -2,6 +2,13 @@
 
 This project uses versioned protocol profiles. Experimental benchmark artifacts are research evidence rather than evidence of a different live released wire specification.
 
+## UCL/2.3.0 — Exact stance retraction (November 2026)
+
+- Added an ACK action that retracts one of the speaker's earlier stances by ID, with both records retained.
+- Added `inspect --state`, deterministic packet `diff`, reply templates, and shared draft preflight.
+- Added stable Portable 2.3 pins and Python and Node support. Older Portable files remain continuable in their original formats.
+- Verified live retraction at act 4,097 from labeled excerpts of a packed history.
+
 ## UCL/2.2.0 — Long conversations in one Portable file (November 2026)
 
 - Add exact act and claim-path lookup, plus a Concept Index that compares vocabulary across packets.

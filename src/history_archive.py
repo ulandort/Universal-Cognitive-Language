@@ -73,7 +73,7 @@ def pack(envelope, packet, pinned=()):
     """Pack an already validated expanded long-draft packet."""
     import ucl
 
-    core.need(envelope['format'] in ucl.ARCHIVE_FORMATS, 'upgrade to Portable 2.2 before packing')
+    core.need(envelope['format'] in ucl.ARCHIVE_FORMATS, 'upgrade to an archive-capable Portable version before packing')
     acts = packet['discourse']['acts']
     acks = packet['acknowledgements']
     pinned = sorted(set(pinned))
@@ -235,10 +235,10 @@ def expand(envelope):
     return expanded
 
 
-def inspect_archive(envelope, *, act_id=None, claim_id=None, path=None):
+def inspect_archive(envelope, *, act_id=None, claim_id=None, path=None, state=False):
     """Read the current view or a single indexed block without expanding the full packet."""
     import portable
-    from inspection import focused_context
+    from inspection import STANCE_ACTIONS, current_state, focused_context
 
     portable.validate_envelope(envelope)
     slots, by_act = _layout(envelope)
@@ -248,6 +248,17 @@ def inspect_archive(envelope, *, act_id=None, claim_id=None, path=None):
         'view': 'selected archive excerpt', 'archive_block_count': len(archive['blocks']),
         'retained_act_count': archive['act_count'], 'whole_packet_audited': False,
     }
+    if state:
+        readable = {**packet, 'acknowledgements': [
+            ack for ack in packet['acknowledgements'] if ack['action'] in STANCE_ACTIONS or ack['action'] == 'retract'
+        ]}
+        return {
+            **current_state(readable, whole_packet_audited=False),
+            'archive_block_count': status['archive_block_count'],
+            'retained_act_count': archive['act_count'],
+            'readable_act_count': len(packet['discourse']['acts']),
+            'pinned_act_count': len(archive['pinned']),
+        }
     if act_id is None and claim_id is None:
         return {**status, 'view': 'readable archive overview',
                 'current_act': packet['discourse']['current'],

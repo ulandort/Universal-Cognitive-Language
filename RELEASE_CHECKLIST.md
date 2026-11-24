@@ -1,6 +1,6 @@
 # Archived release checklist — UCL/2.0 Portable
 
-The current release is documented in [UCL/2.2 release notes](RELEASE_NOTES_2_2.md).
+The current release is documented in [UCL/2.3 release notes](RELEASE_NOTES_2_3.md).
 
 **Target:** full public stable UCL/2.0, not beta. The stable Portable envelope replaces the standalone 1.0 packet as the recommended interchange format. The inner core glyphs, grammar and definition hashing are preserved. The historical research record is retained, but draft formats are not accepted as the 2.0 standard.
 

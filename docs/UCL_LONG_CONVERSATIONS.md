@@ -27,7 +27,7 @@ python src/ucl.py inspect long.txt --act t37
 node tools/check_ucl_portable.js long.txt
 ```
 
-The 2.2 release uses the same single-file Portable envelope and retains the existing definition IDs. Python and Node accept up to 4,096 retained acts and up to 8,192 each of acknowledgements, claim bindings, and viewpoints, subject to the 8 MB CLI input ceiling and the existing per-record limits. Released 2.0 and 2.1 keep their original limits and hashes. To migrate a released packet, run `python src/ucl.py upgrade incoming.txt current.txt` and continue the resulting file with this checkout.
+Portable 2.2 and 2.3 use the same single-file envelope and retain the existing definition IDs. Python and Node accept up to 4,096 retained acts and up to 8,192 each of acknowledgements, claim bindings, and viewpoints, subject to the 8 MB CLI input ceiling and the existing per-record limits. Released 2.0 and 2.1 keep their original limits and hashes. To migrate a released packet, run `python src/ucl.py upgrade incoming.txt current.txt` and continue the resulting file with this checkout.
 
 The 1,000-act fixture is 420,889 bytes in canonical JSON. Looking up `theory` at path `[1]` returns a 2,771-byte canonical excerpt, including the typed condition from act `t37`. The test appends a reply as act 1,001 and preserves all previous acts and IDs. A 4,096-act run of the same fixture was 1,671,673 bytes and returned a 2,772-byte excerpt. Python and Node accepted both sizes. These are byte measurements for a synthetic fixture. Agents reading selected excerpts can avoid sending the whole record to the model. A chat user who pastes the whole file still pays the full input cost.
 
@@ -42,7 +42,7 @@ node tools/check_ucl_portable.js packed.txt
 python src/ucl.py continue packed.txt next.txt < contribution.json
 ```
 
-Packing is opt-in for Portable 2.2. At 2,000 turns the first 1,000 become eligible, then each older batch of 1,000 becomes eligible as the conversation grows. The newest 1,000 stay readable. A packet whose stored representation approaches 7 MB can also archive a smaller eligible batch. Batches split further when their expanded data would exceed 4 MB.
+Packing is opt-in for Portable 2.2 and 2.3. At 2,000 turns the first 1,000 become eligible, then each older batch of 1,000 becomes eligible as the conversation grows. The newest 1,000 stay readable. A packet whose stored representation approaches 7 MB can also archive a smaller eligible batch. Batches split further when their expanded data would exceed 4 MB.
 
 The tool leaves important turns verbatim in the readable portion. It protects the sources of bound claims and viewpoints, formula annotations, vocabulary records, substantive acknowledgements and their exact act targets, and direct references from the readable tail. Use repeatable `--keep-act` options to preserve additional turns that carry important prose or evidence. The CLI carries those pins into subsequent handoffs. A packed conversation continues to apply the archive policy as it grows.
 

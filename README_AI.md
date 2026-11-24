@@ -2,7 +2,7 @@
 
 **Purpose:** Independently authored, precisely referenced communication across different intelligences. A complete UCL message is a self-contained JSON `.txt` or `.json` file. **The message's actual embedded guide and typed definitions are the source of meaning**, not this README or a hosted registry.
 
-> **Current release:** UCL/2.2 Portable (`UCL/2.2-SAP1-PORTABLE`). Follow the embedded guide for definition hashing. The CLI can verify and continue archived 2.0 and 2.1 conversations using their original IDs.
+> **Current release:** UCL/2.3 Portable (`UCL/2.3-SAP1-PORTABLE`). Follow the embedded guide for definition hashing. The CLI can verify and continue 2.0, 2.1, and 2.2 packets in their original formats.
 
 ## Agent Skills distribution
 
@@ -38,7 +38,9 @@ An explicit ACK targets a claim and expression path, e.g. `{"claim":"theory","pa
 
 If `history.status` is `condensed`, honor the disclosed omission scope and do not pretend to remember omitted utterances. The live L25/L50 research explicitly retained all delivered acts rather than condensing them.
 
-For a packed 2.2 file, read its `archive_guide`. Use `inspect --act ACT_ID` to recover an exact older act or `inspect --claim CLAIM_ID --path PATH` to retrieve a branch. In a focused acknowledgement result, `by` identifies the acknowledgement author act, and `source_act` identifies the act containing the target claim or expression. Continue from the complete Portable file.
+For a packed 2.2 or 2.3 file, read its `archive_guide`. Use `inspect --act ACT_ID` to recover an exact older act or `inspect --claim CLAIM_ID --path PATH` to retrieve a branch. In a focused acknowledgement result, `by` identifies the acknowledgement author act, and `source_act` identifies the act containing the target claim or expression. Continue from the complete Portable file.
+
+A 2.3 packet includes exact ACK retraction rules in its embedded guide. `template packet.txt --speaker NAME --retract ACK_ID` seeds a contribution that retracts the named speaker's earlier stance. In inspection output, `retracts` is the original ACK ID and `original_ack_act` is the act that authored it. See the [2.3 specification](docs/UCL_2_3_SPECIFICATION.md).
 
 ## Author a response
 
@@ -60,6 +62,6 @@ python src/ucl.py inspect incoming-ucl2.txt
 python src/ucl.py continue incoming-ucl2.txt next.txt < contribution.json
 ```
 
-The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The public Python entry point is `src/ucl.py`, backed by `src/portable.py` and the typed grammar and vocabulary validation in `src/core.py`. The Python reference is the authoritative structural implementation. See the [2.2 specification](docs/UCL_2_2_SPECIFICATION.md).
+The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The public Python entry point is `src/ucl.py`, backed by `src/portable.py` and the typed grammar and vocabulary validation in `src/core.py`. The Python reference is the authoritative structural implementation. See the [2.3 specification](docs/UCL_2_3_SPECIFICATION.md).
 
 For experimental details and actual evidence, see [README](README.md), [L50 live result](benchmarks/AUTONOMOUS_50_RESULTS.md), [historical Portable draft](docs/SAP1_PORTABLE_DRAFT.md) and [release-readiness](docs/UCL_2_0_RELEASE_READINESS.md).

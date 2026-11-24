@@ -1,6 +1,6 @@
 # UCL/2.1 Portable specification
 
-This is the archived UCL/2.1 specification. See [UCL/2.2](UCL_2_2_SPECIFICATION.md) for the current release. It uses the single self-contained UTF-8 JSON handoff described in the [2.0 specification](UCL_2_0_SPECIFICATION.md), with the vocabulary, identity, and version changes below. The 11 core operators, four body layers, typed expressions, claim paths, and retained conversation model carry forward.
+This is the archived UCL/2.1 specification. See [UCL/2.3](UCL_2_3_SPECIFICATION.md) for the current release. It uses the single self-contained UTF-8 JSON handoff described in the [2.0 specification](UCL_2_0_SPECIFICATION.md), with the vocabulary, identity, and version changes below. The 11 core operators, four body layers, typed expressions, claim paths, and retained conversation model carry forward.
 
 ## Version markers
 

@@ -33,7 +33,8 @@ const NAMED_ALIAS=/^\$[A-Za-z][A-Za-z0-9_]{0,63}/;
 function layers(body){let out=[],depth=0,start=0;for(let i=0;i<body.length;i++){if(body[i]==='[')depth++;if(body[i]===']')depth--;assert(depth>=0,'brackets');if(body[i]===';'&&depth===0){out.push(body.slice(start,i));start=i+1}}out.push(body.slice(start));assert(depth===0&&out.length===4,'layers');return out.map(x=>{assert(x[0]=='['&&x.at(-1)==']','outer layers');return x.slice(1,-1)})}
 function semantic(packet,{archived=false}={}){
  const defs=packet.definitions, domains=packet.domains;
- const long=['UCL/1.2','UCL/1.2-DRAFT'].includes(packet.guide.version);
+ const retractable=packet.guide.version==='UCL/1.3';
+ const long=retractable||['UCL/1.2','UCL/1.2-DRAFT'].includes(packet.guide.version);
  const dependent=long||packet.guide.version==='UCL/1.1';
  const recordsLimit=long?8192:150;
  assert(dependent||packet.guide.version==='UCL/1.0','inner version');
@@ -140,9 +141,27 @@ function semantic(packet,{archived=false}={}){
  }
  assert(packet.discourse.current===acts.at(-1).id,'current act');
  assert(Array.isArray(packet.acknowledgements)&&(archived&&long||packet.acknowledgements.length<=recordsLimit),'acknowledgement count');
+ const indexedAcks=new Map(), retractedAcks=new Set();
+ for(const a of packet.acknowledgements){
+  assert(a&&typeof a.id==='string'&&/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(a.id)&&!indexedAcks.has(a.id),'duplicate or invalid ACK ID');
+  indexedAcks.set(a.id,a);
+ }
  for(const a of packet.acknowledgements){
   const author=seen.get(a.by);assert(author,'ack author');
   const t=a.target;assert(t&&typeof t==='object'&&!Array.isArray(t),'ack target');
+  if(a.action==='retract'){
+   assert(retractable,'ACK retraction requires UCL/1.3');
+   assert(Object.keys(a).sort().join(',')==='action,by,id,note,qualification,replacement,target','retraction fields');
+   assert(Object.keys(t).join(',')==='ack'&&typeof t.ack==='string','retraction target');
+   const original=indexedAcks.get(t.ack);
+   assert(original&&['accept','reject','qualify','adopt-for-discussion','withhold-judgment'].includes(original.action),'retraction must target a stance ACK');
+   assert(actIndex.get(original.by)<actIndex.get(a.by),'retraction must target an ACK from an earlier act');
+   assert(seen.get(original.by).speaker===author.speaker,'retraction ownership');
+   assert(!retractedAcks.has(t.ack),'ACK already retracted');
+   assert(a.qualification===null&&a.replacement===null&&typeof a.note==='string'&&[...a.note].length<=2048,'retraction payload');
+   retractedAcks.add(t.ack);
+   continue;
+  }
   let dest;
   if(Object.keys(t).sort().join(',')==='act,expression_index'){
    dest=t.act;const target=seen.get(dest);assert(target,'ack refs');

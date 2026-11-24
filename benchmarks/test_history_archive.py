@@ -54,6 +54,21 @@ class HistoryArchiveTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, diagnostic):
                     ucl.decode_portable(altered)
 
+    def test_current_state_preserves_stances_without_opening_archive_blocks(self):
+        from inspection import compare_packets, current_state
+
+        with patch.object(history_archive, '_open_block',
+                          side_effect=AssertionError('state does not need archived contents')):
+            state = history_archive.inspect_archive(self.packed, state=True)
+        self.assertFalse(state['whole_packet_audited'])
+        self.assertEqual(state['retained_act_count'], 4096)
+        self.assertLess(state['readable_act_count'], state['retained_act_count'])
+        self.assertEqual(state['latest_stances'], current_state(self.packet)['latest_stances'])
+        self.assertEqual(state['pinned_act_count'], 1)
+        delta = compare_packets(self.packet, ucl.decode_portable(self.packed))
+        self.assertEqual(delta['new_act_count'], 0)
+        self.assertEqual(delta['stance_changes'], [])
+
     def test_size_pressure_can_pack_a_partial_batch_without_hiding_the_tail(self):
         source = make_packet(1010)
         packet = ucl.decode_portable(source)
@@ -62,6 +77,24 @@ class HistoryArchiveTests(unittest.TestCase):
             packed = history_archive.pack(source, packet)
         self.assertEqual(len(packed['archive']['blocks']), 1)
         self.assertEqual(packed['packet']['discourse']['acts'][-1000:], packet['discourse']['acts'][-1000:])
+        self.assertEqual(ucl.decode_portable(packed), packet)
+
+    def test_packing_keeps_the_retraction_and_the_original_ack_readable(self):
+        draft = core.draft_from_packet(self.packet)
+        draft['discourse']['acts'][399]['speaker'] = 'Reviewer'
+        draft['acknowledgements'].append({
+            'id': 'retract400', 'by': 't400', 'target': {'ack': 'condition37'},
+            'action': 'retract', 'qualification': None, 'replacement': None, 'note': '',
+        })
+        packet = core.build(draft, version=core.RETRACTION_VERSION)
+        packed = history_archive.pack(ucl.encode_portable(packet), packet)
+        self.assertIn('archive', packed)
+        with patch.object(history_archive, '_open_block', side_effect=AssertionError('avoid gzip lookup')):
+            state = history_archive.inspect_archive(packed, state=True)
+            excerpt = history_archive.inspect_archive(packed, claim_id='theory', path=[1])
+        self.assertEqual(state['recent_retractions'][-1]['retracts'], 'condition37')
+        self.assertTrue(state['recent_retractions'][-1]['cleared_current_stance'])
+        self.assertTrue({'retract400', 'condition37'} <= {ack['id'] for ack in excerpt['acknowledgements']})
         self.assertEqual(ucl.decode_portable(packed), packet)
 
     def test_cli_continues_past_the_unpacked_act_ceiling(self):

@@ -29,6 +29,10 @@ const VERSIONS=new Map([
   rules:'LQQIye-mjF8wKYpLdvEwzRLHBfVxnzyBPzBnkqi5LZc',
   guide:'OJq6wvk1iM4amrEhQsxzi-xBNt3tkRRL8NJEHnNTaIY',
  }],
+ ['UCL/2.3-SAP1-PORTABLE',{
+  rules:'-ZE0iIhznPDfPkf21ncHm3plHzqarquH51NGnkw8McU',
+  guide:'qotxiYswBk-8n5ZpwaSj_42Q5irV-KW9tzMPlgdNbLw',
+ }],
 ]);
 const ROLE_GUIDE=('FR-1 draft: act/index identifies an exact expression in packet.discourse.acts; '+
 'role is an author-declared purpose (hypothesis, example, counterexample, '+
@@ -121,7 +125,7 @@ function validate(envelope){
  requireThat(keys(envelope,base)||keys(envelope,extended),'envelope fields invalid');
  const pinned=VERSIONS.get(envelope.format);
  requireThat(pinned&&envelope.profile==='portable','unsupported profile');
- requireThat(!archived||['UCL/2.2-SAP1-PORTABLE','UCL/2.2-SAP1-PORTABLE-DRAFT'].includes(envelope.format),'archive requires Portable 2.2');
+ requireThat(!archived||['UCL/2.2-SAP1-PORTABLE','UCL/2.2-SAP1-PORTABLE-DRAFT','UCL/2.3-SAP1-PORTABLE'].includes(envelope.format),'archive requires Portable 2.2 or later');
  const block=envelope.structural_rules;
  requireThat(keys(block,['rules','sha256']),'rules block invalid');
  requireThat(typeof block.sha256==='string'&&block.sha256===hash(RULE_DOMAIN,block.rules),'rules hash mismatch');

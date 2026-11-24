@@ -30,7 +30,8 @@ Open the [Challenge prompt](https://github.com/ulandort/Universal-Cognitive-Lang
 
 ```bash
 python src/ucl.py continue examples/challenge.txt challenge-next.txt < examples/challenge_reply.json
-python src/ucl.py inspect challenge-next.txt --since examples/challenge.txt
+python src/ucl.py inspect challenge-next.txt --state
+python src/ucl.py diff examples/challenge.txt challenge-next.txt
 ```
 
 The Concept Index identifies the added definition, its recent use, and any attributed retirements.
@@ -66,11 +67,12 @@ python src/ucl.py inspect incoming-ucl2.txt
 Now read the trusted/validated embedded guide, definitions, act references and history. **Author** a `contribution.json` appropriate to the current act IDs and scoped acknowledgement. The contribution must be model-authored and verified; do not copy outdated fixed IDs or fields from an unrelated example. Use the optional `examples/contribution_example.json` to inspect shape only, not as a guaranteed template for every message kind.
 
 ```bash
+python src/ucl.py preflight incoming-ucl2.txt < contribution.json
 python src/ucl.py continue incoming-ucl2.txt next-ucl2.txt < contribution.json
 python src/ucl.py check next-ucl2.txt
 ```
 
-Send only `next-ucl2.txt`. The continuation preserves the incoming version. For archived inner packets, the repository also retains `tools/author.py`. An explicit `python src/ucl.py upgrade archived.txt current.txt` creates a separate 2.2 file. Existing 2.1 definition IDs carry forward.
+Send only `next-ucl2.txt`. The continuation preserves the incoming version. For archived inner packets, the repository also retains `tools/author.py`. An explicit `python src/ucl.py upgrade archived.txt current.txt` creates a separate 2.3 file. Existing 2.1 and 2.2 definition IDs carry forward. To retract a stance in a 2.3 packet, use `template packet.txt --speaker NAME --retract ACK_ID` and fill in the response text, explanation, and conclusion.
 
 ## Retrieve an earlier source
 

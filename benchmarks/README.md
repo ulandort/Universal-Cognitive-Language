@@ -1,6 +1,6 @@
 # UCLBench — reproducible benchmarks and conformance tests
 
-UCLBench includes deterministic offline validation and experimental live-model research. **The current public transport is UCL/2.2 Portable**; archived comparison scripts may reproduce experimental profiles, and results from different profiles must not be pooled as if they were the same protocol.
+UCLBench includes deterministic offline validation and experimental live-model research. **The current public transport is UCL/2.3 Portable**; archived comparison scripts may reproduce experimental profiles, and results from different profiles must not be pooled as if they were the same protocol.
 
 ```bash
 python -m unittest discover -s tests -p 'test_release.py' -v

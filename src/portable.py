@@ -22,6 +22,7 @@ CURRENT_FORMAT=ucl.PORTABLE_FORMAT
 FORMAT_BY_VERSION={
     'UCL/1.0': FORMAT, ucl.DEPENDENCY_VERSION: ucl.V21_PORTABLE_FORMAT,
     ucl.INNER_GRAMMAR_VERSION: CURRENT_FORMAT, ucl.LONG_DRAFT_VERSION: ucl.LONG_DRAFT_FORMAT,
+    ucl.LONG_VERSION: ucl.V22_PORTABLE_FORMAT,
 }
 RULE_DOMAIN=b'UCL-SAP1-RULES-2.0\n'
 ENVELOPE_DOMAIN=b'UCL-SAP1-ENVELOPE-2.0\n'
@@ -190,7 +191,35 @@ RULES_BY_FORMAT = {
     FORMAT: RULES,
     ucl.V21_PORTABLE_FORMAT: CURRENT_RULES,
     ucl.LONG_DRAFT_FORMAT: LONG_RULES,
-    CURRENT_FORMAT: {**LONG_RULES, 'status': 'stable-2.2'},
+    ucl.V22_PORTABLE_FORMAT: {**LONG_RULES, 'status': 'stable-2.2'},
+    CURRENT_FORMAT: {
+        **LONG_RULES,
+        'status': 'stable-2.3',
+        'acknowledgement_actions': sorted(sap.ACTIONS | {'retract'}),
+        'reference_rules': {
+            **LONG_RULES['reference_rules'],
+            'ack_target': ('Use {"claim":"existing_claim_id","path":[0]} for a claim stance or '
+                           '{"ack":"EARLIER_ACK_ID"} for a retraction. Use [] for an entire bound claim.'),
+            'ack_target_precedes_author': 'The target claim or stance ACK comes from an earlier act.',
+        },
+        'incremental_authoring_procedure': [
+            'Read the embedded guide and rules, then find the exact claim or earlier stance ACK to address.',
+            'Use fresh act and ACK IDs. Write the response and its UCL explanation and conclusion.',
+            'For retraction, target the original ACK ID and keep its author and claim in the packet.',
+            'Run the local preflight and full validator for this packet version before handing off.',
+            'Rebuild the declaration and integrity mechanically. Preserve the authored meaning and every earlier record.',
+        ],
+        'acknowledgement_retraction': {
+            'example': {'id': 'x6', 'by': 't10', 'action': 'retract', 'target': {'ack': 'x5'},
+                        'qualification': None, 'replacement': None, 'note': 'I retract this stance.'},
+            'rule': (
+                'Use a fresh ACK ID and author act. Target your own stance ACK from an earlier act by ID. '
+                'Use null qualification and replacement. A retraction leaves the original ACK and claim in history. '
+                'It clears only that ACK if it is still the latest stance at its exact scope. '
+                'No earlier stance resumes. A later stance can still be recorded.'
+            ),
+        },
+    },
 }
 
 
@@ -259,7 +288,7 @@ def validate_envelope(env):
     if not isinstance(format_id, str) or format_id not in RULES_BY_FORMAT or env['profile']!='portable':
         raise ValueError('SAP portable: unsupported profile')
     if archived and format_id not in ucl.ARCHIVE_FORMATS:
-        raise ValueError('SAP portable: optional archive requires Portable 2.2')
+        raise ValueError('SAP portable: optional archive requires Portable 2.2 or later')
     block=env['structural_rules']
     if type(block) is not dict or set(block)!={'rules','sha256'}:
         raise ValueError('SAP portable: rules block invalid')

@@ -1,0 +1,77 @@
+name: Publish UCL 2.3.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/publish-ucl23-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ucl-2-3-0-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'ulandort/Universal-Cognitive-Language' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run the release candidate test suites
+        run: |
+          python -m pip install -r requirements-optional.txt
+          python -m unittest discover -s tests
+          python -m unittest discover -s benchmarks -p 'test_*.py'
+      - name: Build and validate the release downloads
+        run: |
+          mkdir -p release-assets
+          python src/ucl.py upgrade examples/quickstart.txt release-assets/ucl-2.3-quickstart.txt
+          python src/ucl.py upgrade examples/challenge.txt release-assets/ucl-2.3-challenge.txt
+          python benchmarks/long_join.py --turns 2000 --pack --out old-archive.txt
+          python src/ucl.py upgrade old-archive.txt release-assets/ucl-2.3-archive.txt
+          cp examples/quickstart_reply.json release-assets/ucl-2.3-quickstart-reply.json
+          cp examples/challenge_reply.json release-assets/ucl-2.3-challenge-reply.json
+          cp examples/challenge_retraction.json release-assets/ucl-2.3-challenge-retraction.json
+          python src/ucl.py continue release-assets/ucl-2.3-quickstart.txt quickstart-next.txt < release-assets/ucl-2.3-quickstart-reply.json
+          python src/ucl.py continue release-assets/ucl-2.3-challenge.txt challenge-next.txt < release-assets/ucl-2.3-challenge-reply.json
+          python src/ucl.py preflight release-assets/ucl-2.3-challenge.txt < release-assets/ucl-2.3-challenge-retraction.json
+          python src/ucl.py continue release-assets/ucl-2.3-challenge.txt release-assets/ucl-2.3-challenge-retracted.txt < release-assets/ucl-2.3-challenge-retraction.json
+          for packet in release-assets/*.txt quickstart-next.txt challenge-next.txt; do
+            python src/ucl.py check "$packet"
+            jq -e '.format == "UCL/2.3-SAP1-PORTABLE"' "$packet"
+            node tools/check_ucl_portable.js "$packet"
+          done
+          python src/ucl.py inspect release-assets/ucl-2.3-archive.txt --act t185 | jq -e '.act.id == "t185" and .whole_packet_audited == false'
+          python src/ucl.py diff release-assets/ucl-2.3-challenge.txt release-assets/ucl-2.3-challenge-retracted.txt \
+            | jq -e '.new_retractions | length == 1 and .[0].retracts == "x4" and .[0].cleared_current_stance and .[0].path == [1]'
+          python src/ucl.py inspect release-assets/ucl-2.3-challenge-retracted.txt --state \
+            | jq -e '.latest_stances | any(.acknowledgement == "x3" and .path == [0])'
+          (cd release-assets && sha256sum ucl-2.3-* > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+      - name: Publish v2.3.0 from the tested main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v2.3.0 --json tagName >/dev/null 2>&1; then
+            test "$(gh api "repos/$GITHUB_REPOSITORY/commits/v2.3.0" --jq .sha)" = "$GITHUB_SHA"
+          else
+            gh release create v2.3.0 release-assets/* \
+              --target "$GITHUB_SHA" \
+              --title "UCL 2.3.0 — Portable" \
+              --notes-file RELEASE_NOTES_2_3.md \
+              --latest
+          fi
+          gh release view v2.3.0 --json tagName,isDraft,isPrerelease,url,assets

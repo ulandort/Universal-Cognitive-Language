@@ -3,9 +3,12 @@
 import core
 
 
-STANCE_ACTIONS = frozenset((
-    'accept', 'reject', 'qualify', 'adopt-for-discussion', 'withhold-judgment', 'withdraw',
-))
+STANCE_ACTIONS = core.RETRACTABLE_ACK_ACTIONS | {'withdraw'}
+STATE_LIMIT = 12
+
+
+def _stance_key(entry):
+    return (entry['speaker'], entry['source_act'], entry['expression_index'], tuple(entry['path']))
 
 
 def _resolve_target(packet, acts_by_id, target):
@@ -22,15 +25,30 @@ def _resolve_target(packet, acts_by_id, target):
     return act_id, index, [], expression
 
 
-def _new_definitions(packet, previous):
+def _ack_scope(ack, acks_by_id):
+    if ack['action'] == 'retract':
+        return acks_by_id[ack['target']['ack']]['target']
+    return ack['target']
+
+
+def _retraction_fields(ack, acks_by_id):
+    if ack['action'] == 'retract':
+        original = acks_by_id[ack['target']['ack']]
+        return {'retracts': original['id'], 'original_ack_act': original['by']}
+    return {}
+
+
+def _new_definitions(packet, previous, *, operation='--since'):
     old_acts = previous['discourse']['acts']
     acts = packet['discourse']['acts']
-    if (packet['guide']['version'] != previous['guide']['version'] or
+    versions = (previous['guide']['version'], packet['guide']['version'])
+    same_semantics = versions[0] == versions[1] or versions == (core.LONG_VERSION, core.RETRACTION_VERSION)
+    if (not same_semantics or
             acts[:len(old_acts)] != old_acts or
             any(packet[field].get(key) != value
                 for field in ('definitions', 'claims', 'domains')
                 for key, value in previous[field].items())):
-        raise ValueError('--since requires an earlier packet from the same retained conversation')
+        raise ValueError(f'{operation} requires an earlier packet from the same retained conversation')
     return sorted(packet['definitions'].keys() - previous['definitions'].keys())
 
 
@@ -38,6 +56,7 @@ def focused_context(packet, *, act_id=None, claim_id=None, path=None):
     """Return a bounded excerpt of a validated packet, with exact source records."""
     acts = packet['discourse']['acts']
     by_id = {act['id']: act for act in acts}
+    acks_by_id = {ack['id']: ack for ack in packet['acknowledgements']}
     definitions = packet['definitions']
     parser = core.Parser(definitions)
     scope = None
@@ -67,7 +86,7 @@ def focused_context(packet, *, act_id=None, claim_id=None, path=None):
             parser.used.add(record['successor'])
 
     def related(ack):
-        target = ack['target']
+        target = _ack_scope(ack, acks_by_id)
         if scope is None and ack['by'] == act_id:
             return True
         if 'claim' in target:
@@ -81,13 +100,13 @@ def focused_context(packet, *, act_id=None, claim_id=None, path=None):
                      key=lambda ack: positions[ack['by']])
     selected = matches
     if len(matches) > 12:
-        substantive = [ack for ack in matches if ack['action'] in STANCE_ACTIONS]
+        substantive = [ack for ack in matches if ack['action'] in STANCE_ACTIONS or ack['action'] == 'retract']
         selected = substantive or matches
         if len(selected) > 12:
             selected = [*selected[:2], *selected[-10:]]
     acknowledgements = []
     for ack in selected:
-        source, index, target_path, expression = _resolve_target(packet, by_id, ack['target'])
+        source, index, target_path, expression = _resolve_target(packet, by_id, _ack_scope(ack, acks_by_id))
         if expression is not None:
             origin = by_id[source]['expressions'][index]
             parser.parse(origin)
@@ -99,6 +118,7 @@ def focused_context(packet, *, act_id=None, claim_id=None, path=None):
         acknowledgements.append({
             **ack, 'speaker': by_id[ack['by']]['speaker'], 'source_act': source,
             'expression_index': index, 'path': target_path, 'expression': expression,
+            **_retraction_fields(ack, acks_by_id),
         })
 
     aliases = parser.used.intersection(definitions)
@@ -123,7 +143,7 @@ def focused_context(packet, *, act_id=None, claim_id=None, path=None):
     }
 
 
-def derive_ledger(packet, previous=None):
+def derive_ledger(packet, previous=None, *, recent_usage_only=False):
     """Project retained records without inferring agreement or question resolution."""
     definitions = packet['definitions']
     acts = packet['discourse']['acts']
@@ -133,15 +153,18 @@ def derive_ledger(packet, previous=None):
 
     latest = {}
     withdrawals = []
+    retractions = []
     recent_acknowledgements = []
     acknowledgements = sorted(packet['acknowledgements'], key=lambda ack: positions[ack['by']])
+    acks_by_id = {ack['id']: ack for ack in acknowledgements}
     for position, ack in enumerate(acknowledgements):
         is_stance = ack['action'] in STANCE_ACTIONS
+        is_retraction = ack['action'] == 'retract'
         is_recent = position >= len(acknowledgements) - 10
-        if not is_stance and not is_recent:
+        if not (is_stance or is_retraction or is_recent):
             continue
         speaker = acts_by_id[ack['by']]['speaker']
-        act_id, index, path, expression = _resolve_target(packet, acts_by_id, ack['target'])
+        act_id, index, path, expression = _resolve_target(packet, acts_by_id, _ack_scope(ack, acks_by_id))
         entry = {
             'speaker': speaker,
             'by': ack['by'],
@@ -154,12 +177,21 @@ def derive_ledger(packet, previous=None):
             'expression': expression,
             'qualification': ack['qualification'],
             'replacement': ack['replacement'],
+            **_retraction_fields(ack, acks_by_id),
         }
         if is_recent:
             recent_acknowledgements.append(entry)
+        if is_retraction:
+            key = _stance_key(entry)
+            clears_stance = latest.get(key, {}).get('acknowledgement') == entry['retracts']
+            entry['cleared_current_stance'] = clears_stance
+            retractions.append(entry)
+            if clears_stance:
+                del latest[key]
+                latest[key] = entry
         if not is_stance:
             continue
-        key = (speaker, act_id, index, tuple(path))
+        key = _stance_key(entry)
         latest.pop(key, None)
         latest[key] = entry
         if ack['action'] == 'withdraw':
@@ -169,13 +201,15 @@ def derive_ledger(packet, previous=None):
     recent_uses = {}
     vocabulary = []
     for position, act in enumerate(acts):
-        parser = core.Parser(definitions)
-        for expression in act['expressions']:
-            parser.parse(expression)
-        for glyph in parser.used.intersection(definitions):
-            first_use.setdefault(glyph, act['id'])
-            if position >= len(acts) - 5:
-                recent_uses.setdefault(glyph, []).append(act['id'])
+        is_recent = position >= len(acts) - 5
+        if is_recent or not recent_usage_only:
+            parser = core.Parser(definitions)
+            for expression in act['expressions']:
+                parser.parse(expression)
+            for glyph in parser.used.intersection(definitions):
+                first_use.setdefault(glyph, act['id'])
+                if is_recent:
+                    recent_uses.setdefault(glyph, []).append(act['id'])
         for entry in act.get('vocabulary', []):
             alias = entry['definition']
             record = {**entry, 'act': act['id'], 'speaker': act['speaker'],
@@ -201,6 +235,7 @@ def derive_ledger(packet, previous=None):
         'omissions': history['omissions'],
         'stances': list(latest.values()),
         'withdrawals': withdrawals,
+        'retractions': retractions,
         'recent_acknowledgements': recent_acknowledgements,
         'vocabulary': vocabulary,
         'symbols': [
@@ -224,6 +259,101 @@ def derive_ledger(packet, previous=None):
     return ledger
 
 
+def compare_packets(previous, packet):
+    """Return a deterministic delta between an earlier packet and its continuation."""
+    added_symbols = _new_definitions(packet, previous, operation='diff')
+    for field in ('acknowledgements', 'revisions', 'viewpoints'):
+        prior = previous[field]
+        if packet[field][:len(prior)] != prior:
+            raise ValueError(f'diff requires the earlier {field} to be preserved in order')
+    before = derive_ledger(previous, recent_usage_only=True)
+    after = derive_ledger(packet, recent_usage_only=True)
+    previous_stances = {_stance_key(entry): entry for entry in before['stances']}
+    stance_changes = []
+    for entry in after['stances']:
+        old = previous_stances.get(_stance_key(entry))
+        meaning_fields = ('action', 'qualification', 'replacement', 'retracts')
+        if old is None or any(old.get(field) != entry.get(field) for field in meaning_fields):
+            stance_changes.append({'before': old, 'after': entry})
+
+    old_issues = set(before['recorded_open_issues'])
+    new_issues = set(after['recorded_open_issues'])
+    new_acts = packet['discourse']['acts'][before['retained_act_count']:]
+    new_acknowledgements = packet['acknowledgements'][len(previous['acknowledgements']):]
+    new_ack_ids = {ack['id'] for ack in new_acknowledgements}
+    return {
+        'diff_version': 1,
+        'previous_packet_sha256': before['packet_sha256'],
+        'packet_sha256': after['packet_sha256'],
+        'new_act_count': len(new_acts),
+        'new_acknowledgement_count': len(new_acknowledgements),
+        'new_definitions': {alias: packet['definitions'][alias] for alias in added_symbols},
+        'new_claims': {claim: packet['claims'][claim] for claim in sorted(packet['claims'].keys() - previous['claims'].keys())},
+        'new_definition_revisions': packet['revisions'][len(previous['revisions']):],
+        'retirements': [entry for entry in after['vocabulary'][len(before['vocabulary']):] if entry['action'] == 'retire'],
+        'stance_changes': stance_changes,
+        'new_retractions': [entry for entry in after['retractions'] if entry['acknowledgement'] in new_ack_ids],
+        'new_questions': [{'act': act['id'], 'targets': act['details']['targets']}
+                          for act in new_acts if act['kind'] == 'question'],
+        'recorded_open_issues_added': sorted(new_issues - old_issues),
+        'recorded_open_issues_removed': sorted(old_issues - new_issues),
+    }
+
+
+def current_state(packet, *, whole_packet_audited=True):
+    """Derive a bounded overview. All listed stance records retain their source IDs."""
+    ledger = derive_ledger(packet, recent_usage_only=True)
+    symbols = ledger['symbols']
+    used = [symbol for symbol in symbols if symbol['used_in_recent_acts']]
+    stances = ledger['stances']
+    def short_stance(record):
+        expression = record['expression']
+        condition = record['qualification']
+        if isinstance(condition, dict):
+            condition = {'expression_preview': condition['expression'][:200],
+                         'explanation_preview': condition['explanation'][:200]}
+        elif isinstance(condition, str):
+            condition = condition[:200]
+        return {
+            **{key: value for key, value in record.items() if key not in ('expression', 'qualification')},
+            'expression_preview': expression[:200] if expression is not None else None,
+            'qualification_preview': condition,
+        }
+
+    return {
+        'view': 'current state excerpt',
+        'whole_packet_audited': whole_packet_audited,
+        'packet_sha256': ledger['packet_sha256'],
+        'current_act': packet['discourse']['current'],
+        'history_status': ledger['history_status'],
+        'retained_act_count': ledger['retained_act_count'],
+        'recorded_summary_preview': ledger['recorded_summary'][:600],
+        'defined_symbol_count': len(symbols),
+        'recently_used_symbol_count': len(used),
+        'recently_used_vocabulary': [
+            {'symbol': record['symbol'], 'definition_id': record['definition_id'],
+             'kind': record['kind'], 'gloss_preview': record['gloss'][:200],
+             'recent_expression_acts': record['recent_expression_acts']}
+            for record in used[:STATE_LIMIT]
+        ],
+        'recorded_open_issue_count': len(ledger['recorded_open_issues']),
+        'recorded_open_issue_previews': [issue[:200] for issue in ledger['recorded_open_issues'][:STATE_LIMIT]],
+        'readable_question_count': len(ledger['questions']),
+        'recent_readable_questions': [
+            {'act': record['act'], 'speaker': record['speaker'],
+             'target_count': len(record['targets']),
+             'target_previews': [target[:200] for target in record['targets'][:3]]}
+            for record in ledger['questions'][-5:]
+        ],
+        'latest_stance_count': len(stances),
+        'latest_stances': [short_stance(record) for record in stances[-STATE_LIMIT:]],
+        'retraction_count': len(ledger['retractions']),
+        'recent_retractions': [short_stance(record) for record in ledger['retractions'][-5:]],
+        'retirement_count': sum(record['action'] == 'retire' for record in ledger['vocabulary']),
+        'recent_retirements': [record for record in ledger['vocabulary'] if record['action'] == 'retire'][-5:],
+    }
+
+
 def _display(value, limit=300):
     # Escape terminal controls and keep each packet-supplied value on one line.
     prefix = value[:limit]
@@ -245,6 +375,8 @@ def _format_acknowledgement(entry):
     qualification = entry['qualification']
     condition = qualification['expression'] if isinstance(qualification, dict) else qualification
     suffix = f' | condition: {_display(condition)}' if condition else ''
+    if 'retracts' in entry:
+        suffix += f' | retracts ACK {_display(entry["retracts"])}'
     if entry['replacement'] is not None:
         suffix += f' | proposed replacement: {_display(entry["replacement"])}'
     return (f'  {_display(entry["speaker"])} ({_display(entry["by"])}) {_display(entry["action"])}'
@@ -312,7 +444,11 @@ def describe_packet(packet, label, previous=None):
     if not ledger['withdrawals']:
         lines.append('  None recorded')
 
-    displayed_acks = {entry['acknowledgement'] for entry in ledger['stances'] + ledger['withdrawals']}
+    if ledger['retractions']:
+        lines.extend(('', 'Recorded ACK retractions'))
+        lines.extend(_format_acknowledgement(entry) for entry in ledger['retractions'])
+    displayed_acks = {entry['acknowledgement']
+                      for key in ('stances', 'withdrawals', 'retractions') for entry in ledger[key]}
     other_acks = [entry for entry in ledger['recent_acknowledgements']
                   if entry['acknowledgement'] not in displayed_acks]
     if other_acks:

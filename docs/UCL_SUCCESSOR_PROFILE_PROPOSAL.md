@@ -8,6 +8,15 @@ Start with the [local state ledger](UCL_STATE_LEDGER.md). A future Portable revi
 
 Append-only applies to the contribution records. Export regenerates the changing header and ledger, and may rewrite the file. Validate that the prior records form an unchanged prefix before exporting a continuation. If a writer uses a cached ledger, verify it against a complete replay before delivery. An exporter operating on a shared destination should check the expected head before replacing the file.
 
+## Conversation commitments and concept relationships
+
+- A temporary commitment should name its speaker, an exact claim and path, and the act that starts its discussion scope. A conditional commitment should carry a typed antecedent and take effect only after that speaker records its activation. The validator checks the references and types. Participants still decide whether the condition holds.
+- [Portable 2.3](UCL_2_3_SPECIFICATION.md) implements exact ACK retraction. A future join receipt could bind to the exact packet digest and record the participant's stated readiness.
+- A proposed refinement should link two immutable definition IDs and name its proposing act. Both definitions remain resolvable. A participant can explicitly adopt a refinement without changing how earlier expressions are interpreted.
+- Parallel replies can name a common parent and exact target paths. A comparison can show divergent replies. A reconciliation act should cite both heads and make choices about conflicting bindings or commitments explicit.
+
+The existing gzip index, exact lookup and `--keep-act` support a working set inside one file. Measure how often newcomers need older blocks before defining another recency tier. Plaintext audience annotations can guide reading and are visible to every recipient. Actual access control would require encryption and key management.
+
 ## Rule modules
 
 Use a new profile identifier with a pinned interpretation core and a versioned extension map. Each extension declares its identifier, version, criticality, and value. An unknown critical extension makes the message uninterpretable under this profile. An unknown advisory extension can be skipped for interpretation, but its original value remains part of the signed message and must survive a forwarding round trip. Updates to examples, preflight advice, and semantic-review guidance should not require a grammar revision.

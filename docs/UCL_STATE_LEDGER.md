@@ -1,6 +1,16 @@
 # UCL state ledger
 
-The ledger is a deterministic read view of a validated UCL Portable packet. It can be printed by `python src/ucl.py inspect packet.txt` or produced as JSON by `python src/ucl.py inspect packet.txt --json`. Both commands validate the entire Portable packet first. The JSON is inspection output. Continue the conversation using the original Portable packet.
+The ledger is a deterministic read view of a validated UCL Portable packet. It can be printed by `python src/ucl.py inspect packet.txt` or produced as JSON by `python src/ucl.py inspect packet.txt --json` for an unpacked packet. Without `--since`, packed files use a readable archive overview. Continue the conversation using the original Portable packet.
+
+## Current State excerpt
+
+`python src/ucl.py inspect packet.txt --state` emits a compact JSON excerpt. It includes up to 12 recently used definitions with their IDs, up to 12 recorded issue previews, five recent question acts, up to 12 latest stance records, and up to five speaker retirements. Preview fields may shorten prose or expressions. Follow a source act ID with `inspect --act` or a claim and path with `inspect --claim --path` for exact text. A recorded question stays visible even when someone has replied. The current file still carries the full definitions and retained records.
+
+For packed files, the excerpt verifies the envelope checksum and archive layout without inflating blocks. It reports visible and total act counts separately, and sets `whole_packet_audited` to false. Question counts cover visible acts. Gzip packing keeps stance authors, acknowledgement targets for substantive stances, and named claim sources visible. Run `check` for a full audit.
+
+## Packet diff
+
+`python src/ucl.py diff earlier.txt later.txt` validates both packets and compares their retained records. It requires the same grammar and preserves earlier acts, definition IDs, domains, claim bindings, acknowledgements, revisions and viewpoints. It reports new definitions, claim bindings, retirements, questions, revision records, and changes in author-recorded issues. Stance changes are based on the action, qualification and replacement at the same speaker and exact claim scope. A subsequent receipt or identical restatement does not count as a stance change. Repacking the same retained conversation leaves the changes empty. A diff checks continuity between the supplied packets, whose speaker labels are unauthenticated.
 
 ## JSON fields
 
@@ -13,6 +23,7 @@ The ledger is a deterministic read view of a validated UCL Portable packet. It c
 | `questions` | All retained question acts in act order, with `act`, `speaker`, and verbatim `targets` |
 | `stances` | Latest recorded stance per speaker and exact target, ordered by the selected acknowledgements' chronology |
 | `withdrawals` | Every retained withdrawal, in acknowledgement chronology |
+| `retractions` | Every retained 2.3 stance retraction, including the original ACK ID and author act and whether it cleared the stance at that point |
 | `recent_acknowledgements` | Last ten acknowledgements in acknowledgement chronology, including procedural actions |
 | `symbols` | Defined symbols in code point order, including definitions absent from recent expressions |
 | `comparison` | Present with `--since earlier.txt`. Includes `previous_packet_sha256` and the code-point-sorted `added_symbols` |
@@ -29,7 +40,8 @@ Each symbol entry contains `symbol`, `definition_id`, `kind`, `gloss`, `first_re
 1. Read acknowledgements in the order of their author acts. Break ties within an act using their order in the packet's acknowledgement array.
 2. Resolve each target to a retained source act, an expression index or null for a whole act, and a zero-based subtree path. A claim binding with an empty path and a direct reference to the same expression name the same target. Whole acts, whole expressions, and subtrees remain distinct.
 3. For each pair of speaker label and resolved target, retain the last `accept`, `reject`, `qualify`, `adopt-for-discussion`, `withhold-judgment`, or `withdraw`. Receipt, understanding, clarification, revision proposals, and custom acknowledgement actions stay in the record without replacing such a stance.
-4. Record every withdrawal separately. A withdrawal concerns its exact target and author. The ledger does not apply it to other speakers, related branches, or the content of the original act.
+4. Record every withdrawal separately. A withdrawal concerns its exact target and author.
+5. Record every retraction separately. If it names the latest stance at that speaker and exact target, replace the current entry with the retraction marker. Earlier stances stay in history and do not resume. A retraction of a superseded ACK leaves the newer stance in effect. The diff lists new retractions even when the current stance stays the same.
 
 This projection records attributed statements without deciding their truth. Portable speaker labels are unauthenticated. A response, revision, or reference to a question does not establish that it was resolved. Question acts and author-recorded open issues are shown separately. Omitted acts cannot supply evidence about earlier stances.
 
