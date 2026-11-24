@@ -89,6 +89,55 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertEqual(packet['definitions'], self.packet['definitions'])
             self.assertEqual(incoming.read_bytes(), core.canon(wire))
 
+    def test_challenge_templates_preflight_and_state_diff(self):
+        challenge = ROOT / 'examples/challenge.txt'
+        fixture = json.loads((ROOT / 'examples/challenge_reply.json').read_text())
+        cli = [sys.executable, str(ROOT / 'src/ucl.py')]
+
+        def run(*args, draft=None, check=True):
+            return subprocess.run([*cli, *map(str, args)], input=json.dumps(draft) if draft else None,
+                                  text=True, capture_output=True, check=check, timeout=20)
+
+        args = ('template', challenge, '--speaker', 'New participant', '--claim', 'theory', '--path', '1')
+        stance = json.loads(run(*args).stdout)
+        self.assertNotIn('new_definitions', stance)
+        self.assertEqual(stance['acknowledgements'][0]['target'], {'claim': 'theory', 'path': [1]})
+        self.assertEqual(stance['act']['references'], ['t8', 't1'])
+        concept = json.loads(run(*args, '--concept', '$control_sensitive', '--domain', 'D').stdout)
+        self.assertEqual(concept['new_definitions']['$control_sensitive']['args'], ['D'])
+        self.assertNotIn('declaration', concept)
+        self.assertIn('PREFLIGHT PASSED', run('preflight', challenge, draft=fixture).stdout)
+
+        for invalid, message in (
+            ({**fixture, 'declaration': ''}, 'generates the declaration layer'),
+            ({**fixture, 'new_definitions': {'$control_sensitive': {'definition': {}}}}, 'bare objects'),
+            ({**fixture, 'acknowledgements': [{**fixture['acknowledgements'][0],
+                'target': {'claim': 'theory', 'path': ['1']}}]}, 'subclaim path invalid'),
+            ({**fixture, 'acknowledgements': [{**fixture['acknowledgements'][0],
+                'qualification': {'expression': '~[B][A]'}}]}, 'invalid acknowledgement qualification'),
+        ):
+            with self.subTest(message=message):
+                rejected = run('preflight', challenge, draft=invalid, check=False)
+                self.assertNotEqual(rejected.returncode, 0)
+                self.assertIn(message, rejected.stderr)
+
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'next.txt'
+            run('continue', challenge, output, draft=fixture)
+            state = json.loads(run('inspect', output, '--state').stdout)
+            self.assertTrue(state['whole_packet_audited'])
+            self.assertEqual(state['current_act'], 't9')
+            self.assertEqual(state['latest_stances'][-1]['source_act'], 't1')
+            delta_text = run('diff', challenge, output).stdout
+            self.assertEqual(delta_text, run('diff', challenge, output).stdout)
+            delta = json.loads(delta_text)
+            self.assertEqual(delta['new_act_count'], 1)
+            self.assertEqual(list(delta['new_definitions']), ['$control_sensitive'])
+            self.assertEqual(delta['stance_changes'][0]['after']['action'], 'qualify')
+            self.assertEqual(delta['stance_changes'][0]['after']['path'], [1])
+            rejected = run('diff', output, challenge, check=False)
+            self.assertIn('same retained conversation', rejected.stderr)
+
     def test_portable_cli_rejects_ambiguous_and_oversized_json(self):
         with tempfile.TemporaryDirectory() as directory:
             packet = Path(directory) / 'packet.txt'

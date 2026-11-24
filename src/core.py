@@ -428,12 +428,12 @@ def _validate_vocabulary(entries, expressions, defs, parser):
         seen.add(key)
 
 
-def validate_discourse(discourse,defs,parser, *, version=VERSION, archived=False):
+def validate_discourse(discourse,defs,parser, *, version=VERSION, archived=False, prior_acts=()):
     need(isinstance(discourse,dict) and set(discourse)=={'current','acts'},'discourse schema')
     acts=discourse['acts']
     limit = MAX_LONG_ACTS if version in LONG_VERSIONS else 100
-    need(isinstance(acts,list) and len(acts)>=1 and (archived and version in LONG_VERSIONS or len(acts)<=limit),'discourse act cap')
-    seen={}; allowed_ans={'open','yes-no','multiple-choice'}
+    need(isinstance(acts,list) and len(acts)>=1 and (archived and version in LONG_VERSIONS or len(prior_acts)+len(acts)<=limit),'discourse act cap')
+    seen={act['id']:act['kind'] for act in prior_acts}; allowed_ans={'open','yes-no','multiple-choice'}
     def expression(s):
         need(isinstance(s,str) and 0<len(s)<=16000,'discourse expression length')
         expr=parser.parse(s)

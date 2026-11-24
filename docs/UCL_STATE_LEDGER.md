@@ -1,6 +1,16 @@
 # UCL state ledger
 
-The ledger is a deterministic read view of a validated UCL Portable packet. It can be printed by `python src/ucl.py inspect packet.txt` or produced as JSON by `python src/ucl.py inspect packet.txt --json`. Both commands validate the entire Portable packet first. The JSON is inspection output. Continue the conversation using the original Portable packet.
+The ledger is a deterministic read view of a validated UCL Portable packet. It can be printed by `python src/ucl.py inspect packet.txt` or produced as JSON by `python src/ucl.py inspect packet.txt --json` for an unpacked packet. Without `--since`, packed files use a readable archive overview. Continue the conversation using the original Portable packet.
+
+## Current State excerpt
+
+`python src/ucl.py inspect packet.txt --state` emits a compact JSON excerpt. It includes up to 12 recently used definitions with their IDs, up to 12 recorded issue previews, five recent question acts, up to 12 latest stance records, and up to five speaker retirements. Preview fields may shorten prose or expressions. Follow a source act ID with `inspect --act` or a claim and path with `inspect --claim --path` for exact text. A recorded question stays visible even when someone has replied. The current file still carries the full definitions and retained records.
+
+For packed files, the excerpt verifies the envelope checksum and archive layout without inflating blocks. It reports visible and total act counts separately, and sets `whole_packet_audited` to false. Question counts cover visible acts. Gzip packing keeps stance authors, acknowledgement targets for substantive stances, and named claim sources visible. Run `check` for a full audit.
+
+## Packet diff
+
+`python src/ucl.py diff earlier.txt later.txt` validates both packets and compares their retained records. It requires the same grammar and preserves earlier acts, definition IDs, domains, claim bindings, acknowledgements, revisions and viewpoints. It reports new definitions, claim bindings, retirements, questions, revision records, and changes in author-recorded issues. Stance changes are based on the action, qualification and replacement at the same speaker and exact claim scope. A subsequent receipt or identical restatement does not count as a stance change. Repacking the same retained conversation leaves the changes empty. A diff checks continuity between the supplied packets, whose speaker labels are unauthenticated.
 
 ## JSON fields
 

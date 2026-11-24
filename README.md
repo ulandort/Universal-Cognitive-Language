@@ -39,7 +39,8 @@ Take the [eight-turn Portable packet](examples/challenge.txt) from a fictional d
 ```bash
 python src/ucl.py inspect examples/challenge.txt
 python src/ucl.py continue examples/challenge.txt challenge-next.txt < examples/challenge_reply.json
-python src/ucl.py inspect challenge-next.txt
+python src/ucl.py inspect challenge-next.txt --state
+python src/ucl.py diff examples/challenge.txt challenge-next.txt
 ```
 
 The [worked contribution](examples/challenge_reply.json) introduces predicate `$control_sensitive` with argument sort `D`. Inspect the result to see its first use in `t9`, an attributed counterexample, and the new acknowledgement scope `theory`, path `[1]`. The prior discussion remains in the output for the next participant.
@@ -105,7 +106,7 @@ Run the reference validator to confirm that an incoming packet uses the pinned g
 
 See the [2.2 specification](docs/UCL_2_2_SPECIFICATION.md#fingerprints) for the current pins. The Python CLI rejects duplicate JSON keys and caps Portable input at 8,000,000 bytes and standalone drafts at 1,000,000 bytes. The `decode` command extracts the inner packet. Use `continue` to carry existing envelope-level formula roles forward.
 
-Use `python src/ucl.py inspect packet.txt` to read the conversation state first. The Concept Index shows recent symbol use and speaker-scoped retirements. Add `--since earlier.txt` to see which definitions were added between two retained packets. The state ledger shows each speaker's latest recorded stance on the exact claim branch, withdrawals, and recorded open issues. Add `--json` for the [derived state ledger](docs/UCL_STATE_LEDGER.md).
+Use `python src/ucl.py inspect packet.txt --state` for a compact JSON view of recent vocabulary, recorded open issues, recent questions, and each listed stance's author and exact claim branch. On packed files this view reads the visible records without inflating the archive. Use `python src/ucl.py diff earlier.txt packet.txt` to compare two validated packets and see what changed. Full inspection includes the Concept Index with speaker-scoped retirements. See the [state and diff reference](docs/UCL_STATE_LEDGER.md).
 
 Portable is the single supported interchange format. Use `inspect packet.txt --act t37` or `inspect packet.txt --claim theory --path 1` to retrieve exact source records as JSON. The [long-conversation guide](docs/UCL_LONG_CONVERSATIONS.md) covers the 1,000-act test and optional gzip blocks, which keep older history inside the same file. The [successor notes](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) cover signing and continuity.
 
@@ -142,6 +143,17 @@ python src/ucl.py check next-message.txt
 ```
 
 For your own conversation, ask your AI to draft a JSON contribution using the template and guide embedded in the packet. The command checks the incoming packet, appends the authored contribution, and validates the result locally before writing it. If validation fails, revise the draft using the reported error. Send only `next-message.txt` to the next recipient. The optional command comes with this repository and works offline.
+
+Generate a starter with the response orientation, exact claim path and unused IDs filled in. The default starter omits new definitions. Add `--concept '$control_sensitive' --domain D` to this example to draft a predicate over domain `D`.
+
+```sh
+python src/ucl.py template examples/challenge.txt --speaker "New participant" --claim theory --path 1 > contribution.json
+# Fill in act.text, explanation and conclusion. Set the stance and ACK action you intend.
+python src/ucl.py preflight examples/challenge.txt < contribution.json
+python src/ucl.py continue examples/challenge.txt next.txt < contribution.json
+```
+
+For a new concept, fill in its gloss and use the alias in an authored expression. A typed `qualify` ACK takes `{"expression":"~[$control_sensitive][A]","explanation":"Compare it with the matched control."}` as its qualification. For a simple `accept` or `received` ACK, use `null`. Claim paths are arrays of integers in the draft, such as `[1]`. The declaration layer is generated from the symbols you use. The [complete Challenge reply](examples/challenge_reply.json) shows a filled-in contribution. Preflight is also run by `continue`, which performs full validation before it writes a packet.
 
 ## Compress a long conversation
 

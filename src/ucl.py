@@ -44,23 +44,12 @@ def check_portable(envelope):
 
 def continue_portable(envelope, contribution):
     """Append an authored draft to a verified Portable envelope."""
-    from authoring import author
+    from authoring import author, preflight
     import portable
 
     parent = decode_portable(envelope)
     archived = 'archive' in envelope
-    if not isinstance(contribution, dict):
-        raise ValueError('draft must be a JSON object')
-    required = {'act', 'orientation', 'explanation', 'conclusion'}
-    missing = required - contribution.keys()
-    if missing:
-        raise ValueError('draft is missing fields: ' + ', '.join(sorted(missing)))
-    claims = contribution.get('claims', {})
-    if not isinstance(claims, dict):
-        raise ValueError('draft.claims must be an object of new claim bindings')
-    if overwritten := parent['claims'].keys() & claims.keys():
-        raise ValueError('draft.claims cannot replace existing bindings: ' + ', '.join(sorted(overwritten)))
-
+    preflight(parent, contribution, archived=archived)
     packet = author(parent, contribution, archived=archived)
     result = portable.encode(packet, formula_roles=envelope.get('formula_roles'), archived=archived)
     if archived:
@@ -98,18 +87,32 @@ def _write_handoff(source, output, result):
     print('VALID ' + portable.label(result['format']), output)
 
 
+def _read_contribution():
+    if sys.stdin.isatty():
+        print('Paste the JSON contribution, then press Ctrl-D (Ctrl-Z then Enter on Windows).', file=sys.stderr)
+    try:
+        return _core.read_json(sys.stdin.buffer)
+    except ValueError as exc:
+        raise ValueError(f'draft on stdin: {exc}') from exc
+
+
+def _portable_file(path):
+    return _core.read_json_file(path, limit=MAX_PORTABLE_JSON)
+
+
+def _claim_path(value):
+    if value == 'root':
+        return []
+    if re.fullmatch(r'(?:[0-9]|1[0-5])(?:\.(?:[0-9]|1[0-5])){0,31}', value):
+        return [int(index) for index in value.split('.')]
+    raise argparse.ArgumentTypeError('use up to 32 dot-separated indices from 0 to 15, or root')
+
+
 def _continue_cli(args):
     if len(args) != 4:
         raise ValueError('Usage: python src/ucl.py continue incoming.txt next.txt < contribution.json')
     source, output = map(Path, args[2:])
-    envelope = _core.read_json_file(source, limit=MAX_PORTABLE_JSON)
-    if sys.stdin.isatty():
-        print('Paste the JSON contribution, then press Ctrl-D (Ctrl-Z then Enter on Windows).', file=sys.stderr)
-    try:
-        contribution = _core.read_json(sys.stdin.buffer)
-    except ValueError as exc:
-        raise ValueError(f'draft on stdin: {exc}') from exc
-    _write_handoff(source, output, continue_portable(envelope, contribution))
+    _write_handoff(source, output, continue_portable(_portable_file(source), _read_contribution()))
 
 def main(args):
     """Dispatch current and archived Portable packets by their version markers."""
@@ -118,7 +121,7 @@ def main(args):
         _continue_cli(args)
         return
     if len(args)<3:
-        raise ValueError('Usage: python src/ucl.py check | encode | decode | pack | continue | inspect | upgrade | build/canonicalize/draft ...')
+        raise ValueError('Usage: python src/ucl.py check | encode | decode | pack | continue | preflight | template | inspect | diff | upgrade | build/canonicalize/draft ...')
     command=args[1]
     if command=='check' and len(args)==3:
         data=_core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
@@ -126,8 +129,37 @@ def main(args):
             print(json.dumps(check_portable(data),indent=2))
         else:
             print(json.dumps(_core.check(data),indent=2))
+    elif command=='preflight' and len(args)==3:
+        from authoring import preflight
+        envelope = _portable_file(args[2])
+        preflight(decode_portable(envelope), _read_contribution(), archived='archive' in envelope)
+        print('PREFLIGHT PASSED. Run continue for full validation and handoff.')
+    elif command=='template':
+        from authoring import reply_template
+        parser = argparse.ArgumentParser(prog='python src/ucl.py template')
+        parser.add_argument('packet')
+        parser.add_argument('--speaker', required=True)
+        parser.add_argument('--claim', required=True)
+        parser.add_argument('--path', type=_claim_path, default=[])
+        parser.add_argument('--concept', help='unused alias for a new predicate definition')
+        parser.add_argument('--domain', help='existing domain for a unary predicate')
+        options = parser.parse_args(args[2:])
+        if options.domain is not None and options.concept is None:
+            parser.error('--domain requires --concept')
+        draft = reply_template(decode_portable(_portable_file(options.packet)), options.speaker,
+                               options.claim, options.path, alias=options.concept, domain=options.domain)
+        print(json.dumps(draft, indent=2, ensure_ascii=False))
+    elif command=='diff':
+        from inspection import compare_packets
+        parser = argparse.ArgumentParser(prog='python src/ucl.py diff')
+        parser.add_argument('earlier')
+        parser.add_argument('later')
+        options = parser.parse_args(args[2:])
+        delta = compare_packets(decode_portable(_portable_file(options.earlier)),
+                                decode_portable(_portable_file(options.later)))
+        print(json.dumps(delta, indent=2, sort_keys=True))
     elif command=='inspect':
-        from inspection import derive_ledger, describe_packet, focused_context
+        from inspection import current_state, derive_ledger, describe_packet, focused_context
 
         parser = argparse.ArgumentParser(prog='python src/ucl.py inspect')
         parser.add_argument('packet', help='Portable packet to inspect')
@@ -136,24 +168,18 @@ def main(args):
         scope = parser.add_mutually_exclusive_group()
         scope.add_argument('--act', metavar='ACT_ID', help='read one retained act as a JSON excerpt')
         scope.add_argument('--claim', metavar='CLAIM_ID', help='read one claim and its sources as a JSON excerpt')
-        parser.add_argument('--path', help='exact claim branch, such as 1 or 0.1, or root for the whole expression')
+        scope.add_argument('--state', action='store_true', help='read a compact state overview as JSON')
+        parser.add_argument('--path', type=_claim_path, help='exact claim branch, such as 1 or 0.1, or root')
         options = parser.parse_args(args[2:])
         if options.path is not None and options.claim is None:
             parser.error('--path requires --claim')
-        if options.since and (options.act is not None or options.claim is not None):
-            parser.error('--since applies to the full ledger')
-        path = None
-        if options.path is not None:
-            if options.path == 'root':
-                path = []
-            elif re.fullmatch(r'(?:[0-9]|1[0-5])(?:\.(?:[0-9]|1[0-5])){0,31}', options.path):
-                path = [int(index) for index in options.path.split('.')]
-            else:
-                parser.error('--path needs up to 32 dot-separated indices from 0 to 15, or root')
-        envelope = _core.read_json_file(options.packet, limit=MAX_PORTABLE_JSON)
+        if options.since and (options.act is not None or options.claim is not None or options.state):
+            parser.error('--since applies to the full ledger. Use diff for a standalone delta.')
+        envelope = _portable_file(options.packet)
         if 'archive' in envelope and not options.since:
             from history_archive import inspect_archive
-            excerpt = inspect_archive(envelope, act_id=options.act, claim_id=options.claim, path=path)
+            excerpt = inspect_archive(envelope, act_id=options.act, claim_id=options.claim,
+                                      path=options.path, state=options.state)
             print(json.dumps(excerpt, indent=2))
             return
         packet = decode_portable(envelope)
@@ -161,7 +187,9 @@ def main(args):
         if options.since:
             previous = decode_portable(_core.read_json_file(options.since, limit=MAX_PORTABLE_JSON))
         if options.act is not None or options.claim is not None:
-            print(json.dumps(focused_context(packet, act_id=options.act, claim_id=options.claim, path=path), indent=2))
+            print(json.dumps(focused_context(packet, act_id=options.act, claim_id=options.claim, path=options.path), indent=2))
+        elif options.state:
+            print(json.dumps(current_state(packet), indent=2))
         elif options.json:
             print(json.dumps(derive_ledger(packet, previous), indent=2))
         else:
