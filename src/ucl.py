@@ -160,12 +160,14 @@ def main(args):
         parser = argparse.ArgumentParser(prog='python src/ucl.py diff')
         parser.add_argument('earlier')
         parser.add_argument('later')
+        parser.add_argument('--compact', action='store_true', help='summarize changes for a continuation prompt')
         options = parser.parse_args(args[2:])
         delta = compare_packets(decode_portable(_portable_file(options.earlier)),
-                                decode_portable(_portable_file(options.later)))
-        print(json.dumps(delta, indent=2, sort_keys=True))
+                                decode_portable(_portable_file(options.later)), compact=options.compact)
+        indent = None if options.compact else 2
+        print(json.dumps(delta, indent=indent, sort_keys=True))
     elif command=='inspect':
-        from inspection import current_state, derive_ledger, describe_packet, focused_context
+        from inspection import current_state, derive_ledger, describe_packet, focused_context, handoff_briefing
 
         parser = argparse.ArgumentParser(prog='python src/ucl.py inspect')
         parser.add_argument('packet', help='Portable packet to inspect')
@@ -175,13 +177,30 @@ def main(args):
         scope.add_argument('--act', metavar='ACT_ID', help='read one retained act as a JSON excerpt')
         scope.add_argument('--claim', metavar='CLAIM_ID', help='read one claim and its sources as a JSON excerpt')
         scope.add_argument('--state', action='store_true', help='read a compact state overview as JSON')
+        parser.add_argument('--handoff', action='store_true', help='assemble a newcomer briefing as JSON')
+        parser.add_argument('--include-act', metavar='ACT_ID', action='append', default=[],
+                            help='include an exact act in a newcomer briefing; repeat for more acts')
         parser.add_argument('--path', type=_claim_path, help='exact claim branch, such as 1 or 0.1, or root')
         options = parser.parse_args(args[2:])
         if options.path is not None and options.claim is None:
             parser.error('--path requires --claim')
+        if options.include_act and not options.handoff:
+            parser.error('--include-act requires --handoff')
+        if options.handoff and (options.since or options.act is not None or options.state):
+            parser.error('--handoff can be combined with --claim, --path and --include-act')
         if options.since and (options.act is not None or options.claim is not None or options.state):
             parser.error('--since applies to the full ledger. Use diff for a standalone delta.')
         envelope = _portable_file(options.packet)
+        if options.handoff:
+            selection = dict(claim_id=options.claim, path=options.path, act_ids=options.include_act)
+            if 'archive' in envelope:
+                from history_archive import inspect_archive_handoff
+                briefing = inspect_archive_handoff(envelope, **selection)
+            else:
+                packet = decode_portable(envelope)
+                briefing = handoff_briefing(packet, wire_format=envelope['format'], **selection)
+            print(json.dumps(briefing, indent=2))
+            return
         if 'archive' in envelope and not options.since:
             from history_archive import inspect_archive
             excerpt = inspect_archive(envelope, act_id=options.act, claim_id=options.claim,

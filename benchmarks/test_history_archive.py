@@ -54,6 +54,23 @@ class HistoryArchiveTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, diagnostic):
                     ucl.decode_portable(altered)
 
+    def test_handoff_opens_each_requested_block_only_once(self):
+        with patch.object(history_archive, '_open_block', wraps=history_archive._open_block) as opened:
+            brief = history_archive.inspect_archive_handoff(self.packed, claim_id='theory', path=[1])
+            self.assertEqual(opened.call_count, 0)
+            self.assertEqual(brief['archive_blocks_opened'], 0)
+            brief = history_archive.inspect_archive_handoff(
+                self.packed, claim_id='theory', path=[1], act_ids=['t1850', 't1851', 't1850'],
+            )
+            self.assertEqual(opened.call_count, 1)
+        self.assertFalse(brief['whole_packet_audited'])
+        self.assertEqual(brief['archive_blocks_opened'], 1)
+        self.assertEqual(brief['current_state']['retained_act_count'], 4096)
+        self.assertEqual(brief['claim']['scope']['path'], [1])
+        self.assertTrue(any(ack['by'] == 't37' for ack in brief['claim']['acknowledgements']))
+        self.assertEqual([entry['act'] for entry in brief['requested_acts']],
+                         self.packet['discourse']['acts'][1849:1851])
+
     def test_current_state_preserves_stances_without_opening_archive_blocks(self):
         from inspection import compare_packets, current_state
 

@@ -110,6 +110,15 @@ See the [2.3 specification](docs/UCL_2_3_SPECIFICATION.md#fingerprints) for the 
 
 Use `python src/ucl.py inspect packet.txt --state` for a compact JSON view of recent vocabulary, recorded open issues, recent questions, and each listed stance's author and exact claim branch. On packed files this view reads the visible records without inflating the archive. Use `python src/ucl.py diff earlier.txt packet.txt` to compare two validated packets and see what changed. Full inspection includes the Concept Index with speaker-scoped retirements. See the [state and diff reference](docs/UCL_STATE_LEDGER.md).
 
+From the current checkout, generate a briefing for a new participant or a compact diff for someone returning to the conversation.
+
+```sh
+python src/ucl.py inspect packed.txt --handoff --claim theory --path 1 --include-act t185
+python src/ucl.py diff earlier.txt later.txt --compact
+```
+
+The briefing combines Current State with exact selected sources. Continue from the original Portable file. The [packed handoff exercise](docs/UCL_HANDOFF_TRIAL.md) shows what to give a first-time reader and what to check in their reply.
+
 Portable is the single supported interchange format. Use `inspect packet.txt --act t37` or `inspect packet.txt --claim theory --path 1` to retrieve exact source records as JSON. The [long-conversation guide](docs/UCL_LONG_CONVERSATIONS.md) covers the 1,000-act test and optional gzip blocks, which keep older history inside the same file. The [successor notes](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) cover signing and continuity.
 
 ## Getting started

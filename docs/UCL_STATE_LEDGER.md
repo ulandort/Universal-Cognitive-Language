@@ -14,6 +14,18 @@ For packed files, the excerpt verifies the envelope checksum and archive layout 
 
 `python src/ucl.py diff earlier.txt later.txt` validates both packets and compares their retained records. It requires the same grammar and preserves earlier acts, definition IDs, domains, claim bindings, acknowledgements, revisions and viewpoints. It reports new definitions, claim bindings, retirements, questions, revision records, and changes in author-recorded issues. Stance changes are based on the action, qualification and replacement at the same speaker and exact claim scope. A subsequent receipt or identical restatement does not count as a stance change. Repacking the same retained conversation leaves the changes empty. A diff checks continuity between the supplied packets, whose speaker labels are unauthenticated.
 
+Add `--compact` for a paste-ready JSON line with both packet digests, full change counts, and up to eight entries each for new acts, stance changes, retractions, and definitions. Acts and stance changes carry their source IDs. The output shows the latest eight in record order and the first eight new definitions in alias order. Gloss and qualification previews use up to 160 characters. Use the full diff if you need complete records.
+
+## Newcomer briefing
+
+```sh
+python src/ucl.py inspect packet.txt --handoff --claim theory --path 1 --include-act t185
+```
+
+The briefing includes Current State, the exact latest act, the selected claim branch and its source, and the definitions and domain declarations used by the included excerpts. Repeat `--include-act` to retrieve more acts in the requested order. Use `--path root` for the full claim with ACKs targeting that root. Omit `--path` for the full claim and ACKs from all its branches. The briefing includes the source packet digest, match counts for the selected acknowledgement excerpts, and the archive blocks opened. Packed packets open each requested block once. Run `check` to audit the full packed history.
+
+Use the original Portable file with the recipient's validator and authoring tools. The briefing is an excerpt for reading and prompting. Try the [outside-reader exercise](UCL_HANDOFF_TRIAL.md) to see whether a new participant can continue from it.
+
 ## JSON fields
 
 | Field | Meaning |
