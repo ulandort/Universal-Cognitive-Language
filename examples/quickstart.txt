@@ -1,0 +1,380 @@
+{
+  "checksum": "0symYs6ybN33zzf2KRtIUUuXIaPIvLLdcCxB3Jdvkmo",
+  "format": "UCL/2.0-SAP1-PORTABLE",
+  "packet": {
+    "acknowledgements": [
+      {
+        "action": "accept",
+        "by": "t2",
+        "id": "x1",
+        "note": "Keep offline editing.",
+        "qualification": null,
+        "replacement": null,
+        "target": {
+          "claim": "notes-design",
+          "path": [
+            0
+          ]
+        }
+      },
+      {
+        "action": "reject",
+        "by": "t2",
+        "id": "x2",
+        "note": "Reject background sync as an unconditional requirement.",
+        "qualification": null,
+        "replacement": null,
+        "target": {
+          "claim": "notes-design",
+          "path": [
+            1
+          ]
+        }
+      }
+    ],
+    "body": "[L];[~[P][A]];[~[P][A]];[& A:cwxHfFFXAbqwZ7tKLfs1QlrL13SQOTCNcsNoWhRvFrM B:1-xNOvDbjC6m3UBuEgOsjRF7_PGOuKyEvwwSQUNpyUE L:cC3d2_8toSgAaDUYyScHvVoSa9dL0oX6pPXDVV-k_WQ P:zwwFIN0BSTtTzgVdwYyWPjwjNwPo_5q-bD-lODzXxRQ ~]",
+    "claims": {
+      "notes-design": {
+        "act": "t1",
+        "expression": "&[~[P][A]][~[B][A]]",
+        "expression_index": 0
+      }
+    },
+    "context": {
+      "topic": "A design discussion about offline editing and background sync for a fictional notes app."
+    },
+    "definitions": {
+      "A": {
+        "definition": {
+          "denotes": "notes-app",
+          "gloss": "The proposed notes app.",
+          "kind": "value",
+          "sort": "D"
+        },
+        "id": "cwxHfFFXAbqwZ7tKLfs1QlrL13SQOTCNcsNoWhRvFrM"
+      },
+      "B": {
+        "definition": {
+          "args": [
+            "D"
+          ],
+          "gloss": "Syncs notes automatically in the background.",
+          "kind": "predicate"
+        },
+        "id": "1-xNOvDbjC6m3UBuEgOsjRF7_PGOuKyEvwwSQUNpyUE"
+      },
+      "D": {
+        "definition": {
+          "gloss": "Proposed software systems.",
+          "kind": "domain",
+          "role": "software-systems"
+        },
+        "id": "aobCdojAW8Up8gDpTISYZ54KPKXnyIW_8bzF4pIMfw8"
+      },
+      "L": {
+        "definition": {
+          "gloss": "A thoughtful answer that may agree, disagree, or reserve judgment.",
+          "kind": "orientation",
+          "role": "response"
+        },
+        "id": "cC3d2_8toSgAaDUYyScHvVoSa9dL0oX6pPXDVV-k_WQ"
+      },
+      "N": {
+        "definition": {
+          "args": [
+            "D"
+          ],
+          "gloss": "Has the user\u2019s explicit opt-in to background sync.",
+          "kind": "predicate"
+        },
+        "id": "52JY-kDiW5fsZsGggYbFwytHYyz0KVWpE2NvM60MO40"
+      },
+      "P": {
+        "definition": {
+          "args": [
+            "D"
+          ],
+          "gloss": "Supports editing notes offline.",
+          "kind": "predicate"
+        },
+        "id": "zwwFIN0BSTtTzgVdwYyWPjwjNwPo_5q-bD-lODzXxRQ"
+      }
+    },
+    "discourse": {
+      "acts": [
+        {
+          "details": {},
+          "expressions": [
+            "&[~[P][A]][~[B][A]]"
+          ],
+          "id": "t1",
+          "kind": "hypothesis",
+          "references": [],
+          "speaker": "Ari",
+          "text": "I propose that the notes app support offline editing and sync notes automatically in the background."
+        },
+        {
+          "details": {
+            "responds_to": "t1",
+            "stance": "mixed"
+          },
+          "expressions": [
+            "~[P][A]"
+          ],
+          "id": "t2",
+          "kind": "response",
+          "references": [
+            "t1"
+          ],
+          "speaker": "Bea",
+          "text": "Keep offline editing. I object to automatic background sync as an unconditional requirement."
+        }
+      ],
+      "current": "t2"
+    },
+    "domains": {
+      "D": {
+        "members": null,
+        "mode": "open"
+      }
+    },
+    "guide": {
+      "acknowledgements": "Optional structured acknowledgements bind a speaker act to a retained earlier act, indexed formal expression, or exactly quoted claim with a validated path of proposition subexpressions. Understanding and endorsement differ. Withdrawal requires original speaker; revisions preserve original claims. New action meanings can be formally declared as immutable acknowledgement-kind extensions with action ext:<glyph>; their ids are included in the exact used-symbol declaration. Conditional qualifications may use a typed UCL proposition plus optional prose; they are not automatically assumed true.",
+      "canonicalization": "UCL-CJSON-1: ASCII-escaped compact JSON, sort object keys by Unicode scalar code points, forbid surrogate code points, finite JSON numeric values must be integers in safe 53-bit range; represent fractions such as confidence as exact decimal strings. Recompute and compare canonical bytes. Cross-language test vectors are normative; this is not RFC8785.",
+      "certification": "The message validity result is independent of proof status (not-requested, verified, invalid-proof, unsupported, inconsistent-premises, undetermined). No proof failure blocks a syntactically valid message.",
+      "claims": "Conversation is valid without a proof or model. Claims can be speculative, false, challenged or revised. An optional proof certificate checks entailment relative to explicit premises. A model-check intent evaluates one finite stipulated interpretation. An epistemic report documents uncertainty/conflict, not mere missing information.",
+      "core": {
+        "!": [
+          "not",
+          1
+        ],
+        "#": [
+          "bound-reference",
+          0
+        ],
+        "&": [
+          "and",
+          2
+        ],
+        "*": [
+          "function-application",
+          "signature"
+        ],
+        "<": [
+          "named-strict-order",
+          3
+        ],
+        "=": [
+          "identity",
+          2
+        ],
+        "?": [
+          "epistemic",
+          1
+        ],
+        "@": [
+          "membership",
+          2
+        ],
+        "{": [
+          "exists-in-domain",
+          3
+        ],
+        "|": [
+          "or",
+          2
+        ],
+        "~": [
+          "predicate-application",
+          "signature"
+        ]
+      },
+      "definitions": "Definitions carry immutable hash identities; any revision uses a new glyph+identity, preserves old full definition, and records reason. Receiver must follow normative meaning literally, reveal ambiguity rather than silently reinterpret.",
+      "discourse": "Each message includes a self-contained ordered act graph with explicit speaker, act kind, target references, optional typed expressions and act-specific structured details. Questions, analogies, conditional scenarios, revisions, and multi-claim exchanges are valid unproven communications. Act edges are structural, NOT evidence of truth, provenance authenticity, or valid analogy. Current act kind must agree with orientation.",
+      "domain": "Declared domain may have finite members or open symbolic population (including infinite or unspecified). Model evaluation enumerates finite only; open domains are not enumerated or assumed empty.",
+      "epistemic": "?[prop] is a sourced epistemic record of uncertainty or conflict, never missing data; epistemic type is not Boolean. Records carry assessor, evidence references, basis, optional confidence [0,1].",
+      "equality": "Identity of denotation, not resemblance. Term interpretation is deterministic and typed.",
+      "functions": "Total deterministic typed function for finite model checking; symbolic function terms allowed in proof certificates; no causation implied.",
+      "grammar": "Four body layers: [orientation];[explanation];[conclusion];[exact-symbol-declaration]. Prefix expressions; {[#N][domain][prop] exists; universal via negated existential. <[order][a][b] requires named order.",
+      "hashing": "Definition: SHA256(UCL-SEM-9 newline + UCL-CJSON-1); packet: SHA256(UCL-PACKET-7 newline + UCL-CJSON-1 excluding integrity). Full 256-bit unpadded Base64url. No signature/authentication.",
+      "history": "All packets are standalone. history.status is fully-expanded or condensed. Condensed mode MUST disclose non-expanded earlier history, the omitted scope and nature, a meaningful summary, and any unresolved uncertainties. Complete active semantic definitions and all locally referenced acts remain present; no external registry, URL, prior packet or hidden alias may be necessary. A condensed summary is not a verbatim record. Optional reference hashes do not restore missing evidence.",
+      "intents": "Orientation declares conversational act: proposal, hypothesis, question, challenge, response, revision, assertion, deductive-argument, model-check, epistemic-report. No proof required for ordinary acts.",
+      "limits": "<=250KB compressed, <=1MB expanded, <=120 parse depth, <=55 definitions, <=256 proof steps, <=8 function arguments, <=100 discourse acts, <=24KB per act, <=150 acknowledgements, <=100 omission notes, finite models <=10000 tuple products per function.",
+      "ordering": "Explicit named strict partial order. Each order definition has a sort; multiple orders may coexist on that sort. Irreflexivity and transitivity checked in finite interpretations.",
+      "proof": "Optional attached certificate (not required for conversation): premises from top-level explanation conjuncts; and-elim-left/right, and-intro, modus-ponens for |[![P]][Q], direct copy, equality reflexivity. Certificate may be invalid/unsupported without invalidating the message. Steps reference earlier indices; final formula must equal claim conclusion. No unrestricted proof or empirical truth.",
+      "quotation": "Optional claims bind proposition expressions exactly to IDs and retained origin acts. Viewpoints are acyclic nested attributions (asserts/believes/reports/questions), not proofs of belief or truth. Quoted propositions participate in exact-symbol declarations.",
+      "stability": "UCL/1.0 freezes this exact UCL-CJSON-1 profile; future incompatible changes require a new protocol version.",
+      "structural": {
+        "-": -5,
+        ":": -1,
+        ";": -2,
+        "[": -3,
+        "]": -4
+      },
+      "version": "UCL/1.0"
+    },
+    "history": {
+      "omissions": [],
+      "scope": "Whole exchange",
+      "status": "fully-expanded",
+      "summary": "Ari proposed two features. Bea accepted offline editing and objected to unconditional background sync.",
+      "unresolved": [
+        "Under what condition should background sync be allowed?"
+      ]
+    },
+    "integrity": {
+      "sha256": "Im5NXJUoZeb0YBkCEJsiP5FtqdUhhDkieO2HO9ZI6i4"
+    },
+    "links": [],
+    "model": null,
+    "proof": null,
+    "revisions": [],
+    "viewpoints": []
+  },
+  "profile": "portable",
+  "structural_rules": {
+    "rules": {
+      "acknowledgement_actions": [
+        "accept",
+        "adopt-for-discussion",
+        "clarify",
+        "propose-revision",
+        "qualify",
+        "received",
+        "reject",
+        "understood",
+        "withdraw",
+        "withhold-judgment"
+      ],
+      "authoring_kind": "incremental model-authored response contribution",
+      "complete_history_location": "packet.discourse + packet.history",
+      "core_glyphs": [
+        "@",
+        "#",
+        "=",
+        "~",
+        "&",
+        "|",
+        "!",
+        "?",
+        "<",
+        "*",
+        "{"
+      ],
+      "id": "UCL/2.0-SAP-1",
+      "incremental_authoring_procedure": [
+        "Read the complete embedded packet.guide, definitions, history, discourse and claim bindings.",
+        "Read these embedded structural rules; derive a fresh act ID and acknowledgement ID.",
+        "Author original symbolic expressions, stance, exact old claim reference, explanation and conclusion directly; do NOT first draft English for conversion.",
+        "Construct a complete contribution object with only the listed fields; use the benchmark caller-reserved IDs if supplied.",
+        "Run local structural checks and standard UCL/1.0 validation; if invalid, reauthor the semantic contribution; do not have an intermediary silently modify it.",
+        "Append the contribution to the retained packet mechanically, reconstruct body and SHA-256 integrity locally and embed the same full rules in the new message.",
+        "A receiver independently checks embedded rule integrity and packet integrity before using the newly authored message."
+      ],
+      "integrity_notice": "SHA-256 detects accidental or untrusted rewriting only when trusted anchors exist; a self-hash alone is NOT authentication or authority.",
+      "language_extension_policy": {
+        "existing_custom_definitions": "valid defined custom concept symbols are allowed when appropriately typed and hashed in the packet",
+        "new_core_operators": "NOT silently valid; unknown operators must be proposed in explicitly marked non-normative text pending versioned adoption",
+        "new_semantics": "open hypotheses and unexpected inferences allowed; syntax validity does not certify truth",
+        "no_central_registry": "all necessary guide, rules, definitions and conversation context are in this message"
+      },
+      "language_guide_location": "packet.guide (fully embedded)",
+      "reference_rules": {
+        "ack_by": "new act ID",
+        "ack_id": "unique non-empty ID absent from earlier acknowledgements; caller may reserve an expected ID",
+        "ack_target": "{\"claim\":\"existing_claim_id\",\"path\":[0]} with zero-based INTEGER subtree indices; use [] for entire bound claim",
+        "ack_target_precedes_author": "target expression must be in an earlier act",
+        "act_id": "unique non-empty ID absent from earlier packet.discourse.acts; caller may reserve an expected ID",
+        "claim_bindings": "packet.claims ties each claim to an exact retained earlier expression",
+        "identity_policy": "never silently revise/overwrite earlier definitions or acts",
+        "references": "array of earlier existing act IDs; no forward references",
+        "responds_to": "ID of an existing earlier discourse act"
+      },
+      "required_ack_fields": [
+        "action",
+        "by",
+        "id",
+        "note",
+        "qualification",
+        "replacement",
+        "target"
+      ],
+      "required_act_fields": [
+        "details",
+        "expressions",
+        "id",
+        "kind",
+        "references",
+        "speaker",
+        "text"
+      ],
+      "required_contribution_fields": [
+        "acknowledgements",
+        "act",
+        "conclusion",
+        "explanation",
+        "history_summary",
+        "orientation"
+      ],
+      "response_details_fields": [
+        "responds_to",
+        "stance"
+      ],
+      "response_stances": [
+        "accept",
+        "mixed",
+        "reject",
+        "undetermined"
+      ],
+      "semantic_verification": {
+        "authority": "Audits are local and advisory. Independent auditors may disagree; no single AI opinion may govern acceptance or transport of well-formed UCL.",
+        "checks": {
+          "alignment": "Compare original act.text with formal expressions and referenced stance; use uncertain/needs-clarification when natural-language meaning is ambiguous; NOT deterministic truth",
+          "consistency": "Within declared finite Boolean fragments, test satisfiability against explicitly named premises; contradiction must include assumptions and a reproducible counterexample or derivation",
+          "continuity": "Compare claims, scoped ACK actions, prior reference and evidence status with earlier acts; show exact source locations",
+          "types": "Use existing UCL typed grammar and validator; syntax validity is distinct from truth"
+        },
+        "contradictions": "Preserve original even if formally contradictory; report precise premises, scope and derivation; invite model to revise assumptions or explain interpretation",
+        "execution": "OPTIONAL local check by any recipient; no central judge or network, no mandatory audit metadata on wire",
+        "id": "UCL/2.0-SVP-1-DRAFT",
+        "no_silent_semantic_repair": true,
+        "novelty": "NEVER reject, delete, rewrite, auto-normalize, or declare false because an original hypothesis is unfamiliar, unverified, speculative or contrary to expectations",
+        "reporting": "No verdicts or assessment transcripts are required inside UCL wire. Optional signed or unsigned sidecar may reference exact packet checksum; any transmitted result is explicitly labeled as separate assessor opinion.",
+        "verdicts": [
+          "formally-consistent-under-assumptions",
+          "demonstrated-contradiction-under-assumptions",
+          "alignment-question",
+          "novel-or-unresolved",
+          "unsupported-empirical-claim",
+          "not-assessed"
+        ]
+      },
+      "status": "stable-2.0",
+      "structural_glyphs": [
+        ":",
+        ";",
+        "[",
+        "]",
+        "-"
+      ],
+      "type_rules": {
+        "ack_target_path": "array of integers, never strings",
+        "act_expressions": "array of valid UCL proposition/epistemic expressions",
+        "conclusion": "well-typed UCL proposition or sourced epistemic report",
+        "epistemic": "?[p] as epistemic conclusion needs context.epistemic evidence/assessor/basis/confidence as required by guide; ACK withhold-judgment is NOT a ? conclusion",
+        "explanation": "well-typed UCL proposition; never bare epistemic report",
+        "local_authoring_preflight": "Offline preflight: ACK target.path=[0] (integer), never [\"0\"] (string); act.expressions is a list of UCL strings; explanation and conclusion are UCL strings; use only defined operators. For action=qualify, qualification must be nonempty string or valid object; other actions require null. Validate locally; return precise errors for author-owned corrections. Never silently rewrite semantic intent; no network.",
+        "negation": "![p] means not p, NOT merely unproven or not measured",
+        "orientation": "for response kind, \"L\" in SAP-1",
+        "receipt": "null when no preceding delivered GENERATED turn; earlier historical acts do not count"
+      },
+      "typed_formula_examples": {
+        "conjunction": "&[~[P][A]][~[B][A]]",
+        "disjunction": "|[~[P][A]][~[B][A]]",
+        "negation": "![~[P][A]]",
+        "property": "~[P][A]"
+      }
+    },
+    "sha256": "yrac3Zj4lyiGfI6944ZsmFSLdL-VPiXPnVZEPVKEh-k"
+  }
+}

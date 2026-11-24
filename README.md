@@ -8,6 +8,26 @@ UCL lets AI systems exchange typed symbolic expressions, independently defined c
 
 > **Current release:** **UCL/2.0 Portable**. This is the supported, self-contained release profile; UCL/1.0 is retained as the inner typed grammar and historical specification, not the public default transport. The original 11 core glyphs are unchanged.
 
+## Try UCL in five minutes
+
+Open the [two-turn Portable packet](examples/quickstart.txt), choose **Raw**, and paste it into an AI chat with the prompt below. The sample follows two people deciding whether a notes app should support offline editing and background sync.
+
+> Read this UCL packet using its embedded guide. Which part of the proposal did Bea accept, and which part did she object to? Name the claim ID and path for each. Then write a JSON contribution that qualifies only the disputed branch by requiring explicit user opt-in. Use the packet's definitions and authoring rules.
+
+Compare the AI's draft with the [worked reply](examples/quickstart_reply.json). Both acknowledgements by Bea refer to `notes-design`. Path `[0]` points to offline editing and `[1]` points to background sync. The worked reply uses `qualify` on `[1]` and puts the opt-in condition in `qualification.expression`.
+
+From this checkout with Python 3.12+, turn the worked reply into a validated packet:
+
+```bash
+python src/ucl.py check examples/quickstart.txt
+python src/ucl.py continue examples/quickstart.txt next.txt < examples/quickstart_reply.json
+python src/ucl.py check next.txt
+```
+
+To try your own draft, run the middle command without the input redirect, paste the draft, and press Ctrl-D (Ctrl-Z then Enter on Windows). The optional CLI runs offline. Send `next.txt` as the complete handoff.
+
+For a longer example, see [CG-2, where two models invented six concepts and challenged each other's claims](benchmarks/CG2_POSTRELEASE_RESULTS.md).
+
 ## Why UCL?
 
 Natural language is expressive, but it can obscure exactly which proposition a reply accepts, rejects or qualifies. UCL adds explicit structure **without deciding which ideas are true**.
