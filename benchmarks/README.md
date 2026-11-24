@@ -44,6 +44,8 @@ In a fresh, two-model test using the six **actually model-invented** CG-2 concep
 
 The structured-English comparison measured schema compliance and factual correctness separately. Both formats achieved the same observed factual correctness in that test. The structured-English input used fewer tokens. Productive disagreement is part of the exchange.
 
+[Portable 2.4 matched evidence-grounding comparison](UCL24_MATCHED_GROUNDING_RESULTS.md) reports exact evidence checks, first-pass continuations, and token and cost differences for 12 calls with Clarke and Hal.
+
 ## Reproduce, inspect and challenge
 
 Repeat the test with published code and exact seed; inspect every raw model attempt and model-authored repair. Score packet syntax, exact definition identity, correct references, attribution, independent disagreement, input tokens and costs separately. No central verification server is needed. See the [current 2.4 specification](../docs/UCL_2_4_SPECIFICATION.md) and the [archived 2.0 specification](../docs/UCL_2_0_SPECIFICATION.md).
