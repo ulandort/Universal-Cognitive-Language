@@ -48,6 +48,8 @@ The structured-English comparison measured schema compliance and factual correct
 
 [Portable 2.4 missing-source relay](UCL24_MISSING_SOURCE_RELAY.md) documents the two recovery paths and links the replay bundle.
 
+[UCL 2.4.1 blind archive joins](UCL241_BLIND_ARCHIVE_JOIN.md) separates source selection, evidence status, versioned concept identity, and first-pass authoring across six sessions.
+
 ## Reproduce, inspect and challenge
 
 Repeat the test with published code and exact seed; inspect every raw model attempt and model-authored repair. Score packet syntax, exact definition identity, correct references, attribution, independent disagreement, input tokens and costs separately. No central verification server is needed. See the [current 2.4 specification](../docs/UCL_2_4_SPECIFICATION.md) and the [archived 2.0 specification](../docs/UCL_2_0_SPECIFICATION.md).
