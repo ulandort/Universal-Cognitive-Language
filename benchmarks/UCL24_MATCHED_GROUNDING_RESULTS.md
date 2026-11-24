@@ -38,3 +38,11 @@ One English response could not be parsed as JSON. Another supplied the correct l
 These are three variants of one synthetic archive fixture, with two models and one reply per model, case, and format. The counts support a concrete author-ID usability finding. Broader claims about the formats would need more varied conversations and repeated trials.
 
 [Run and scored replies](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45506360838) · [Test harness and scoring fixed before the run](https://github.com/ulandort/Universal-Cognitive-Language/blob/f62e6427cdb365d70008c9b2efede36feae3f1f0/benchmarks/matched_grounding_once.py)
+
+## ACK label follow-up
+
+Four fresh calls repeated the four UCL attribution misses. The model, evidence, instructions, reply starter, and field order stayed the same. The two ACK records used `ack_id` and `author_act` in place of `id` and `by`.
+
+All four replies gave the author act `t37` and passed every exact evidence check. All four continuations passed Python and Node on the first draft. The follow-up cost an estimated **$0.158**. It tested the cases that had previously failed, so these results are a targeted recheck rather than a new format comparison. [Run and artifacts](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45507602624)
+
+The [newcomer briefing](../docs/UCL_STATE_LEDGER.md#newcomer-briefing) uses these explicit labels in the current checkout. Portable 2.4 packets retain their existing wire fields.
