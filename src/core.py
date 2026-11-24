@@ -128,6 +128,7 @@ def guide(version=VERSION):
     return result
 
 def packet_version(packet):
+    need(isinstance(packet, dict), 'packet schema')
     header = packet.get('guide')
     version = header.get('version') if isinstance(header, dict) else None
     need(version in (VERSION, *DEPENDENCY_VERSIONS) and header == guide(version), 'guide mismatch')
@@ -421,11 +422,11 @@ def _validate_vocabulary(entries, expressions, defs, parser):
         seen.add(key)
 
 
-def validate_discourse(discourse,defs,parser, *, version=VERSION):
+def validate_discourse(discourse,defs,parser, *, version=VERSION, archived=False):
     need(isinstance(discourse,dict) and set(discourse)=={'current','acts'},'discourse schema')
     acts=discourse['acts']
     limit = MAX_LONG_ACTS if version == LONG_VERSION else 100
-    need(isinstance(acts,list) and 1<=len(acts)<=limit,'discourse act cap')
+    need(isinstance(acts,list) and len(acts)>=1 and (archived and version==LONG_VERSION or len(acts)<=limit),'discourse act cap')
     seen={}; allowed_ans={'open','yes-no','multiple-choice'}
     def expression(s):
         need(isinstance(s,str) and 0<len(s)<=16000,'discourse expression length')
@@ -506,9 +507,9 @@ def resolve_claim_path(parser, expression, path):
          'acknowledgement subclaim must be a proposition or epistemic expression')
     return tree
 
-def validate_acknowledgements(acks,discourse,defs,parser,claims, *, version=VERSION):
+def validate_acknowledgements(acks,discourse,defs,parser,claims, *, version=VERSION, archived=False):
     limit = MAX_LONG_RECORDS if version == LONG_VERSION else 150
-    need(isinstance(acks,list) and len(acks)<=limit,'acknowledgement list size')
+    need(isinstance(acks,list) and (archived and version==LONG_VERSION or len(acks)<=limit),'acknowledgement list size')
     acts=discourse['acts']; byid={a['id']:a for a in acts}
     positions={a['id']:i for i,a in enumerate(acts)}
     seen=set()
@@ -633,12 +634,12 @@ def orientation_matches(role,kind):
              'clarification':{'question','response'}}
     return role==kind or role in aliases.get(kind,set())
 
-def make_body(orientation,explanation,conclusion,defs,discourse,acks,claims, *, version=VERSION):
+def make_body(orientation,explanation,conclusion,defs,discourse,acks,claims, *, version=VERSION, archived=False):
     parser=Parser(defs);ts=[parser.parse(s) for s in (orientation,explanation,conclusion)]
     need(ts[0][1]=='orientation' and ts[1][1]=='prop','orientation/explanation types')
     need(ts[2][1] in ('prop','epistemic'),'conclusion must be proposition or epistemic report')
-    validate_discourse(discourse,defs,parser,version=version)
-    validate_acknowledgements(acks,discourse,defs,parser,claims,version=version)
+    validate_discourse(discourse,defs,parser,version=version,archived=archived)
+    validate_acknowledgements(acks,discourse,defs,parser,claims,version=version,archived=archived)
     declared=' '.join(sorted(g if g in CORE else g+':'+defs[g]['id'] for g in parser.used))
     return ';'.join('['+s+']' for s in (orientation,explanation,conclusion,declared))
 
@@ -713,7 +714,7 @@ def validate_quotes(claims,viewpoints,discourse,parser, *, version=VERSION):
         seen[vid]=v
     return {'quoted_claims':len(claims),'nested_viewpoints':len(viewpoints)}
 
-def check(p):
+def check(p, *, archived=False):
     need(isinstance(p,dict) and set(p)=={'guide','definitions','domains','model','proof','context','body','links','revisions','discourse','acknowledgements','history','claims','viewpoints','integrity'},'packet schema')
     version = packet_version(p)
     need(p['integrity']=={'sha256':packet_id(p)},'packet integrity')
@@ -724,8 +725,8 @@ def check(p):
     need(isinstance(p['context'],dict) and bool(p['context']) and isinstance(p['links'],list),'context/links missing')
     check_revisions(p['revisions'],defs,version=version)
     x=layers(p['body']);parser=Parser(defs);trees=[parser.parse(s) for s in x[:3]]
-    discourse_result=validate_discourse(p['discourse'],defs,parser,version=version)
-    ack_result=validate_acknowledgements(p['acknowledgements'],p['discourse'],defs,parser,p['claims'],version=version)
+    discourse_result=validate_discourse(p['discourse'],defs,parser,version=version,archived=archived)
+    ack_result=validate_acknowledgements(p['acknowledgements'],p['discourse'],defs,parser,p['claims'],version=version,archived=archived)
     history_result=validate_history(p['history'],p['discourse'],defs)
     quote_result=validate_quotes(p['claims'],p['viewpoints'],p['discourse'],parser,version=version)
     need(trees[0][1]=='orientation' and trees[1][1]=='prop','body layer types')
@@ -759,7 +760,7 @@ def draft_version(draft):
     return DEPENDENCY_VERSION
 
 
-def build(draft, *, version=VERSION):
+def build(draft, *, version=VERSION, archived=False):
     required={'definitions','domains','model','proof','context','orientation','explanation','conclusion','links','revisions','discourse','acknowledgements','history','claims','viewpoints'}
     need(isinstance(draft,dict) and set(draft)==required,'draft schema')
     embedded_guide = guide(version)
@@ -773,10 +774,10 @@ def build(draft, *, version=VERSION):
         identity = ids[alias]
         need('id' not in record or record['id'] == identity, 'supplied hash mismatch ' + alias)
         defs[alias] = {'definition': record['definition'], 'id': identity}
-    body=make_body(draft['orientation'],draft['explanation'],draft['conclusion'],defs,draft['discourse'],draft['acknowledgements'],draft['claims'],version=version)
+    body=make_body(draft['orientation'],draft['explanation'],draft['conclusion'],defs,draft['discourse'],draft['acknowledgements'],draft['claims'],version=version,archived=archived)
     p={'guide':embedded_guide,'definitions':defs,'domains':draft['domains'],'model':draft['model'],
        'proof':draft['proof'],'context':draft['context'],'body':body,'links':draft['links'], 'revisions':draft['revisions'], 'discourse':draft['discourse'], 'acknowledgements':draft['acknowledgements'], 'history':draft['history'], 'claims':draft['claims'], 'viewpoints':draft['viewpoints']}
-    p['integrity']={'sha256':packet_id(p)};check(p);return p
+    p['integrity']={'sha256':packet_id(p)};check(p,archived=archived);return p
 
 def upgrade_packet(packet, *, long_draft=False):
     draft = draft_from_packet(packet)
@@ -832,8 +833,8 @@ def load_json(text):
     check(packet)
     return packet
 
-def draft_from_packet(packet):
-    check(packet)
+def draft_from_packet(packet, *, archived=False):
+    check(packet, archived=archived)
     seg=layers(packet['body'])
     out={k:__import__('copy').deepcopy(v) for k,v in packet.items() if k not in ('guide','body','integrity')}
     out.update(orientation=seg[0],explanation=seg[1],conclusion=seg[2])

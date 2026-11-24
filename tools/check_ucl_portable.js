@@ -7,7 +7,9 @@
 */
 'use strict';
 const fs=require('fs');
-const {hash,semantic}=require('./check_ucl.js');
+const {canonical,hash,semantic}=require('./check_ucl.js');
+const {createHash}=require('node:crypto');
+const {gunzipSync,inflateRawSync}=require('node:zlib');
 const RULE_DOMAIN='UCL-SAP1-RULES-2.0\n';
 const ENVELOPE_DOMAIN='UCL-SAP1-ENVELOPE-2.0\n';
 const VERSIONS=new Map([
@@ -30,21 +32,99 @@ const ROLE_GUIDE=('FR-1 draft: act/index identifies an exact expression in packe
 'Never suppress original novel ideas.');
 function requireThat(ok,msg){if(!ok)throw Error('SAP portable: '+msg)}
 function keys(obj,required){return !!obj&&typeof obj==='object'&&!Array.isArray(obj)&&
-  Object.keys(obj).sort().join(',')===required.slice().sort().join(',')}
+  Object.keys(obj).length===required.length&&required.every(key=>Object.hasOwn(obj,key))}
+function rawHash(bytes){return createHash('sha256').update(bytes).digest('base64url')}
+function orderedSlots(slots,limit){
+ return Array.isArray(slots)&&slots.every((slot,index)=>Number.isSafeInteger(slot)&&slot>=0&&slot<limit&&
+  (index===0||slots[index-1]<slot));
+}
+function expandArchive(envelope){
+ const {archive:a,packet:p}=envelope;
+ const {acts:readable,current}=p.discourse;
+ requireThat(keys(a,['codec','blocks','pinned','act_count','ack_count','readable_ack_slots'])&&
+  a.codec==='gzip+base64url','archive metadata or codec');
+ requireThat(typeof envelope.archive_guide==='string'&&
+  rawHash(envelope.archive_guide)==='I5ii4bIUzldhadQm8YkY3MkPrn49NtCU5Lpw27O5HCc','archive guide');
+ requireThat(Number.isSafeInteger(a.act_count)&&a.act_count>1000&&
+  Number.isSafeInteger(a.ack_count)&&a.ack_count>=0,'archive counts');
+ requireThat(Array.isArray(readable)&&readable.length>=1000&&readable.at(-1).id===current,'archive readable history');
+ const readableIds=new Set(readable.map(act=>act.id));
+ requireThat(readableIds.size===readable.length&&Array.isArray(a.pinned)&&
+  a.pinned.every(id=>typeof id==='string'&&readableIds.has(id)),'archive pinned or readable IDs');
+ requireThat(Array.isArray(a.blocks)&&a.blocks.length>0&&orderedSlots(a.readable_ack_slots,a.ack_count)&&
+  a.readable_ack_slots.length===p.acknowledgements.length&&p.acknowledgements.every(ack=>readableIds.has(ack.by)),
+  'archive block or readable ACK index');
+ const actSlots=new Map(), archivedIds=new Set();
+ const acks=new Map(a.readable_ack_slots.map((slot,index)=>[slot,p.acknowledgements[index]]));
+ let end=-1, expandedBytes=0;
+ for(const block of a.blocks){
+  requireThat(keys(block,['act_ids','act_slots','expanded_bytes','sha256','data']),'archive block fields');
+  const {act_slots:slots,act_ids:ids,expanded_bytes:size}=block;
+  requireThat(orderedSlots(slots,a.act_count-1000)&&slots.length>=1&&slots.length<=1000&&
+   slots[0]>end&&Math.floor(slots[0]/1000)===Math.floor(slots.at(-1)/1000),'archive block slots');
+  end=slots.at(-1);
+  requireThat(Array.isArray(ids)&&ids.length===slots.length&&Number.isSafeInteger(size)&&size>0&&size<=4_000_000,
+   'archive block size or IDs');
+  expandedBytes+=size;
+  requireThat(expandedBytes<=96_000_000,'archive full-audit limit');
+  const bytes=Buffer.from(block.data,'base64url');
+  requireThat(bytes.toString('base64url')===block.data&&bytes.length>=18&&
+   bytes.readUInt32BE(0)===0x1f8b0800,'archive gzip header');
+  const raw=gunzipSync(bytes,{maxOutputLength:size});
+  const deflate=bytes.subarray(10,-8);
+  const member=inflateRawSync(deflate,{maxOutputLength:size,info:true});
+  requireThat(member.engine.bytesWritten===deflate.length&&raw.length===size&&rawHash(raw)===block.sha256,
+   'archive member length or SHA-256');
+  const records=JSON.parse(raw.toString('utf8'));
+  requireThat(keys(records,['acts','acknowledgements'])&&records.acts.length===slots.length&&
+   Array.isArray(records.acknowledgements)&&Buffer.from(canonical(records)).equals(raw),'archive block records');
+  const owners=new Set(ids);
+  for(const [index,act] of records.acts.entries()){
+   requireThat(typeof act.id==='string'&&act.id===ids[index]&&!readableIds.has(act.id)&&
+    !archivedIds.has(act.id)&&!act.vocabulary,'archive act ID conflict or protected vocabulary');
+   archivedIds.add(act.id);
+   actSlots.set(slots[index],act);
+  }
+  for(const pair of records.acknowledgements){
+   requireThat(Array.isArray(pair)&&pair.length===2,'archive ACK record');
+   const [slot,ack]=pair;
+   requireThat(Number.isSafeInteger(slot)&&slot>=0&&slot<a.ack_count&&!acks.has(slot)&&owners.has(ack.by)&&
+    ['received','understood'].includes(ack.action),'archive ACK index or protected author');
+   acks.set(slot,ack);
+  }
+ }
+ requireThat(readable.length+actSlots.size===a.act_count&&acks.size===a.ack_count,'archive counts do not match');
+ const protectedIds=[
+  ...Object.values(p.claims).map(claim=>claim.act), ...p.viewpoints.map(view=>view.source_act),
+  ...(envelope.formula_roles||[]).map(role=>role.act), ...readable.slice(-1000).flatMap(act=>act.references),
+ ];
+ for(const ack of p.acknowledgements){
+  if(['received','understood'].includes(ack.action))continue;
+  if(Object.hasOwn(ack.target,'act'))protectedIds.push(ack.target.act);
+  if(ack.replacement!==null)protectedIds.push(ack.replacement);
+ }
+ requireThat(protectedIds.every(id=>readableIds.has(id)),'archive hides a protected source');
+ let next=0;
+ const acts=Array.from({length:a.act_count},(_,slot)=>actSlots.get(slot)??readable[next++]);
+ return {...p,discourse:{...p.discourse,acts},acknowledgements:Array.from({length:a.ack_count},(_,slot)=>acks.get(slot))};
+}
 function validate(envelope){
  requireThat(!!envelope&&typeof envelope==='object'&&!Array.isArray(envelope),'envelope must be object');
  const base=['format','profile','structural_rules','packet','checksum'];
+ const archived=Object.hasOwn(envelope,'archive');
+ if(archived)base.push('archive_guide','archive');
  const extended=[...base,'formula_roles','formula_role_guide'];
  requireThat(keys(envelope,base)||keys(envelope,extended),'envelope fields invalid');
  const pinned=VERSIONS.get(envelope.format);
  requireThat(pinned&&envelope.profile==='portable','unsupported profile');
+ requireThat(!archived||envelope.format==='UCL/2.2-SAP1-PORTABLE-DRAFT','archive requires the long Portable draft');
  const block=envelope.structural_rules;
  requireThat(keys(block,['rules','sha256']),'rules block invalid');
  requireThat(typeof block.sha256==='string'&&block.sha256===hash(RULE_DOMAIN,block.rules),'rules hash mismatch');
  requireThat(block.sha256===pinned.rules,'unknown or altered structural standard');
  const {checksum,...body}=envelope;
  requireThat(typeof checksum==='string'&&checksum===hash(ENVELOPE_DOMAIN,body),'envelope checksum mismatch');
- const packet=envelope.packet;
+ let packet=envelope.packet;
  requireThat(keys(packet,['guide','definitions','domains','model','proof','context','body',
   'links','revisions','discourse','acknowledgements','history','claims','viewpoints','integrity']),
   'inner packet field shape');
@@ -52,7 +132,8 @@ function validate(envelope){
   'embedded inner guide missing');
  requireThat(hash('UCL-GUIDE-PIN-2\n',packet.guide)===pinned.guide,
   'unknown or altered inner language guide');
- const checked=semantic(packet);
+ if(archived)packet=expandArchive(envelope);
+ const checked=semantic(packet,{archived});
  if(Object.hasOwn(envelope,'formula_roles')){
    requireThat(envelope.formula_role_guide===ROLE_GUIDE,'role guide mismatch');
    const roles=envelope.formula_roles;

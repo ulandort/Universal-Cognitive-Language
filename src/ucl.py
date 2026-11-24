@@ -38,13 +38,15 @@ def check_portable(envelope):
     packet=portable.decode(envelope)
     return {'status':'VALID '+portable.label(envelope['format']),
             'format':envelope['format'],
-            'packet':_core.check(packet)}
+            'packet':_core.check(packet, archived='archive' in envelope)}
 
 def continue_portable(envelope, contribution):
     """Append an authored draft to a verified Portable envelope."""
     from authoring import author
+    import portable
 
     parent = decode_portable(envelope)
+    archived = 'archive' in envelope
     if not isinstance(contribution, dict):
         raise ValueError('draft must be a JSON object')
     required = {'act', 'orientation', 'explanation', 'conclusion'}
@@ -57,13 +59,22 @@ def continue_portable(envelope, contribution):
     if overwritten := parent['claims'].keys() & claims.keys():
         raise ValueError('draft.claims cannot replace existing bindings: ' + ', '.join(sorted(overwritten)))
 
-    packet = author(parent, contribution)
-    result = encode_portable(packet, formula_roles=envelope.get('formula_roles'))
+    packet = author(parent, contribution, archived=archived)
+    result = portable.encode(packet, formula_roles=envelope.get('formula_roles'), archived=archived)
+    if archived:
+        from history_archive import pack
+        return pack(result, packet, envelope['archive']['pinned'])
     decode_portable(result)
     return result
 
 def portable_json_bytes(envelope):
-    data = _core.canon(envelope)
+    if 'archive' in envelope:
+        front = ('format', 'profile', 'archive_guide', 'structural_rules', 'packet')
+        order = (*front, *sorted(envelope.keys() - set(front) - {'archive'}), 'archive')
+        fields = [_core.canon(key) + b':' + _core.canon(envelope[key]) for key in order]
+        data = b'{\n' + b',\n'.join(fields) + b'\n}'
+    else:
+        data = _core.canon(envelope)
     if len(data) > MAX_PORTABLE_JSON:
         raise ValueError(f'Portable JSON output exceeds {MAX_PORTABLE_JSON} bytes')
     return data
@@ -105,7 +116,7 @@ def main(args):
         _continue_cli(args)
         return
     if len(args)<3:
-        raise ValueError('Usage: python src/ucl.py check file.txt | encode inner.json portable.txt | decode portable.txt inner.json | continue incoming.txt next.txt < contribution.json | inspect portable.txt [--json] [--since earlier.txt] | upgrade old.txt current.txt | build/canonicalize/draft ...')
+        raise ValueError('Usage: python src/ucl.py check | encode | decode | pack | continue | inspect | upgrade | build/canonicalize/draft ...')
     command=args[1]
     if command=='check' and len(args)==3:
         data=_core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
@@ -138,6 +149,11 @@ def main(args):
             else:
                 parser.error('--path needs up to 32 dot-separated indices from 0 to 15, or root')
         envelope = _core.read_json_file(options.packet, limit=MAX_PORTABLE_JSON)
+        if 'archive' in envelope and not options.since:
+            from history_archive import inspect_archive
+            excerpt = inspect_archive(envelope, act_id=options.act, claim_id=options.claim, path=path)
+            print(json.dumps(excerpt, indent=2))
+            return
         packet = decode_portable(envelope)
         previous = None
         if options.since:
@@ -158,9 +174,27 @@ def main(args):
         result=decode_portable(source)
         Path(args[3]).write_bytes(_core.canon(result))
         print('VALID ' + portable.label(source['format']), args[3])
+    elif command=='pack':
+        from history_archive import pack
+        parser = argparse.ArgumentParser(prog='python src/ucl.py pack')
+        parser.add_argument('source', type=Path)
+        parser.add_argument('output', type=Path)
+        parser.add_argument('--keep-act', action='append', default=[], metavar='ACT_ID')
+        options = parser.parse_args(args[2:])
+        envelope = _core.read_json_file(options.source, limit=MAX_PORTABLE_JSON)
+        packet = decode_portable(envelope)
+        pinned = [*envelope.get('archive', {}).get('pinned', []), *options.keep_act]
+        expanded = portable.encode(packet, formula_roles=envelope.get('formula_roles'),
+                                   archived='archive' in envelope)
+        result = pack(expanded, packet, pinned)
+        if 'archive' not in result:
+            raise ValueError('no eligible unprotected history to archive yet')
+        _write_handoff(options.source, options.output, result)
     elif command=='upgrade' and (len(args)==4 or (len(args)==5 and args[4]=='--long-draft')):
         source, output = map(Path, args[2:4])
         envelope = _core.read_json_file(source, limit=MAX_PORTABLE_JSON)
+        if 'archive' in envelope:
+            raise ValueError('archive already uses the long Portable draft')
         packet = _core.upgrade_packet(decode_portable(envelope), long_draft=len(args)==5)
         result = encode_portable(packet, formula_roles=envelope.get('formula_roles'))
         _write_handoff(source, output, result)

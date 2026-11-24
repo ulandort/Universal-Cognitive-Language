@@ -15,9 +15,9 @@ ACKNOWLEDGEMENT = 'condition37'
 AUDIT_PHRASE = 'independent-input control'
 
 
-def make_packet(turns=1000):
-    if not 1000 <= turns <= core.MAX_LONG_ACTS:
-        raise ValueError('the long-join fixture needs between 1,000 and 4,096 acts')
+def make_packet(turns=1000, *, archived=False):
+    if not 1000 <= turns or (not archived and turns > core.MAX_LONG_ACTS):
+        raise ValueError('the long-join fixture needs at least 1,000 acts; use --pack above 4,096')
     seed = ucl.decode_portable(ucl.read_json_file(ROOT / 'examples/challenge.txt'))
     draft = core.draft_from_packet(seed)
     draft['definitions']['$independent_inputs'] = {
@@ -61,6 +61,12 @@ def make_packet(turns=1000):
     draft['discourse']['current'] = f't{turns}'
     draft.update(orientation='Q', explanation='~[B][A]', conclusion='~[B][A]')
     draft['history']['summary'] = f'Synthetic {turns}-act conversation with a recorded eligibility caveat and later revisions.'
+    if archived:
+        import portable
+        from history_archive import pack
+
+        packet = core.build(draft, version=core.LONG_VERSION, archived=True)
+        return pack(portable.encode(packet, archived=True), packet)
     return ucl.encode_portable(core.build(draft, version=core.LONG_VERSION))
 
 
@@ -68,8 +74,9 @@ def main():
     args = argparse.ArgumentParser(description=__doc__)
     args.add_argument('--out', type=Path, required=True)
     args.add_argument('--turns', type=int, default=1000)
+    args.add_argument('--pack', action='store_true', help='generate and archive an offline stress fixture')
     options = args.parse_args()
-    envelope = make_packet(options.turns)
+    envelope = make_packet(options.turns, archived=options.pack)
     raw = ucl.portable_json_bytes(envelope)
     options.out.write_bytes(raw)
     packet = ucl.decode_portable(envelope)
@@ -77,6 +84,7 @@ def main():
     assert any(ack['id'] == ACKNOWLEDGEMENT for ack in excerpt['acknowledgements'])
     print(json.dumps({
         'acts': options.turns, 'packet_bytes': len(raw), 'claim_excerpt_bytes': len(core.canon(excerpt)),
+        'archive_blocks': len(envelope.get('archive', {}).get('blocks', [])),
         'packet_sha256': packet['integrity']['sha256'],
     }))
 

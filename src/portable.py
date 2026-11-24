@@ -228,8 +228,8 @@ def _validate_formula_roles(packet,roles):
         used.add(key)
     return True
 
-def encode(packet,formula_roles=None):
-    ucl.check(packet)
+def encode(packet,formula_roles=None, *, archived=False):
+    ucl.check(packet, archived=archived)
     format_id = FORMAT_BY_VERSION[ucl.packet_version(packet)]
     rules = copy.deepcopy(RULES_BY_FORMAT[format_id])
     env={'format':format_id,'profile':'portable',
@@ -242,13 +242,18 @@ def encode(packet,formula_roles=None):
     env['checksum']=envelope_checksum(env)
     return env
 
-def decode(env):
+def validate_envelope(env):
     required={'format','profile','structural_rules','packet','checksum'}
+    archived = isinstance(env, dict) and 'archive' in env
+    if archived:
+        required.update(('archive', 'archive_guide'))
     if type(env) is not dict or set(env) not in (required,required|{'formula_roles','formula_role_guide'}):
         raise ValueError('SAP portable: envelope fields invalid')
     format_id = env['format']
     if not isinstance(format_id, str) or format_id not in RULES_BY_FORMAT or env['profile']!='portable':
         raise ValueError('SAP portable: unsupported profile')
+    if archived and format_id != ucl.LONG_DRAFT_FORMAT:
+        raise ValueError('SAP portable: optional archive requires the long Portable draft')
     block=env['structural_rules']
     if type(block) is not dict or set(block)!={'rules','sha256'}:
         raise ValueError('SAP portable: rules block invalid')
@@ -260,13 +265,21 @@ def decode(env):
         raise ValueError('SAP portable: embedded authoring rules checksum mismatch')
     if env['checksum']!=envelope_checksum(env):
         raise ValueError('SAP portable: envelope checksum mismatch')
-    pkt=copy.deepcopy(env['packet'])
-    ucl.check(pkt)
-    if FORMAT_BY_VERSION[ucl.packet_version(pkt)] != format_id:
+    if FORMAT_BY_VERSION[ucl.packet_version(env['packet'])] != format_id:
         raise ValueError('SAP portable: inner guide version does not match the envelope format')
+    if 'formula_roles' in env and env['formula_role_guide'] != ROLE_GUIDE:
+        raise ValueError('SAP portable: unknown formula role profile')
+
+
+def decode(env):
+    validate_envelope(env)
+    if 'archive' in env:
+        from history_archive import expand
+        pkt = expand(env)
+    else:
+        pkt = copy.deepcopy(env['packet'])
+    ucl.check(pkt, archived='archive' in env)
     if 'formula_roles' in env:
-        if env['formula_role_guide']!=ROLE_GUIDE:
-            raise ValueError('SAP portable: unknown formula role profile')
         _validate_formula_roles(pkt,env['formula_roles'])
     return pkt
 

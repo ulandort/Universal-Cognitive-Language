@@ -3,8 +3,8 @@
 import core
 
 
-def author(parent, contribution):
-    draft=core.draft_from_packet(parent)
+def author(parent, contribution, *, archived=False):
+    draft=core.draft_from_packet(parent, archived=archived)
     acts=draft['discourse']['acts']
     act=contribution['act']
     if act['id'] in {x['id'] for x in acts}:raise ValueError('new act ID must be unique')
@@ -25,5 +25,5 @@ def author(parent, contribution):
     hist=draft['history']
     hist['summary']=contribution.get('history_summary',hist['summary']+' New act '+act['id']+' appended.')
     hist['unresolved'].extend(contribution.get('new_unresolved',[]))
-    return core.build(draft, version=core.packet_version(parent))
+    return core.build(draft, version=core.packet_version(parent), archived=archived)
 

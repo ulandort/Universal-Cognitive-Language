@@ -31,7 +31,7 @@ const CORE={'@':2,'#':0,'=':2,'~':-1,'&':2,'|':2,'!':1,'?':1,'<':3,'*':-1,'{':3}
 const RESERVED=new Set(' @ # = ~ & | ! ? < * { : ; [ ] -'.trim().split(' '));
 const NAMED_ALIAS=/^\$[A-Za-z][A-Za-z0-9_]{0,63}/;
 function layers(body){let out=[],depth=0,start=0;for(let i=0;i<body.length;i++){if(body[i]==='[')depth++;if(body[i]===']')depth--;assert(depth>=0,'brackets');if(body[i]===';'&&depth===0){out.push(body.slice(start,i));start=i+1}}out.push(body.slice(start));assert(depth===0&&out.length===4,'layers');return out.map(x=>{assert(x[0]=='['&&x.at(-1)==']','outer layers');return x.slice(1,-1)})}
-function semantic(packet){
+function semantic(packet,{archived=false}={}){
  const defs=packet.definitions, domains=packet.domains;
  const long=packet.guide.version==='UCL/1.2-DRAFT';
  const dependent=long||packet.guide.version==='UCL/1.1';
@@ -100,7 +100,7 @@ function semantic(packet){
   fail('operator '+g);
  }let r=one();assert(i===s.length,'trailing');return r;}
  assert(parse(src[0])==='orientation','orientation');assert(parse(src[1])==='prop','explanation');assert(['prop','epistemic'].includes(parse(src[2])),'conclusion');
- const acts=packet.discourse.acts;assert(acts.length>=1&&acts.length<=(long?4096:100),'act count');let seen=new Map();
+ const acts=packet.discourse.acts;assert(acts.length>=1&&(archived&&long||acts.length<=(long?4096:100)),'act count');let seen=new Map();
  const actIndex=new Map(acts.map((act,index)=>[act.id,index]));
  for(const a of acts){assert(!seen.has(a.id),'duplicate act');assert(typeof a.text==='string'&&a.text.length>0,'act text');assert(typeof a.speaker==='string'&&a.speaker.length>0&&a.speaker.length<=120,'speaker');assert(a.references.every(r=>seen.has(r)),'references');for(const e of a.expressions)assert(['prop','epistemic'].includes(parse(e)),'act expression');const d=a.details;
   if(a.kind==='challenge')assert(d.disputes.length>0&&d.disputes.every(x=>seen.has(x)),'challenge refs');
@@ -139,7 +139,7 @@ function semantic(packet){
   seen.set(a.id,a);
  }
  assert(packet.discourse.current===acts.at(-1).id,'current act');
- assert(Array.isArray(packet.acknowledgements)&&packet.acknowledgements.length<=recordsLimit,'acknowledgement count');
+ assert(Array.isArray(packet.acknowledgements)&&(archived&&long||packet.acknowledgements.length<=recordsLimit),'acknowledgement count');
  for(const a of packet.acknowledgements){
   const author=seen.get(a.by);assert(author,'ack author');
   const t=a.target;assert(t&&typeof t==='object'&&!Array.isArray(t),'ack target');
