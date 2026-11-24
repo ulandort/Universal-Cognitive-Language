@@ -138,6 +138,22 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertEqual(after['discourse']['acts'][:-1], before['discourse']['acts'])
             self.assertEqual({glyph: after['definitions'][glyph] for glyph in before['definitions']},
                              before['definitions'])
+            self.assertLess(inspected.stdout.index('Concept index'), inspected.stdout.index('Recorded open issues'))
+            comparison = subprocess.run(
+                [*cli, 'inspect', str(outgoing), '--since', str(incoming), '--json'],
+                text=True, capture_output=True, timeout=20,
+            )
+            self.assertEqual(comparison.returncode, 0, comparison.stderr)
+            ledger = json.loads(comparison.stdout)
+            self.assertEqual(ledger['comparison']['added_symbols'], ['$control_sensitive'])
+            symbol = next(item for item in ledger['symbols'] if item['symbol'] == '$control_sensitive')
+            self.assertEqual(symbol['recent_expression_acts'], ['t9'])
+            unrelated = subprocess.run(
+                [*cli, 'inspect', str(outgoing), '--since', str(ROOT / 'examples/quickstart.txt')],
+                text=True, capture_output=True, timeout=20,
+            )
+            self.assertNotEqual(unrelated.returncode, 0)
+            self.assertIn('same retained conversation', unrelated.stderr)
 
     def test_state_ledger_resolves_exact_stances_through_a_long_history(self):
         starter = json.loads((ROOT / 'examples/quickstart.txt').read_bytes())

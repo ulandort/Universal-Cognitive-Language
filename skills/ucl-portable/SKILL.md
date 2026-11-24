@@ -11,6 +11,10 @@ Use this skill when the user wants to **read, explain, validate, create, continu
 
 **Current format:** `UCL/2.1-SAP1-PORTABLE`. The CLI also reads and continues archived `UCL/2.0-SAP1-PORTABLE` packets using their original IDs. The 11 original core glyphs are `@ # = ~ & | ! ? < * {`. Do not introduce a new core glyph.
 
+## Try a packet
+
+Start with the [five-minute quickstart](https://github.com/ulandort/Universal-Cognitive-Language#try-ucl-in-five-minutes) or join the [eight-turn UCL Challenge](https://github.com/ulandort/Universal-Cognitive-Language#ucl-challenge-join-at-turn-nine). The Challenge packet and its embedded guide are sufficient for reading and drafting in a fresh model session.
+
 ## 1. Prepare the local tools
 
 - If you are working inside the [UCL repository](https://github.com/ulandort/Universal-Cognitive-Language), use its `src/ucl.py`, `tools/author.py`, and `docs/UCL_2_0_SPECIFICATION.md` directly.

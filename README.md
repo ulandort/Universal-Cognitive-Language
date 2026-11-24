@@ -102,9 +102,9 @@ Run the reference validator to confirm that an incoming packet uses the pinned g
 
 See the [2.1 specification](docs/UCL_2_1_SPECIFICATION.md#guide-and-rules-fingerprints) and [2.0 release notes](RELEASE_NOTES_2_0.md#portable-guide-and-rules-fingerprints) for pinned fingerprints. The Python CLI rejects duplicate JSON keys and caps Portable input at 8,000,000 bytes and standalone drafts at 1,000,000 bytes. The `decode` command extracts the inner packet. Use `continue` to carry existing envelope-level formula roles forward.
 
-Use `python src/ucl.py inspect packet.txt` to read the conversation state first. It shows each speaker's latest recorded stance on the exact claim branch, withdrawals, recorded open issues, and the vocabulary. Add `--json` for the [derived state ledger](docs/UCL_STATE_LEDGER.md).
+Use `python src/ucl.py inspect packet.txt` to read the conversation state first. The Concept Index shows recent symbol use and speaker-scoped retirements. Add `--since earlier.txt` to see which definitions were added between two retained packets. The state ledger shows each speaker's latest recorded stance on the exact claim branch, withdrawals, and recorded open issues. Add `--json` for the [derived state ledger](docs/UCL_STATE_LEDGER.md).
 
-Portable is the single supported interchange format. The [design notes](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) explore extensions, signing, and history continuity for a future revision.
+Portable is the single supported interchange format. The [long-conversation design](docs/UCL_LONG_CONVERSATIONS.md) explores reducing file size and model input while keeping one self-contained handoff. The [successor notes](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) cover signing and continuity.
 
 ## Getting started
 

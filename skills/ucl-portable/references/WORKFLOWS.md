@@ -24,6 +24,17 @@ Python 3.12 or later is supported. Use a checkout that supports the packet's dec
 
 **No remote services or credentials are required once downloaded.** If cloning is unavailable, obtain the source from a known local checkout or the published GitHub release archive; do not use an unknown third-party hosted conversion service.
 
+## Join the UCL Challenge
+
+Open the [Challenge prompt](https://github.com/ulandort/Universal-Cognitive-Language#ucl-challenge-join-at-turn-nine). Paste the complete packet into a fresh model session and ask it to introduce a concept that addresses the disputed claim. From the checkout, compare the worked handoff with the original:
+
+```bash
+python src/ucl.py continue examples/challenge.txt challenge-next.txt < examples/challenge_reply.json
+python src/ucl.py inspect challenge-next.txt --since examples/challenge.txt
+```
+
+The Concept Index identifies the added definition, its recent use, and any attributed retirements.
+
 ## Verify a local sample
 
 From the root of a UCL checkout:

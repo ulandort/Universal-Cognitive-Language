@@ -15,13 +15,14 @@ The ledger is a deterministic read view of a validated UCL Portable packet. It c
 | `withdrawals` | Every retained withdrawal, in acknowledgement chronology |
 | `recent_acknowledgements` | Last ten acknowledgements in acknowledgement chronology, including procedural actions |
 | `symbols` | Defined symbols in code point order, including definitions absent from recent expressions |
+| `comparison` | Present with `--since earlier.txt`. Includes `previous_packet_sha256` and the code-point-sorted `added_symbols` |
 | `vocabulary` | Retained retirements, examples, and counterexamples in act and record order, with speaker, act, and resolved definition ID |
 
 Each acknowledgement entry contains `speaker`, `by` (author act ID), `acknowledgement` (ACK ID), `action`, and the original `target`. It also contains the resolved `source_act`, `expression_index`, `path`, and `expression`, plus the original `qualification` and `replacement`. For a whole-act acknowledgement, `expression_index` and `expression` are null. The `expression` is the exact resolved subtree rendered in UCL syntax.
 
 An example or counterexample also includes the referenced expression. A retirement includes the suggested successor and its resolved ID, both null when no successor was given.
 
-Each symbol entry contains `symbol`, `definition_id`, `kind`, `gloss`, `first_retained_expression_act` (an act ID or null), and the boolean `used_in_recent_acts`. Usage counts expressions directly listed in each act's `expressions` field. Recent usage covers the last five retained acts. First retained use does not establish when a symbol was introduced or whether it remains endorsed.
+Each symbol entry contains `symbol`, `definition_id`, `kind`, `gloss`, `first_retained_expression_act` (an act ID or null), the boolean `used_in_recent_acts`, and the ordered `recent_expression_acts` list of exact act IDs. Usage counts expressions directly listed in each act's `expressions` field. Recent usage covers the last five retained acts. First retained use does not establish when a symbol was introduced or whether it remains endorsed.
 
 ## Stance derivation
 
@@ -32,4 +33,4 @@ Each symbol entry contains `symbol`, `definition_id`, `kind`, `gloss`, `first_re
 
 This projection records attributed statements without deciding their truth. Portable speaker labels are unauthenticated. A response, revision, or reference to a question does not establish that it was resolved. Question acts and author-recorded open issues are shown separately. Omitted acts cannot supply evidence about earlier stances.
 
-The terminal view puts the recorded state first, then shows recent questions, the vocabulary, and recent acts. It may shorten long prose and escapes nonprintable characters. The JSON view preserves the original strings. Both can be regenerated locally from the single Portable file.
+The terminal view starts with a Concept Index, then shows recorded state, recent questions, the full symbol catalog, and recent acts. A comparison requires the same grammar version, matching earlier definitions, domains, and claims, and an unchanged retained act prefix. It compares two validated records and does not authenticate their provenance. Retirement is attributed to a speaker and never removes a symbol from the catalog. It may shorten long prose and escapes nonprintable characters. The JSON view preserves the original strings. Both can be regenerated locally from the single Portable file.

@@ -7,6 +7,7 @@ self-contained Portable wire lives in portable.py.
 from __future__ import annotations
 from core import *  # Preserve existing public typed-grammar API exactly.
 import core as _core
+import argparse
 import json
 import sys
 from tempfile import NamedTemporaryFile
@@ -102,7 +103,7 @@ def main(args):
         _continue_cli(args)
         return
     if len(args)<3:
-        raise ValueError('Usage: python src/ucl.py check file.txt | encode inner.json portable.txt | decode portable.txt inner.json | continue incoming.txt next.txt < contribution.json | inspect portable.txt [--json] | upgrade old.txt current.txt | build/canonicalize/draft ...')
+        raise ValueError('Usage: python src/ucl.py check file.txt | encode inner.json portable.txt | decode portable.txt inner.json | continue incoming.txt next.txt < contribution.json | inspect portable.txt [--json] [--since earlier.txt] | upgrade old.txt current.txt | build/canonicalize/draft ...')
     command=args[1]
     if command=='check' and len(args)==3:
         data=_core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
@@ -111,13 +112,22 @@ def main(args):
         else:
             print(json.dumps(_core.check(data),indent=2))
     elif command=='inspect':
-        if len(args) != 3 and not (len(args) == 4 and args[3] == '--json'):
-            raise ValueError('Usage: python src/ucl.py inspect portable.txt [--json]')
         from inspection import derive_ledger, describe_packet
 
-        envelope = _core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
+        parser = argparse.ArgumentParser(prog='python src/ucl.py inspect')
+        parser.add_argument('packet', help='Portable packet to inspect')
+        parser.add_argument('--json', action='store_true', help='emit the derived ledger as JSON')
+        parser.add_argument('--since', metavar='EARLIER_PACKET', help='compare against an earlier retained packet')
+        options = parser.parse_args(args[2:])
+        envelope = _core.read_json_file(options.packet, limit=MAX_PORTABLE_JSON)
         packet = decode_portable(envelope)
-        print(json.dumps(derive_ledger(packet), indent=2) if len(args) == 4 else describe_packet(packet, portable.label(envelope['format'])))
+        previous = None
+        if options.since:
+            previous = decode_portable(_core.read_json_file(options.since, limit=MAX_PORTABLE_JSON))
+        if options.json:
+            print(json.dumps(derive_ledger(packet, previous), indent=2))
+        else:
+            print(describe_packet(packet, portable.label(envelope['format']), previous))
     elif command=='encode' and len(args)==4:
         source=_core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
         result=encode_portable(source)
