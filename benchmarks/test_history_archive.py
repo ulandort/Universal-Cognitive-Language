@@ -66,6 +66,10 @@ class HistoryArchiveTests(unittest.TestCase):
         self.assertFalse(brief['whole_packet_audited'])
         self.assertEqual(brief['archive_blocks_opened'], 1)
         self.assertEqual(brief['current_state']['retained_act_count'], 4096)
+        issues = self.packed['packet']['history']['unresolved']
+        self.assertEqual(brief['open_issue'], {
+            'text': issues[-1], 'source': f'/packet/history/unresolved/{len(issues) - 1}',
+        })
         self.assertEqual(brief['claim']['scope']['path'], [1])
         self.assertTrue(any(ack['author_act'] == 't37' and ack['ack_id'] == 'condition37'
                             for ack in brief['claim']['acknowledgements']))

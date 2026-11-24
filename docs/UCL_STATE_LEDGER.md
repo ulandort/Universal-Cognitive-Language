@@ -34,6 +34,8 @@ Briefing version 2 uses three distinct reference labels. The labels apply both t
 
 The raw `inspect --act`, `inspect --claim`, and `inspect --state` commands retain their existing field names. Packet ACKs still use `id` and `by` on the wire.
 
+When an author has recorded issues, `open_issue` quotes the last entry in `packet.history.unresolved` verbatim and gives its JSON Pointer in the original packet. It is conversation-wide speaker data. It can refer to a different branch than the selected claim. When the list is empty, the field is null. Questions remain in Current State.
+
 Use the original Portable file with the recipient's validator and authoring tools. The briefing is an excerpt for reading and prompting. Try the [outside-reader exercise](UCL_HANDOFF_TRIAL.md) to see whether a new participant can continue from it.
 
 ## JSON fields

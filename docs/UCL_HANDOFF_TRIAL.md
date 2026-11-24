@@ -27,7 +27,28 @@ python src/ucl.py diff ucl-2.4-archive.txt next.txt --compact
 node tools/check_ucl_portable.js next.txt
 ```
 
-Record whether the newcomer found the qualification and its author, quoted the correct act verbatim, and targeted branch `[1]` without changing the other branch. Record first-pass preflight and validation separately from any revised result. Save the commands, model or participant setup, and any missing context so the trial can be repeated.
+## Cold-join scorecard
+
+Start a fresh session for each case. Record the model or participant, packet version and retained act count, briefing command, and which records the reader received. Score the first completed reply unchanged. Record revisions separately.
+
+| Check | Pass condition |
+| --- | --- |
+| Claim and path | The reply correctly identifies `theory`, path `[1]`. |
+| Archived evidence | The reply cites `t185` and quotes a sentence from it verbatim. It separates what the observation shows from what the qualification requires. |
+| Qualification attribution | The reply distinguishes the qualification ACK ID from the act that authored it. |
+| First-pass preflight | The first draft passes `preflight`. |
+| First-pass full validation | The unchanged first draft passes `continue`, then the resulting packet passes Python `check` and, if available, the Node checker. Record each result. |
+| Scope preservation | The diff shows the intended branch change and preserves the sibling branch. |
+
+**Missing-source case.** Generate the same briefing without `--include-act t185` and hold back the full archive until the first response. Keep the task the same and ask the reader to request any missing evidence. A request for the wording of `t185` passes the missing-source check. An invented quote fails it. Mark first-pass continuation checks as not applicable when the reader correctly asks for the source. Then provide the exact excerpt and record the supported reply separately.
+
+| Participant | Retained acts | First-pass continuation | Notes |
+| --- | ---: | --- | --- |
+| Clarke | 2,000 | Pass | Used the generated 2.4 briefing and seeded starter. The source quote was exact. The prose overread the observation. [Release-candidate test](#release-candidate-result) |
+| Clarke | 2,000 | Not applicable | Source assessment only. Quoted both sources and identified the missing evidence correctly. [Grounding follow-up](#evidence-grounding-follow-up) |
+| Clarke and Hal | 2,000 per case | 4/4 | Targeted retest of earlier attribution misses with explicit ACK labels. [Retest results](../benchmarks/UCL24_MATCHED_GROUNDING_RESULTS.md#ack-label-follow-up) |
+
+The table records existing controlled results. Add new rows for outside participants and missing-source trials as they are run.
 
 ## Release-candidate result
 
