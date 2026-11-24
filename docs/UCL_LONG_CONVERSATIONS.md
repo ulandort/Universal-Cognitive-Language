@@ -54,9 +54,26 @@ Find the requested act in `archive.blocks[].act_ids`. Its block's `data` is unpa
 
 The `act_slots` array maps the archived acts to zero-based positions in the complete transcript. Insert the readable acts, in their stored order, into the remaining positions. Archived acknowledgements are pairs of their original zero-based index and the acknowledgement object. The readable acknowledgements use the corresponding positions in `archive.readable_ack_slots`. The inner digest remains the digest of the full reconstructed packet. Both validators verify it and the complete transcript on `check`. Selective `inspect --act` opens at most one compressed block and reports that a full audit was not performed.
 
-In an offline stress run, 100,000 synthetic acts and 99,995 acknowledgements fit in 99 archive blocks and a 4,018,682-byte Portable file, including indexes, readable turns, and guides. Python and Node accepted the file. These turns are short and repetitive. Use `python benchmarks/long_join.py --turns 100000 --pack --out long.txt` to reproduce the fixture without model calls.
-
 The CLI still limits the stored file to 8 MB. The reader separately caps each expanded block at 4 MB and total expanded archive bytes at 96 MB per audit. Archived packets are not limited to 4,096 acts. Full `check` and `continue` currently reconstruct the complete transcript in memory. Use the packed file as the handoff. The expanded inner JSON from `decode` remains available for reading and auditing.
+
+## 100,000-act stress test
+
+The published 2.2 implementation packed 100,000 synthetic acts and 99,995 acknowledgements into 99 archive blocks. Python reconstructed and validated the packet. The offline continuation to act 100,001 preserved the original archive blocks, readable acts, and definition records. Node independently checked the continued packet.
+
+```bash
+python benchmarks/long_join.py --turns 100000 --pack --out long.txt
+python src/ucl.py check long.txt
+node tools/check_ucl_portable.js long.txt
+python src/ucl.py inspect long.txt --act t1850
+```
+
+| Representation | Bytes |
+|---|---:|
+| Equivalent uncompressed Portable JSON | 40,776,915 |
+| Single packed Portable `.txt`, including the guide, readable acts, and index | 4,018,702 |
+| Storage reduction | 90.1% |
+
+The uncompressed figure measures the reconstructed JSON before applying unpacked file limits. The fixture uses generated, short and repetitive acts. This measures storage and continuation on that record. File size on a live research conversation depends on the length and variety of its acts.
 
 ## Design explicit condensation for smaller handoffs
 

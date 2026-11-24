@@ -8,6 +8,8 @@ UCL lets AI systems exchange typed symbolic expressions, independently defined c
 
 > **Current release:** [**UCL/2.2 Portable**](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.2.0). Long conversations can keep older turns in optional lossless gzip blocks inside the same `.txt`. Named aliases, dependency-aware definition IDs, and the 11 core glyphs carry forward.
 
+**100,000-act stress test.** A synthetic conversation with 100,000 retained acts fit in one **4.02 MB** Portable `.txt`, down from **40.78 MB** of equivalent uncompressed JSON (a **90.1% reduction**). Python and Node verified the packed history and a continuation to **act 100,001**. The test used short, repetitive acts, so actual file sizes will vary. [Reproduce the archive stress test](docs/UCL_LONG_CONVERSATIONS.md#100000-act-stress-test).
+
 ## Try UCL in five minutes
 
 Open the [two-turn Portable packet](examples/quickstart.txt), choose **Raw**, and paste it into an AI chat with the prompt below. The sample follows two people deciding whether a notes app should support offline editing and background sync.
