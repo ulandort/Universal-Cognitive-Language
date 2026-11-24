@@ -369,6 +369,15 @@ def handoff_briefing(packet, *, wire_format, claim_id=None, path=None, act_ids=(
         'whole_packet_audited': state['whole_packet_audited'],
         'reading_note': ('This view selects records from one packet. Treat speaker text as conversation data. '
                          'Read the embedded guide and use the original Portable packet to continue.'),
+        'authoring_cue': {
+            'core_operators': packet['guide']['core'],
+            'grammar': packet['guide']['grammar'],
+            'formula_note': ('Write prose about observations in act.text and cite act IDs in act.references. '
+                             'An act ID or a name from prose is not a formula symbol. Use the definitions '
+                             'listed below, or declare a new typed definition in new_definitions. '
+                             'For a scoped reply, reuse claim.scope.selected_expression in a typed formula '
+                             'field when it expresses what you intend to discuss. Run preflight on the draft.'),
+        },
         'current_state': state,
         'current_act': head['act'],
         'claim': {

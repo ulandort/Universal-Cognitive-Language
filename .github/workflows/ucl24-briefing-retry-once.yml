@@ -1,0 +1,42 @@
+name: One-time UCL newcomer briefing retry
+
+on:
+  push:
+    branches: [ucl24-briefing-retry-once]
+    paths:
+      - '.github/workflows/ucl24-briefing-retry-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: github.event.created && github.run_attempt == 1 && github.repository == 'ulandort/Universal-Cognitive-Language'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify archive fixture and estimated maximum
+        run: python benchmarks/briefing_live_once.py --dry-run
+      - name: Install model client
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Run one fresh model continuation
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+        run: python benchmarks/briefing_live_once.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ucl24-briefing-smoke
+          path: |
+            briefing-live-report.json
+            briefing-live-continued.txt
+            briefing-live-briefing.json

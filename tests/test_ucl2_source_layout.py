@@ -143,6 +143,8 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertEqual(brief['requested_acts'][0]['act']['id'], 't2')
             self.assertEqual(brief['current_act']['id'], 't9')
             self.assertIn('$control_sensitive', brief['definitions'])
+            self.assertIn('~', brief['authoring_cue']['core_operators'])
+            self.assertIn('act.references', brief['authoring_cue']['formula_note'])
             self.assertTrue(brief['whole_packet_audited'])
             compact_text = run('diff', challenge, output, '--compact').stdout
             compact = json.loads(compact_text)
