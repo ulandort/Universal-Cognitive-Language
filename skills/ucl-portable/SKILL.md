@@ -17,7 +17,7 @@ Start with the [five-minute quickstart](https://github.com/ulandort/Universal-Co
 
 ## 1. Prepare the local tools
 
-- If you are working inside the [UCL repository](https://github.com/ulandort/Universal-Cognitive-Language), use its `src/ucl.py`, `tools/author.py`, and `docs/UCL_2_0_SPECIFICATION.md` directly.
+- Inside the [UCL repository](https://github.com/ulandort/Universal-Cognitive-Language), use `src/ucl.py` and `docs/UCL_2_3_SPECIFICATION.md`.
 - If this skill is installed in another repository, **its own SKILL.md is not the protocol implementation**. Ask permission before retrieving code, then clone or otherwise obtain the UCL repository into an explicitly chosen local directory. Use the commands in [references/WORKFLOWS.md](references/WORKFLOWS.md). Never pretend `src/ucl.py` is installed merely because this skill is.
 - Python 3.12+ reference validator uses the standard library for ordinary plaintext packets. Neither internet access nor an API key is needed to validate packets once code is available. Never install an unrelated hosted interpreter or central registry.
 
@@ -30,7 +30,7 @@ Start with the [five-minute quickstart](https://github.com/ulandort/Universal-Co
    ```
 3. Read `packet.guide`, `packet.definitions`, `packet.claims`, `packet.discourse.acts`, `packet.acknowledgements`, `packet.history` and any role annotations. The packet's own validated definitions—not guessed conventional names—determine the meaning of each custom symbol.
 4. Compare previous definition IDs and retained history before interpreting revisions. A scoped acknowledgement can mean `understood`, `reject`, `qualify`, `adopt-for-discussion`, or `withhold-judgment`; none means automatic empirical proof.
-5. A checksum **does not authenticate the speaker**. Verify an expected hash, signature, or trusted delivery path separately when authenticity matters.
+5. Retraction validation compares speaker labels. Anyone who can author a packet can reuse a label. When identity matters, verify the sender through a trusted channel or a separate signature.
 
 ## 3. Understand and reason without changing old meaning
 
@@ -42,12 +42,13 @@ Start with the [five-minute quickstart](https://github.com/ulandort/Universal-Co
 
 ## 4. Independently author and hand off
 
-1. Decide **your own** new concept, claim, counterargument or stance first. Use the current packet's embedded rules to construct the full UCL contribution; do not just translate English into decorative symbols.
+1. Decide **your own** new concept, claim, counterargument or stance first. For scoped replies with the local CLI, use **template → edit → preflight → continue**. Choose the target from the validated packet. Use `template --claim CLAIM --path PATH` for a claim reply or `template --retract ACK_ID` for a 2.3 retraction. Pass `--speaker NAME` to either command. Use the embedded guide to draft directly when the CLI is unavailable.
 2. Preserve all earlier delivered acts, definition IDs and meanings. New custom concepts use a fresh alias such as `$background_sync` and a typed definition in `new_definitions`; **never overwrite** an earlier meaning under its old identifier.
 3. Construct the required act fields, typed expression(s), exact scoped acknowledgement, honest history summary and optional role labels. Ensure IDs and acknowledgement paths are well-typed and refer to retained history.
 4. Save the authored contribution as JSON. Use optional `act.vocabulary` records for retirement, examples, or counterexamples. The embedded guide defines the record shapes. See `examples/challenge_reply.json` for a worked counterexample.
 5. Use the local CLI to build and check the complete handoff:
    ```bash
+   python /path/to/Universal-Cognitive-Language/src/ucl.py preflight incoming.txt < contribution.json
    python /path/to/Universal-Cognitive-Language/src/ucl.py continue incoming.txt next.txt < contribution.json
    python /path/to/Universal-Cognitive-Language/src/ucl.py check next.txt
    ```

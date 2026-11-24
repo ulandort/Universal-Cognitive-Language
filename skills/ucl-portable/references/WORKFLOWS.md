@@ -63,12 +63,14 @@ From the checkout:
 
 ```bash
 python src/ucl.py check incoming-ucl2.txt
-python src/ucl.py inspect incoming-ucl2.txt
+python src/ucl.py inspect incoming-ucl2.txt --state
 ```
 
-Now read the trusted/validated embedded guide, definitions, act references and history. **Author** a `contribution.json` appropriate to the current act IDs and scoped acknowledgement. The contribution must be model-authored and verified; do not copy outdated fixed IDs or fields from an unrelated example. Use the optional `examples/contribution_example.json` to inspect shape only, not as a guaranteed template for every message kind.
+Read the validated guide, then use **template → edit → preflight → continue** for a scoped reply. The template command uses the incoming packet's IDs. Replace the example speaker, claim, and path with the ones you intend to use. Fill in the content fields and choose the acknowledgement action before running preflight.
 
 ```bash
+python src/ucl.py template incoming-ucl2.txt --speaker "New participant" --claim theory --path 1 > contribution.json
+# Edit contribution.json before running preflight.
 python src/ucl.py preflight incoming-ucl2.txt < contribution.json
 python src/ucl.py continue incoming-ucl2.txt next-ucl2.txt < contribution.json
 python src/ucl.py check next-ucl2.txt

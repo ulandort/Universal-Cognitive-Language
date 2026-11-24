@@ -6,6 +6,8 @@ The ledger is a deterministic read view of a validated UCL Portable packet. It c
 
 `python src/ucl.py inspect packet.txt --state` emits a compact JSON excerpt. It includes up to 12 recently used definitions with their IDs, up to 12 recorded issue previews, five recent question acts, up to 12 latest stance records, and up to five speaker retirements. Preview fields may shorten prose or expressions. Follow a source act ID with `inspect --act` or a claim and path with `inspect --claim --path` for exact text. A recorded question stays visible even when someone has replied. The current file still carries the full definitions and retained records.
 
+Each `latest_stances` entry has a `status`. `current` marks the latest recorded stance at that scope, which can include withholding judgment or adopting a claim for discussion. `withdrawn` marks the speaker's withdrawal of their own claim. `retracted` means the latest stance was cleared by a retraction. In that entry, `acknowledgement` is the retraction ACK ID and `retracts` is the original ACK ID. Retractions of superseded ACKs appear in `recent_retractions` while the newer stance keeps its own status.
+
 For packed files, the excerpt verifies the envelope checksum and archive layout without inflating blocks. It reports visible and total act counts separately, and sets `whole_packet_audited` to false. Question counts cover visible acts. Gzip packing keeps stance authors, acknowledgement targets for substantive stances, and named claim sources visible. Run `check` for a full audit.
 
 ## Packet diff

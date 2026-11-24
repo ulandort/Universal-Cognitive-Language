@@ -161,6 +161,7 @@ class SourceLayoutTests(unittest.TestCase):
         stances = current_state(after)['latest_stances']
         self.assertTrue(any(a['acknowledgement'] == 'x3' for a in stances))
         self.assertEqual(stances[-1]['action'], 'retract')
+        self.assertEqual(stances[-1]['status'], 'retracted')
         excerpt = focused_context(after, claim_id='theory', path=[1])
         self.assertEqual(excerpt['acknowledgements'][-1]['original_ack_act'], 't8')
 
@@ -175,6 +176,8 @@ class SourceLayoutTests(unittest.TestCase):
         delta = compare_packets(ucl.decode_portable(accepted), behind)
         self.assertFalse(delta['new_retractions'][0]['cleared_current_stance'])
         self.assertEqual(delta['stance_changes'], [])
+        surviving = current_state(behind)['latest_stances'][-1]
+        self.assertEqual((surviving['status'], surviving['acknowledgement']), ('current', 'x5'))
         newest_retraction = copy.deepcopy(older_retraction)
         newest_retraction['acknowledgements'][0]['target']['ack'] = 'x5'
         cleared = ucl.decode_portable(ucl.continue_portable(accepted, newest_retraction))
@@ -214,6 +217,27 @@ class SourceLayoutTests(unittest.TestCase):
                 rejected = subprocess.run(js, text=True, capture_output=True, timeout=20)
                 self.assertNotEqual(rejected.returncode, 0)
                 self.assertIn('retraction ownership', rejected.stderr)
+
+    def test_retract_and_take_a_new_stance_in_one_act(self):
+        from inspection import compare_packets, current_state
+
+        previous = ucl.decode_portable(ucl.read_json_file(ROOT / 'examples/challenge.txt'))
+        previous = core.upgrade_packet(previous)
+        draft = ucl.read_json_file(ROOT / 'examples/challenge_retraction.json')
+        draft['act']['text'] = 'I retract x4 and withhold judgment on branch [1].'
+        draft['acknowledgements'].append({
+            'id': 'x6', 'by': 't9', 'target': {'claim': 'theory', 'path': [1]},
+            'action': 'withhold-judgment', 'qualification': None, 'replacement': None, 'note': '',
+        })
+        packet = ucl.decode_portable(ucl.continue_portable(ucl.encode_portable(previous), draft))
+        self.assertEqual(packet['acknowledgements'][-2:], draft['acknowledgements'])
+        state = current_state(packet)
+        stance = state['latest_stances'][-1]
+        self.assertEqual((stance['status'], stance['acknowledgement']), ('current', 'x6'))
+        self.assertEqual(state['recent_retractions'][-1]['retracts'], 'x4')
+        delta = compare_packets(previous, packet)
+        self.assertEqual(delta['new_retractions'][0]['acknowledgement'], 'x5')
+        self.assertEqual(delta['stance_changes'][0]['after']['acknowledgement'], 'x6')
 
     def test_portable_cli_rejects_ambiguous_and_oversized_json(self):
         with tempfile.TemporaryDirectory() as directory:

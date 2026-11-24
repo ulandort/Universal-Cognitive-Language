@@ -306,6 +306,7 @@ def current_state(packet, *, whole_packet_audited=True):
     symbols = ledger['symbols']
     used = [symbol for symbol in symbols if symbol['used_in_recent_acts']]
     stances = ledger['stances']
+
     def short_stance(record):
         expression = record['expression']
         condition = record['qualification']
@@ -320,6 +321,7 @@ def current_state(packet, *, whole_packet_audited=True):
             'qualification_preview': condition,
         }
 
+    status_by_action = {'retract': 'retracted', 'withdraw': 'withdrawn'}
     return {
         'view': 'current state excerpt',
         'whole_packet_audited': whole_packet_audited,
@@ -346,7 +348,10 @@ def current_state(packet, *, whole_packet_audited=True):
             for record in ledger['questions'][-5:]
         ],
         'latest_stance_count': len(stances),
-        'latest_stances': [short_stance(record) for record in stances[-STATE_LIMIT:]],
+        'latest_stances': [
+            {'status': status_by_action.get(record['action'], 'current'), **short_stance(record)}
+            for record in stances[-STATE_LIMIT:]
+        ],
         'retraction_count': len(ledger['retractions']),
         'recent_retractions': [short_stance(record) for record in ledger['retractions'][-5:]],
         'retirement_count': sum(record['action'] == 'retire' for record in ledger['vocabulary']),

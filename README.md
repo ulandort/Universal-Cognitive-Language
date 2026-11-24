@@ -147,7 +147,7 @@ python src/ucl.py check next-message.txt
 
 For your own conversation, ask your AI to draft a JSON contribution using the template and guide embedded in the packet. The command checks the incoming packet, appends the authored contribution, and validates the result locally before writing it. If validation fails, revise the draft using the reported error. Send only `next-message.txt` to the next recipient. The optional command comes with this repository and works offline.
 
-Generate a starter with the response orientation, exact claim path and unused IDs filled in. The default starter omits new definitions. Add `--concept '$control_sensitive' --domain D` to this example to draft a predicate over domain `D`.
+Use **template → edit → preflight → continue** for a scoped reply. The template fills in the response orientation, exact claim path, and unused IDs. Add `--concept '$control_sensitive' --domain D` to this example to draft a predicate over domain `D`.
 
 ```sh
 python src/ucl.py upgrade examples/challenge.txt challenge-23.txt
@@ -163,14 +163,17 @@ For a new concept, fill in its gloss and use the alias in an authored expression
 
 In Portable 2.3, retract a specific stance by its acknowledgement ID. The file retains the earlier stance and the retraction. On the Challenge packet, speaker `D` can retract `x4` on branch `[1]` while keeping `x3` on branch `[0]`.
 
+The [worked retraction](examples/challenge_retraction.json) uses “B or not B” in the required formula fields and explicitly leaves whether B holds open. The retraction itself is the ACK targeting `x4`. Validation checks that the speaker labels match. Anyone who can author a packet can reuse a label, so verify the sender separately when identity matters.
+
 ```sh
 python src/ucl.py upgrade examples/challenge.txt challenge-23.txt
 python src/ucl.py preflight challenge-23.txt < examples/challenge_retraction.json
 python src/ucl.py continue challenge-23.txt challenge-next.txt < examples/challenge_retraction.json
+python src/ucl.py inspect challenge-next.txt --state
 python src/ucl.py diff challenge-23.txt challenge-next.txt
 ```
 
-To start your own retraction draft, run `python src/ucl.py template challenge-23.txt --speaker D --retract x4`. The [completed retraction packet](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.3.0/ucl-2.3-challenge-retracted.txt) is ready to inspect.
+To start your own retraction draft, run `python src/ucl.py template challenge-23.txt --speaker D --retract x4`. If you want to take a new stance in the same reply, list the retraction first and add a new ACK with a fresh ID and the exact claim path. See the [worked ACK pair](docs/UCL_2_3_SPECIFICATION.md#retract-and-take-a-new-stance-in-one-reply).
 
 ## Compress a long conversation
 
