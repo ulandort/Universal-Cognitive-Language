@@ -98,3 +98,11 @@ UCL already validates disclosed history, and its inner draft helper provides a s
 A future revision of the same format could store repeated structures once and refer to them by a readable local ID. Measure this on long, varied conversations first. The embedded guide already appears once per packet, and local references will save little on unique prose. A local model can reuse the same complete file without sending the whole history to its prompt at every turn.
 
 Keeping every original act means the file must still grow as participants add unique information. A readable, smaller handoff comes from avoiding repetition or from explicitly deciding what verbatim material to leave out. Block archiving reduces stored bytes without losing old wording. Focused reading reduces what the model needs in its context. Disclosed condensation is a separate research design for when participants are willing to leave material behind.
+
+## Live cold handoff after a retraction
+
+In one Portable 2.3 run, Clarke and Hal continued a synthetic packed conversation from 4,096 to 4,098 acts. Clarke authored a retraction of the Reviewer's qualification on claim `theory`, branch `[1]`. The Reviewer's acceptance on branch `[0]` stayed in effect.
+
+Hal joined in a fresh API call. It received the derived Current State, the exact surviving claim branch, a verbatim excerpt of archived act `t1850`, and a response template. Hal returned the original retracted ACK ID `condition37`, the surviving ACK ID `ack38`, and the first sentence of the archived act verbatim. Its new act cited `t1850` and adopted branch `[0]` for discussion. Python and Node accepted both continuations, and the check confirmed that the earlier acts, acknowledgements, and definitions were preserved.
+
+Hal received 1,067 input tokens. The two model calls cost an estimated `$0.1123`. The run includes the report and both Portable outputs. [Run and artifacts](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45451819553) · [Test harness](https://github.com/ulandort/Universal-Cognitive-Language/blob/da76f7c2193f34b1d8490e5891ca6c20d9bc5c48/benchmarks/cold_relay_live_once.py)
