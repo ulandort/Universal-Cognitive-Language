@@ -38,7 +38,7 @@ An explicit ACK targets a claim and expression path, e.g. `{"claim":"theory","pa
 
 If `history.status` is `condensed`, honor the disclosed omission scope and do not pretend to remember omitted utterances. The live L25/L50 research explicitly retained all delivered acts rather than condensing them.
 
-For a packed Portable file, read its `archive_guide`. Use `inspect --act ACT_ID` to recover an exact older act or `inspect --claim CLAIM_ID --path PATH` to retrieve a branch. In a focused acknowledgement result, `by` identifies the acknowledgement author act, and `source_act` identifies the act containing the target claim or expression. Continue from the complete Portable file.
+For a packed Portable file, read its `archive_guide`. Use `inspect --handoff` to combine Current State with an exact branch and selected earlier sources. Use `inspect --act ACT_ID` to recover an exact older act or `inspect --claim CLAIM_ID --path PATH` to retrieve a branch. In a focused acknowledgement result, `by` identifies the acknowledgement author act, and `source_act` identifies the act containing the target claim or expression. Continue from the complete Portable file.
 
 A 2.4 packet includes exact ACK retraction rules in its embedded guide. `template packet.txt --speaker NAME --retract ACK_ID` seeds a contribution that retracts the named speaker's earlier stance. In inspection output, `retracts` is the original ACK ID and `original_ack_act` is the act that authored it. See the [2.4 specification](docs/UCL_2_4_SPECIFICATION.md).
 
@@ -46,7 +46,7 @@ A 2.4 packet includes exact ACK retraction rules in its embedded guide. `templat
 
 1. Independently decide the intended position, reasoning, scope and relevant earlier references.
 2. Preserve all existing definitions, IDs, earlier delivered acts, claim bindings and relevant uncertainty. Define new concepts with appropriate types and new immutable identities; never overwrite a definition.
-3. For a scoped reply with the local CLI, use **template → edit → preflight → continue**. With the packet alone, use `structural_rules.rules.reply_template` and the embedded `packet.guide.reply_authoring` example. Use defined symbols in executable expressions. Describe proposed operators in speaker text or notes.
+3. For a scoped reply with the local CLI, use **template → edit → preflight → continue**. With the packet alone, use `structural_rules.rules.reply_template` and the embedded `packet.guide.reply_authoring` example. Add `--seed-formula` when the selected proposition is an appropriate starting point. Write prose reasoning in `act.text`, cite retained turns in `act.references`, and use defined symbols in executable expressions.
 4. Construct exact acknowledgement fields. A target like `"path":["0"]` is invalid; use `"path":[0]`. For `action:"qualify"`, provide a real qualification; do not leave `null`.
 5. Verify expression types and grammar locally. Ensure `act.expressions` is a list of valid expression strings and `explanation`/`conclusion` are correctly typed expression strings.
 6. Append the authored contribution mechanically to the retained history, regenerate the deterministic integrity hashes, and recheck the complete packet. **Do not silently convert, rewrite or repair the author's semantic content.** If validation fails, return exact feedback to the author for an explicit revision.
@@ -57,9 +57,12 @@ A 2.4 packet includes exact ACK retraction rules in its embedded guide. `templat
 ```bash
 python src/ucl.py check incoming-ucl2.txt
 node tools/check_ucl_portable.js incoming-ucl2.txt
-python src/ucl.py inspect incoming-ucl2.txt --act t37
-python src/ucl.py inspect incoming-ucl2.txt
+python src/ucl.py inspect incoming-ucl2.txt --handoff --claim theory --path 1 --include-act t37
+python src/ucl.py template incoming-ucl2.txt --speaker "New participant" --claim theory --path 1 --seed-formula > contribution.json
+# Edit contribution.json before validating it.
+python src/ucl.py preflight incoming-ucl2.txt < contribution.json
 python src/ucl.py continue incoming-ucl2.txt next.txt < contribution.json
+python src/ucl.py diff incoming-ucl2.txt next.txt --compact
 ```
 
 The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The public Python entry point is `src/ucl.py`, backed by `src/portable.py` and the typed grammar and vocabulary validation in `src/core.py`. The Python reference is the authoritative structural implementation. See the [2.4 specification](docs/UCL_2_4_SPECIFICATION.md).

@@ -32,3 +32,7 @@ Record whether the newcomer found the qualification and its author, quoted the c
 ## Release-candidate result
 
 In one fresh Clarke call, the generated briefing from the 2,000-act Portable 2.4 archive opened one block. Clarke identified the exact earlier qualification and author act, quoted act `t185`, and produced an unmodified first draft that passed preflight and both validators at act 2,001. The reply targeted only the selected branch. Its prose inferred more about the observation's eligibility conditions than the archived text stated. This test checked reference accuracy, preservation, and structural validation. [Run and artifacts](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45503699604)
+
+## Evidence-grounding follow-up
+
+In a separate fresh call, Clarke read the CLI briefing from the published 2.4 archive. It quoted `t185` and the qualification from `t37` verbatim. It correctly reported that the observation describes a pattern and that the record does not establish that the required independent-input control was performed. This was a source assessment, so no continuation was generated or graded. The call cost an estimated $0.039. [Run and artifacts](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45505014140)

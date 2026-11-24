@@ -1,5 +1,7 @@
 # UCL/2.1 Portable
 
+These notes describe the historical 2.1.0 release. See the [2.4 release notes](RELEASE_NOTES_2_4.md) for the current release.
+
 UCL 2.1 expands the vocabulary that participants can build and use together. Each handoff is one self-contained UTF-8 JSON `.txt` file, with the guide, authoring template, definitions, and retained conversation embedded. The 11 core operators and four-layer body carry forward.
 
 - **Named aliases and a larger catalog.** Use terms like `$background_sync` alongside single-character aliases. A packet can define up to 512 symbols.
@@ -19,6 +21,6 @@ python src/ucl.py check next.txt
 
 ## Compatibility and verification
 
-The current wire identifier is `UCL/2.1-SAP1-PORTABLE`. The CLI validates and continues released 2.0 files using their original IDs. To reissue an archived packet under 2.1, use `python src/ucl.py upgrade archived.txt current.txt`. Keep the archived file for references to its original hashes. Earlier 2.1 development snapshots use the pins from their corresponding checkouts.
+The 2.1 wire identifier is `UCL/2.1-SAP1-PORTABLE`. The CLI validates and continues released 2.0 files using their original IDs. To reissue an archived packet under 2.1, use `python src/ucl.py upgrade archived.txt current.txt`. Keep the archived file for references to its original hashes. Earlier 2.1 development snapshots use the pins from their corresponding checkouts.
 
 Python is the reference validator. The independent Node checker covers a subset. A live Hal continuation used the embedded template and produced a packet that passed both checkers, with all prior acts and definition IDs retained. See the [live smoke test](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45346075965) and [wire specification](https://github.com/ulandort/Universal-Cognitive-Language/blob/v2.1.0/docs/UCL_2_1_SPECIFICATION.md).

@@ -32,6 +32,18 @@ Historical experiments: [native authorship](NATIVE_AUTHORING.md), [FR-1](formula
 
 In a fresh, two-model test using the six **actually model-invented** CG-2 concept definitions, recipients answered eight predeclared source-fidelity questions with and without a false third-party recap. [Full findings](COLD_RECIPIENT_ATTACK_RESULTS.md): UCL/2.0 **32/32**, matched structured English **32/32** (including **16/16 attacked** in each arm); 8/8 valid responses, software-estimated **$0.187411 USD** total. Neither format was misled in this small, explicitly warned scenario. UCL used **34,531 input tokens** compared with **21,813** for structured English. A result in one test does not establish general superiority or prompt-injection security.
 
+## Additional live results
+
+| Experiment | Observed result | What was checked |
+|---|---|---|
+| **Post-release Concept Genesis CG-2** | **7/8 delivered; 6 novel definitions; 6/6 identity receipts** | Independently authored concepts, precise critique, counterexamples, and evolving disagreement ([full CG-2 results](CG2_POSTRELEASE_RESULTS.md)) |
+| **UCL/2.0 vs structured English** | **UCL 56/56; structured English 48/56** strict-schema answers | UCL: 8/8 valid outputs; English: 7/8. The English malformed response nevertheless contained all 8 correct choices; no observed semantic-accuracy difference ([comparison report](UCL2_VS_STRUCTURED_ENGLISH.md)) |
+| **UCL/2.3 live stance retraction** | **4,096 → 4,097 acts** | Clarke identified the earlier qualification on branch `[1]` and retracted it while preserving its acceptance of branch `[0]`. Python and Node validated the continuing packet. ([successful run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45447764248)) |
+| **2.4 live newcomer briefing** | **2,000 → 2,001 acts** | Both validators accepted a fresh continuation with an exact archived quote. The prose overread the observation. [Run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45503699604) |
+| **2.4 evidence-grounding follow-up** | **Exact quotes and correct control status** | A fresh call distinguished a descriptive observation from the independent-input requirement. [Method and result](../docs/UCL_HANDOFF_TRIAL.md#evidence-grounding-follow-up) |
+
+The structured-English comparison measured schema compliance and factual correctness separately. Both formats achieved the same observed factual correctness in that test. The structured-English input used fewer tokens. Productive disagreement is part of the exchange.
+
 ## Reproduce, inspect and challenge
 
-Repeat the test with published code and exact seed; inspect every raw model attempt and model-authored repair. Score packet syntax, exact definition identity, correct references, attribution, independent disagreement, input tokens and costs separately. No central verification server is needed. The normative 2.0 format is defined in [the specification](../docs/UCL_2_0_SPECIFICATION.md).
+Repeat the test with published code and exact seed; inspect every raw model attempt and model-authored repair. Score packet syntax, exact definition identity, correct references, attribution, independent disagreement, input tokens and costs separately. No central verification server is needed. See the [current 2.4 specification](../docs/UCL_2_4_SPECIFICATION.md) and the [archived 2.0 specification](../docs/UCL_2_0_SPECIFICATION.md).
