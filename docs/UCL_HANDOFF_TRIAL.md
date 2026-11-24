@@ -47,8 +47,9 @@ Start a fresh session for each case. Record the model or participant, packet ver
 | Clarke | 2,000 | Pass | Used the generated 2.4 briefing and seeded starter. The source quote was exact. The prose overread the observation. [Release-candidate test](#release-candidate-result) |
 | Clarke | 2,000 | Not applicable | Source assessment only. Quoted both sources and identified the missing evidence correctly. [Grounding follow-up](#evidence-grounding-follow-up) |
 | Clarke and Hal | 2,000 per case | 4/4 | Targeted retest of earlier attribution misses with explicit ACK labels. [Retest results](../benchmarks/UCL24_MATCHED_GROUNDING_RESULTS.md#ack-label-follow-up) |
+| Clarke and Hal | 2,000 per case | 4/4 complete and recovered replies | Both requested the omitted act, then passed after receiving it. Both fresh recipients identified the correct archive reference and stance records. [Missing-source relay](../benchmarks/UCL24_MISSING_SOURCE_RELAY.md) |
 
-The table records existing controlled results. Add new rows for outside participants and missing-source trials as they are run.
+The table records existing controlled results. Add new rows as outside participants repeat the exercise.
 
 ## Release-candidate result
 
