@@ -2,7 +2,7 @@
 
 **Purpose:** Independently authored, precisely referenced communication across different intelligences. A complete UCL message is a self-contained JSON `.txt` or `.json` file. **The message's actual embedded guide and typed definitions are the source of meaning**, not this README or a hosted registry.
 
-> **Current development version:** UCL/2.1 Portable (`UCL/2.1-SAP1-PORTABLE`). Follow the embedded guide for definition hashing. The CLI can verify and continue archived 2.0 conversations using their original IDs.
+> **Current release:** UCL/2.1 Portable (`UCL/2.1-SAP1-PORTABLE`). Follow the embedded guide for definition hashing. The CLI can verify and continue archived 2.0 conversations using their original IDs.
 
 ## Agent Skills distribution
 
@@ -24,6 +24,8 @@ Body:        [orientation];[explanation];[conclusion];[exact symbol declarations
 
 `@[a][D]` is membership; `#N` is a scoped bound variable; `=[a][b]` is identity; `~[P][a]` is a defined typed predicate; `&[p][q]` and `|[p][q]` are conjunction and inclusive disjunction; `![p]` is negation; `?[p]` is an epistemic report requiring the stated provenance, **not** an ordinary unanswered question; `<[R][a][b]` is a defined strict order; `*[f][a]` applies a defined function; `{` introduces typed existential binding. Consult the embedded guide for all type, scoping, arity and evidence requirements.
 
+Named aliases such as `$background_sync` are interpreted using the same embedded catalog as single-character aliases.
+
 **Never assume** `P`, `B`, `C`, `E`, `G`, `K`, `M` or `N` has a universal meaning. Each is a symbol whose meaning and immutable SHA-256 identity are defined **in that packet**.
 
 ## Read the conversation
@@ -40,7 +42,7 @@ If `history.status` is `condensed`, honor the disclosed omission scope and do no
 
 1. Independently decide the intended position, reasoning, scope and relevant earlier references.
 2. Preserve all existing definitions, IDs, earlier delivered acts, claim bindings and relevant uncertainty. Define new concepts with appropriate types and new immutable identities; never overwrite a definition.
-3. Compose the new act and symbols using the actual embedded guide. Use existing typed concepts; unknown core operators are **not** executable UCL. Unspecified operator proposals may be expressed as clearly non-normative notes.
+3. Use the contribution template at `structural_rules.rules.reply_template` in a 2.1 packet and compose the new act using its embedded guide. Use existing typed concepts; unknown core operators are **not** executable UCL. Unspecified operator proposals may be expressed as clearly non-normative notes.
 4. Construct exact acknowledgement fields. A target like `"path":["0"]` is invalid; use `"path":[0]`. For `action:"qualify"`, provide a real qualification; do not leave `null`.
 5. Verify expression types and grammar locally. Ensure `act.expressions` is a list of valid expression strings and `explanation`/`conclusion` are correctly typed expression strings.
 6. Append the authored contribution mechanically to the retained history, regenerate the deterministic integrity hashes, and recheck the complete packet. **Do not silently convert, rewrite or repair the author's semantic content.** If validation fails, return exact feedback to the author for an explicit revision.
@@ -51,8 +53,10 @@ If `history.status` is `condensed`, honor the disclosed omission scope and do no
 ```bash
 python src/ucl.py check incoming-ucl2.txt
 node tools/check_ucl_portable.js incoming-ucl2.txt
+python src/ucl.py inspect incoming-ucl2.txt
+python src/ucl.py continue incoming-ucl2.txt next.txt < contribution.json
 ```
 
-The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The public Python entry point is `src/ucl.py`, backed by `src/portable.py` and the unchanged inner grammar in `src/core.py`. The Python reference is the authoritative structural implementation. See the [2.1 specification](docs/UCL_2_1_SPECIFICATION.md).
+The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The public Python entry point is `src/ucl.py`, backed by `src/portable.py` and the typed grammar and vocabulary validation in `src/core.py`. The Python reference is the authoritative structural implementation. See the [2.1 specification](docs/UCL_2_1_SPECIFICATION.md).
 
-For experimental details and actual evidence, see [README](README.md), [L50 live result](benchmarks/AUTONOMOUS_50_RESULTS.md), [Portable format](docs/SAP1_PORTABLE_DRAFT.md) and [release-readiness](docs/UCL_2_0_RELEASE_READINESS.md).
+For experimental details and actual evidence, see [README](README.md), [L50 live result](benchmarks/AUTONOMOUS_50_RESULTS.md), [historical Portable draft](docs/SAP1_PORTABLE_DRAFT.md) and [release-readiness](docs/UCL_2_0_RELEASE_READINESS.md).

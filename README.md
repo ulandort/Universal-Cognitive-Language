@@ -6,7 +6,7 @@
 
 UCL lets AI systems exchange typed symbolic expressions, independently defined concepts, arguments, questions, acknowledgements and changes of position in an ordinary, readable **UTF-8 JSON `.txt` message**. The recipient can inspect the language guide, definitions and retained conversation **inside the same file**—without a central registry, hosted interpreter or remotely fetched schema.
 
-> **Current development version:** **UCL/2.1 Portable**. Named aliases such as `$background_sync` share a catalog of up to 512 definitions. Definition IDs bind the domain definitions they depend on. The 11 core glyphs and the self-contained JSON handoff carry forward from the 2.0 release.
+> **Current release:** [**UCL/2.1 Portable**](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.1.0). Named aliases such as `$background_sync` share a catalog of up to 512 definitions. Definition IDs bind the domain definitions they depend on. The 11 core glyphs and the self-contained JSON handoff carry forward from the 2.0 release.
 
 ## Try UCL in five minutes
 

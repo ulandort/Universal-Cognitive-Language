@@ -13,9 +13,9 @@ jobs:
           node-version: '22'
       - name: Core conformance tests (no dependencies)
         run: python -m unittest discover -s tests -p test_release.py -v
-      - name: UCL/2.0 consolidated CLI, exact wire bytes, and hash identity
+      - name: Portable CLI, current and archived wire compatibility, and hash identity
         run: python -m unittest discover -s tests -p test_ucl2_source_layout.py -v
-      - name: Agent Skills format, guidance, and local UCL/2.0 workflow
+      - name: Agent Skills format and local Portable workflow
         run: python -m unittest discover -s tests -p test_agent_skill.py -v
       - name: Optional security tests
         run: |

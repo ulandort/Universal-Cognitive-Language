@@ -2,6 +2,15 @@
 
 This project uses versioned protocol profiles. Experimental benchmark artifacts are research evidence rather than evidence of a different live released wire specification.
 
+## UCL/2.1.0 — Expand the Portable vocabulary (November 2026)
+
+- Add readable named aliases and raise the catalog capacity from 55 to 512 definitions.
+- Bind definition identities to their exact typed domain dependencies, including finite membership.
+- Record speaker-scoped retirements, successors, examples, and counterexamples in retained acts.
+- Embed a worked reply template and add `continue`, state-first `inspect`, and an optional JSON ledger.
+- Verify and continue archived 2.0 packets with their original identities. Explicit `upgrade` reissues a separate 2.1 packet.
+- Publish validated quickstart and challenge files. See the [release notes](RELEASE_NOTES_2_1.md).
+
 ## UCL/2.0.1 — Source-layout maintenance (November 2026)
 
 **No UCL wire, grammar, hashing, or semantic changes.** Consolidates the stable UCL/2.0 Portable Python implementation under `src/`:

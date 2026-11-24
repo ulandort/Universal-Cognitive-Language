@@ -265,8 +265,7 @@ def main():
     ap.add_argument('source',type=Path)
     ap.add_argument('output',type=Path,nargs='?')
     a=ap.parse_args()
-    limit = ucl.MAX_EXPANDED if a.mode == 'encode' else ucl.MAX_PORTABLE_JSON
-    data = ucl.read_json_file(a.source, limit=limit)
+    data = ucl.read_json_file(a.source, limit=ucl.MAX_PORTABLE_JSON)
     if a.mode=='encode':
         result=encode(data)
     else:

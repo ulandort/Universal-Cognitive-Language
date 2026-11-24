@@ -119,7 +119,7 @@ def main(args):
         packet = decode_portable(envelope)
         print(json.dumps(derive_ledger(packet), indent=2) if len(args) == 4 else describe_packet(packet, portable.label(envelope['format'])))
     elif command=='encode' and len(args)==4:
-        source=_core.read_json_file(args[2])
+        source=_core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
         result=encode_portable(source)
         Path(args[3]).write_bytes(portable_json_bytes(result))
         print('VALID ' + portable.label(result['format']), args[3])

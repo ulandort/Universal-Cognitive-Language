@@ -393,4 +393,30 @@ class SourceLayoutTests(unittest.TestCase):
             )
             self.assertEqual(checked.returncode, 0, checked.stderr)
 
+    def test_portable_encode_and_node_accept_a_valid_packet_over_one_megabyte(self):
+        envelope = json.loads((ROOT / 'examples/quickstart.txt').read_bytes())
+        draft = core.draft_from_packet(portable.decode(envelope))
+        for turn in range(3, 76):
+            draft['discourse']['acts'].append({
+                'id': f't{turn}', 'speaker': 'Ari', 'kind': 'response',
+                'references': ['t1'], 'text': 'a' * 14000, 'expressions': ['~[P][A]'],
+                'details': {'responds_to': 't1', 'stance': 'mixed'},
+            })
+        draft['discourse']['current'] = 't75'
+        packet = core.build(draft, version=core.DEPENDENCY_VERSION)
+        inner = core.canon(packet)
+        self.assertGreater(len(inner), core.MAX_EXPANDED)
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'large-inner.json'
+            outgoing = Path(directory) / 'large-portable.txt'
+            source.write_bytes(inner)
+            process = subprocess.run(
+                [sys.executable, str(ROOT / 'src/ucl.py'), 'encode', str(source), str(outgoing)],
+                text=True, capture_output=True, timeout=20,
+            )
+            self.assertEqual(process.returncode, 0, process.stderr)
+            result = json.loads(outgoing.read_bytes())
+            self.assertEqual(portable.decode(result), packet)
+            self._check_node_portable(result)
+
 if __name__=='__main__':unittest.main()

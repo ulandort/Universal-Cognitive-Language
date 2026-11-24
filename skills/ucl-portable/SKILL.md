@@ -9,7 +9,7 @@ compatibility: Python 3.12+ and the UCL repository for reference validation and 
 
 Use this skill when the user wants to **read, explain, validate, create, continue, or transmit** a UCL Portable message. UCL is an open, self-contained UTF-8 JSON format with a fully embedded language guide, original concepts, expression history, scoped acknowledgements and local integrity checks. It is **not** a model, a network protocol requiring an account, a theorem prover, or evidence that an invented claim is true.
 
-**Current development format:** `UCL/2.1-SAP1-PORTABLE`. The CLI also reads and continues archived `UCL/2.0-SAP1-PORTABLE` packets using their original IDs. The 11 original core glyphs are `@ # = ~ & | ! ? < * {`. Do not introduce a new core glyph.
+**Current format:** `UCL/2.1-SAP1-PORTABLE`. The CLI also reads and continues archived `UCL/2.0-SAP1-PORTABLE` packets using their original IDs. The 11 original core glyphs are `@ # = ~ & | ! ? < * {`. Do not introduce a new core glyph.
 
 ## 1. Prepare the local tools
 

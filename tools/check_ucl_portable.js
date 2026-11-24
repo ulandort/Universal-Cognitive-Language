@@ -75,8 +75,11 @@ function validate(envelope){
 if(require.main===module){
  try{
    if(process.argv.length!==3)throw Error('Usage: node tools/check_ucl_portable.js packet.txt');
-   const raw=fs.readFileSync(process.argv[2],'utf8');
-   requireThat(Buffer.byteLength(raw,'utf8')<=1_000_000,'envelope too large');
+   const source=process.argv[2];
+   const maxBytes=8_000_000;
+   requireThat(fs.statSync(source).size<=maxBytes,'envelope too large');
+   const raw=fs.readFileSync(source,'utf8');
+   requireThat(Buffer.byteLength(raw,'utf8')<=maxBytes,'envelope too large');
    process.stdout.write(JSON.stringify(validate(JSON.parse(raw)))+'\n');
  }catch(e){console.error('INVALID:',e.message);process.exitCode=1}
 }

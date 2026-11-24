@@ -1,6 +1,6 @@
 # UCL/2.1 Portable specification
 
-UCL/2.1 is the current development revision of Portable. It uses the single self-contained UTF-8 JSON handoff described in the [2.0 specification](UCL_2_0_SPECIFICATION.md), with the vocabulary, identity, and version changes below. The 11 core operators, four body layers, typed expressions, claim paths, and retained conversation model carry forward.
+UCL/2.1 is the current release of Portable. It uses the single self-contained UTF-8 JSON handoff described in the [2.0 specification](UCL_2_0_SPECIFICATION.md), with the vocabulary, identity, and version changes below. The 11 core operators, four body layers, typed expressions, claim paths, and retained conversation model carry forward.
 
 ## Version markers
 
