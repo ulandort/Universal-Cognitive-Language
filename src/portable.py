@@ -19,7 +19,10 @@ import structural_authoring as sap
 
 FORMAT=ucl.LEGACY_PORTABLE_FORMAT  # Retained for archived release tooling.
 CURRENT_FORMAT=ucl.PORTABLE_FORMAT
-FORMAT_BY_VERSION={ucl.INNER_GRAMMAR_VERSION: CURRENT_FORMAT, 'UCL/1.0': FORMAT}
+FORMAT_BY_VERSION={
+    'UCL/1.0': FORMAT, ucl.DEPENDENCY_VERSION: ucl.V21_PORTABLE_FORMAT,
+    ucl.INNER_GRAMMAR_VERSION: CURRENT_FORMAT, ucl.LONG_DRAFT_VERSION: ucl.LONG_DRAFT_FORMAT,
+}
 RULE_DOMAIN=b'UCL-SAP1-RULES-2.0\n'
 ENVELOPE_DOMAIN=b'UCL-SAP1-ENVELOPE-2.0\n'
 ROLES=frozenset(('hypothesis','example','counterexample','quotation','question'))
@@ -175,11 +178,25 @@ CURRENT_RULES = {
         },
     },
 }
-RULES_BY_FORMAT = {FORMAT: RULES, CURRENT_FORMAT: CURRENT_RULES}
+LONG_RULES = {
+    **CURRENT_RULES,
+    'status': 'draft-2.2',
+    'history_reading': (
+        'A long discussion remains one complete Portable file. Inspect the current state, then look up the '
+        'exact claim branches and prior acts needed for your reply. Treat a selected view as an excerpt.'
+    ),
+}
+RULES_BY_FORMAT = {
+    FORMAT: RULES,
+    ucl.V21_PORTABLE_FORMAT: CURRENT_RULES,
+    ucl.LONG_DRAFT_FORMAT: LONG_RULES,
+    CURRENT_FORMAT: {**LONG_RULES, 'status': 'stable-2.2'},
+}
 
 
 def label(format_id):
-    return format_id.split('-')[0] + ' Portable'
+    suffix = ' (draft)' if format_id == ucl.LONG_DRAFT_FORMAT else ''
+    return format_id.split('-')[0] + ' Portable' + suffix
 
 
 def fingerprint(domain,obj):
@@ -217,8 +234,8 @@ def _validate_formula_roles(packet,roles):
         used.add(key)
     return True
 
-def encode(packet,formula_roles=None):
-    ucl.check(packet)
+def encode(packet,formula_roles=None, *, archived=False):
+    ucl.check(packet, archived=archived)
     format_id = FORMAT_BY_VERSION[ucl.packet_version(packet)]
     rules = copy.deepcopy(RULES_BY_FORMAT[format_id])
     env={'format':format_id,'profile':'portable',
@@ -231,13 +248,18 @@ def encode(packet,formula_roles=None):
     env['checksum']=envelope_checksum(env)
     return env
 
-def decode(env):
+def validate_envelope(env):
     required={'format','profile','structural_rules','packet','checksum'}
+    archived = isinstance(env, dict) and 'archive' in env
+    if archived:
+        required.update(('archive', 'archive_guide'))
     if type(env) is not dict or set(env) not in (required,required|{'formula_roles','formula_role_guide'}):
         raise ValueError('SAP portable: envelope fields invalid')
     format_id = env['format']
     if not isinstance(format_id, str) or format_id not in RULES_BY_FORMAT or env['profile']!='portable':
         raise ValueError('SAP portable: unsupported profile')
+    if archived and format_id not in ucl.ARCHIVE_FORMATS:
+        raise ValueError('SAP portable: optional archive requires Portable 2.2')
     block=env['structural_rules']
     if type(block) is not dict or set(block)!={'rules','sha256'}:
         raise ValueError('SAP portable: rules block invalid')
@@ -249,13 +271,21 @@ def decode(env):
         raise ValueError('SAP portable: embedded authoring rules checksum mismatch')
     if env['checksum']!=envelope_checksum(env):
         raise ValueError('SAP portable: envelope checksum mismatch')
-    pkt=copy.deepcopy(env['packet'])
-    ucl.check(pkt)
-    if FORMAT_BY_VERSION[ucl.packet_version(pkt)] != format_id:
+    if FORMAT_BY_VERSION[ucl.packet_version(env['packet'])] != format_id:
         raise ValueError('SAP portable: inner guide version does not match the envelope format')
+    if 'formula_roles' in env and env['formula_role_guide'] != ROLE_GUIDE:
+        raise ValueError('SAP portable: unknown formula role profile')
+
+
+def decode(env):
+    validate_envelope(env)
+    if 'archive' in env:
+        from history_archive import expand
+        pkt = expand(env)
+    else:
+        pkt = copy.deepcopy(env['packet'])
+    ucl.check(pkt, archived='archive' in env)
     if 'formula_roles' in env:
-        if env['formula_role_guide']!=ROLE_GUIDE:
-            raise ValueError('SAP portable: unknown formula role profile')
         _validate_formula_roles(pkt,env['formula_roles'])
     return pkt
 

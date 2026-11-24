@@ -17,6 +17,10 @@ jobs:
         run: python -m unittest discover -s tests -p test_ucl2_source_layout.py -v
       - name: Agent Skills format and local Portable workflow
         run: python -m unittest discover -s tests -p test_agent_skill.py -v
+      - name: Offline long-history lookup, archival, and continuation
+        run: |
+          python -m unittest discover -s benchmarks -p test_long_join.py -v
+          python -m unittest discover -s benchmarks -p test_history_archive.py -v
       - name: Optional security tests
         run: |
           pip install -r requirements-optional.txt

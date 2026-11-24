@@ -2,6 +2,14 @@
 
 This project uses versioned protocol profiles. Experimental benchmark artifacts are research evidence rather than evidence of a different live released wire specification.
 
+## UCL/2.2.0 — Long conversations in one Portable file (November 2026)
+
+- Add exact act and claim-path lookup, plus a Concept Index that compares vocabulary across packets.
+- Add optional embedded gzip archives with readable decoding instructions and pinning of important turns.
+- Keep the latest 1,000 acts readable. Pack older acts losslessly in indexed blocks within the same file.
+- Verify archived histories with Python and Node. An offline 100,000-act conversation fit in 4.02 MB and continued to 100,001 acts.
+- Continue reading earlier 2.0 and 2.1 packets with their original hashes. See the [release notes](RELEASE_NOTES_2_2.md).
+
 ## UCL/2.1.0 — Expand the Portable vocabulary (November 2026)
 
 - Add readable named aliases and raise the catalog capacity from 55 to 512 definitions.

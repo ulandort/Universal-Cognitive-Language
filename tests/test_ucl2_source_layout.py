@@ -9,9 +9,9 @@ class SourceLayoutTests(unittest.TestCase):
     def setUpClass(cls):
         cls.packet=core.load_json((ROOT/'examples/cross_model_conversation_8_turns.json').read_text(encoding='utf8'))
     def test_public_version_and_original_grammar(self):
-        self.assertEqual(ucl.VERSION,'UCL/2.1')
+        self.assertEqual(ucl.VERSION,'UCL/2.2')
         self.assertEqual(ucl.PORTABLE_FORMAT,portable.CURRENT_FORMAT)
-        self.assertEqual(ucl.INNER_GRAMMAR_VERSION,'UCL/1.1')
+        self.assertEqual(ucl.INNER_GRAMMAR_VERSION,'UCL/1.2')
         self.assertEqual(ucl.CORE,core.CORE)
         self.assertEqual(ucl.check(self.packet),core.check(self.packet))
         self.assertEqual(ucl.packet_id(self.packet),core.packet_id(self.packet))
@@ -138,6 +138,22 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertEqual(after['discourse']['acts'][:-1], before['discourse']['acts'])
             self.assertEqual({glyph: after['definitions'][glyph] for glyph in before['definitions']},
                              before['definitions'])
+            self.assertLess(inspected.stdout.index('Concept index'), inspected.stdout.index('Recorded open issues'))
+            comparison = subprocess.run(
+                [*cli, 'inspect', str(outgoing), '--since', str(incoming), '--json'],
+                text=True, capture_output=True, timeout=20,
+            )
+            self.assertEqual(comparison.returncode, 0, comparison.stderr)
+            ledger = json.loads(comparison.stdout)
+            self.assertEqual(ledger['comparison']['added_symbols'], ['$control_sensitive'])
+            symbol = next(item for item in ledger['symbols'] if item['symbol'] == '$control_sensitive')
+            self.assertEqual(symbol['recent_expression_acts'], ['t9'])
+            unrelated = subprocess.run(
+                [*cli, 'inspect', str(outgoing), '--since', str(ROOT / 'examples/quickstart.txt')],
+                text=True, capture_output=True, timeout=20,
+            )
+            self.assertNotEqual(unrelated.returncode, 0)
+            self.assertIn('same retained conversation', unrelated.stderr)
 
     def test_state_ledger_resolves_exact_stances_through_a_long_history(self):
         starter = json.loads((ROOT / 'examples/quickstart.txt').read_bytes())

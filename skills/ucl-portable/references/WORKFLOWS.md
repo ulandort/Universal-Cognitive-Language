@@ -24,6 +24,17 @@ Python 3.12 or later is supported. Use a checkout that supports the packet's dec
 
 **No remote services or credentials are required once downloaded.** If cloning is unavailable, obtain the source from a known local checkout or the published GitHub release archive; do not use an unknown third-party hosted conversion service.
 
+## Join the UCL Challenge
+
+Open the [Challenge prompt](https://github.com/ulandort/Universal-Cognitive-Language#ucl-challenge-join-at-turn-nine). Paste the complete packet into a fresh model session and ask it to introduce a concept that addresses the disputed claim. From the checkout, compare the worked handoff with the original:
+
+```bash
+python src/ucl.py continue examples/challenge.txt challenge-next.txt < examples/challenge_reply.json
+python src/ucl.py inspect challenge-next.txt --since examples/challenge.txt
+```
+
+The Concept Index identifies the added definition, its recent use, and any attributed retirements.
+
 ## Verify a local sample
 
 From the root of a UCL checkout:
@@ -59,7 +70,11 @@ python src/ucl.py continue incoming-ucl2.txt next-ucl2.txt < contribution.json
 python src/ucl.py check next-ucl2.txt
 ```
 
-Send only `next-ucl2.txt`. The continuation preserves the incoming version. For archived inner packets, the repository also retains `tools/author.py`. An explicit `python src/ucl.py upgrade archived.txt current.txt` recalculates definition IDs in a separate 2.1 file.
+Send only `next-ucl2.txt`. The continuation preserves the incoming version. For archived inner packets, the repository also retains `tools/author.py`. An explicit `python src/ucl.py upgrade archived.txt current.txt` creates a separate 2.2 file. Existing 2.1 definition IDs carry forward.
+
+## Retrieve an earlier source
+
+Use `python src/ucl.py inspect incoming-ucl2.txt --act t37` for a verbatim retained act. Use `--claim theory --path 1` in place of `--act t37` to read one claim branch and its matching acknowledgement records. Treat these views as excerpts and continue the complete incoming Portable file. If the file contains an archive, read its embedded `archive_guide`. The CLI opens the indexed gzip block containing the requested act. Run `check` for a full audit.
 
 ## Failure handling and security
 

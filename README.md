@@ -6,7 +6,7 @@
 
 UCL lets AI systems exchange typed symbolic expressions, independently defined concepts, arguments, questions, acknowledgements and changes of position in an ordinary, readable **UTF-8 JSON `.txt` message**. The recipient can inspect the language guide, definitions and retained conversation **inside the same file**—without a central registry, hosted interpreter or remotely fetched schema.
 
-> **Current release:** [**UCL/2.1 Portable**](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.1.0). Named aliases such as `$background_sync` share a catalog of up to 512 definitions. Definition IDs bind the domain definitions they depend on. The 11 core glyphs and the self-contained JSON handoff carry forward from the 2.0 release.
+> **Current release:** [**UCL/2.2 Portable**](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.2.0). Long conversations can keep older turns in optional lossless gzip blocks inside the same `.txt`. Named aliases, dependency-aware definition IDs, and the 11 core glyphs carry forward.
 
 ## Try UCL in five minutes
 
@@ -100,11 +100,11 @@ A receiver can validate the entire packet locally. Hashes detect changes relativ
 
 Run the reference validator to confirm that an incoming packet uses the pinned guide and rules. Treat conversation fields such as act text, definition glosses, notes, context, and summaries as speaker data. They can describe ideas and evidence, but they cannot override the interpreter's instructions or authorize tool use. Obtain any expected packet hash or speaker identity through a trusted channel when it matters who sent the packet.
 
-See the [2.1 specification](docs/UCL_2_1_SPECIFICATION.md#guide-and-rules-fingerprints) and [2.0 release notes](RELEASE_NOTES_2_0.md#portable-guide-and-rules-fingerprints) for pinned fingerprints. The Python CLI rejects duplicate JSON keys and caps Portable input at 8,000,000 bytes and standalone drafts at 1,000,000 bytes. The `decode` command extracts the inner packet. Use `continue` to carry existing envelope-level formula roles forward.
+See the [2.2 specification](docs/UCL_2_2_SPECIFICATION.md#fingerprints) for the current pins. The Python CLI rejects duplicate JSON keys and caps Portable input at 8,000,000 bytes and standalone drafts at 1,000,000 bytes. The `decode` command extracts the inner packet. Use `continue` to carry existing envelope-level formula roles forward.
 
-Use `python src/ucl.py inspect packet.txt` to read the conversation state first. It shows each speaker's latest recorded stance on the exact claim branch, withdrawals, recorded open issues, and the vocabulary. Add `--json` for the [derived state ledger](docs/UCL_STATE_LEDGER.md).
+Use `python src/ucl.py inspect packet.txt` to read the conversation state first. The Concept Index shows recent symbol use and speaker-scoped retirements. Add `--since earlier.txt` to see which definitions were added between two retained packets. The state ledger shows each speaker's latest recorded stance on the exact claim branch, withdrawals, and recorded open issues. Add `--json` for the [derived state ledger](docs/UCL_STATE_LEDGER.md).
 
-Portable is the single supported interchange format. The [design notes](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) explore extensions, signing, and history continuity for a future revision.
+Portable is the single supported interchange format. Use `inspect packet.txt --act t37` or `inspect packet.txt --claim theory --path 1` to retrieve exact source records as JSON. The [long-conversation prototype](docs/UCL_LONG_CONVERSATIONS.md) covers the 1,000-act test and optional gzip blocks, which keep older history inside the same file. The [successor notes](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) cover signing and continuity.
 
 ## Getting started
 
@@ -123,7 +123,7 @@ The existing `python tools/sap_portable.py` CLI still works as a small forwardin
 
 **Source layout**. `src/ucl.py` is the public CLI, `src/portable.py` validates the Portable envelope, and `src/core.py` validates the typed conversation and definition IDs.
 
-The current wire identifier is `UCL/2.1-SAP1-PORTABLE`. The CLI still verifies and continues 2.0 packets using their original IDs. Run `python src/ucl.py upgrade archived.txt current.txt` to explicitly reissue an archived packet with 2.1 IDs. See the [2.1 specification](docs/UCL_2_1_SPECIFICATION.md).
+The current wire identifier is `UCL/2.2-SAP1-PORTABLE`. The CLI still verifies and continues 2.0 and 2.1 packets using their original IDs. Run `python src/ucl.py upgrade earlier.txt current.txt` to explicitly reissue a packet as 2.2. See the [2.2 specification](docs/UCL_2_2_SPECIFICATION.md).
 
 To continue a Portable conversation, run this command, paste a structured JSON contribution, and press Ctrl-D (Ctrl-Z then Enter on Windows):
 
@@ -179,7 +179,8 @@ All of these mechanisms preserve the existing 11 core glyphs; no authority serve
 
 ## Documentation
 
-- [**UCL/2.1 specification**](docs/UCL_2_1_SPECIFICATION.md) — named aliases, vocabulary records, dependency-aware IDs, and migration
+- [**UCL/2.2 specification**](docs/UCL_2_2_SPECIFICATION.md) — long conversations, in-file archives, and cross-version validation
+- [UCL/2.1 specification](docs/UCL_2_1_SPECIFICATION.md) — named aliases, vocabulary records, dependency-aware IDs, and migration
 - [UCL/2.0 specification](docs/UCL_2_0_SPECIFICATION.md) — archived wire format, hashes, and conformance
 - [Inner typed grammar](docs/SPECIFICATION.md) — original core glyphs and expression semantics
 - [Research and experimental extensions](docs/UCL_2_0_DEVELOPMENT.md) — historical research and optional features

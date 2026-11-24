@@ -8,6 +8,12 @@ from pathlib import Path
 
 VERSION='UCL/1.0'
 DEPENDENCY_VERSION='UCL/1.1'
+LONG_VERSION='UCL/1.2'
+LONG_DRAFT_VERSION='UCL/1.2-DRAFT'
+LONG_VERSIONS=(LONG_VERSION, LONG_DRAFT_VERSION)
+DEPENDENCY_VERSIONS=(DEPENDENCY_VERSION, *LONG_VERSIONS)
+MAX_LONG_ACTS=4096
+MAX_LONG_RECORDS=8192
 DEPENDENCY_DOMAIN=b'UCL-SEM-10\n'
 MAX_DEFINITIONS=512
 NAMED_ALIAS=re.compile(r'\$[A-Za-z][A-Za-z0-9_]{0,63}')
@@ -58,7 +64,7 @@ def definition_id(d):return b64(hashlib.sha256(SEM_DOMAIN+canon(d)).digest())
 def packet_id(p):return b64(hashlib.sha256(PACK_DOMAIN+canon({k:v for k,v in p.items() if k!='integrity'})).digest())
 
 def guide(version=VERSION):
-    need(version in (VERSION, DEPENDENCY_VERSION), 'unknown inner guide version')
+    need(version in (VERSION, *DEPENDENCY_VERSIONS), 'unknown inner guide version')
     result = {'version':VERSION,'core':CORE,'structural':STRUCT,
       'grammar':'Four body layers: [orientation];[explanation];[conclusion];[exact-symbol-declaration]. Prefix expressions; {[#N][domain][prop] exists; universal via negated existential. <[order][a][b] requires named order.',
       'domain':'Declared domain may have finite members or open symbolic population (including infinite or unspecified). Model evaluation enumerates finite only; open domains are not enumerated or assumed empty.',
@@ -80,7 +86,7 @@ def guide(version=VERSION):
       'quotation':'Optional claims bind proposition expressions exactly to IDs and retained origin acts. Viewpoints are acyclic nested attributions (asserts/believes/reports/questions), not proofs of belief or truth. Quoted propositions participate in exact-symbol declarations.',
       'history':'All packets are standalone. history.status is fully-expanded or condensed. Condensed mode MUST disclose non-expanded earlier history, the omitted scope and nature, a meaningful summary, and any unresolved uncertainties. Complete active semantic definitions and all locally referenced acts remain present; no external registry, URL, prior packet or hidden alias may be necessary. A condensed summary is not a verbatim record. Optional reference hashes do not restore missing evidence.'}
 
-    if version == DEPENDENCY_VERSION:
+    if version in DEPENDENCY_VERSIONS:
         result.update(
             version=version,
             hashing=(
@@ -116,12 +122,22 @@ def guide(version=VERSION):
                 'Declare referenced vocabulary aliases and successors in the exact symbol layer.'
             ),
         )
+    if version in LONG_VERSIONS:
+        result['limits'] = result['limits'].replace('<=1MB expanded', '<=8MB Portable JSON in the CLI').replace(
+            '<=100 discourse acts', f'<= {MAX_LONG_ACTS} discourse acts').replace(
+            '<=150 acknowledgements', f'<= {MAX_LONG_RECORDS} each of acknowledgements, claims, and viewpoints')
+        result['stability'] = (
+            'UCL/1.2-DRAFT tests larger retained histories and preserves UCL/1.1 definition IDs.'
+            if version == LONG_DRAFT_VERSION else
+            'UCL/1.2 supports larger histories and optional Portable gzip archives. Definition IDs preserve the UCL/1.1 scheme.'
+        )
     return result
 
 def packet_version(packet):
+    need(isinstance(packet, dict), 'packet schema')
     header = packet.get('guide')
     version = header.get('version') if isinstance(header, dict) else None
-    need(version in (VERSION, DEPENDENCY_VERSION) and header == guide(version), 'guide mismatch')
+    need(version in (VERSION, *DEPENDENCY_VERSIONS) and header == guide(version), 'guide mismatch')
     return version
 
 def _definition_ids(defs, domains, version):
@@ -233,11 +249,11 @@ def render(t):
 def conjuncts(t):return conjuncts(t[2][0])+conjuncts(t[2][1]) if t[0]=='&' else [t]
 
 def _validate_definition_shapes(defs, version):
-    limit = MAX_DEFINITIONS if version == DEPENDENCY_VERSION else 55
+    limit = MAX_DEFINITIONS if version in DEPENDENCY_VERSIONS else 55
     need(isinstance(defs,dict) and 1<=len(defs)<=limit,'catalog size')
     for g,rec in defs.items():
         single = isinstance(g, str) and len(g) == 1 and 33 <= ord(g) <= 126 and g not in RESERVED
-        named = version == DEPENDENCY_VERSION and isinstance(g, str) and NAMED_ALIAS.fullmatch(g)
+        named = version in DEPENDENCY_VERSIONS and isinstance(g, str) and NAMED_ALIAS.fullmatch(g)
         need(single or named, 'reserved/invalid extension glyph ' + repr(g))
         need(isinstance(rec,dict) and set(rec) in ({'definition'}, {'id','definition'}),'definition record')
         d=rec['definition'];need(isinstance(d,dict) and isinstance(d.get('gloss'),str) and d['gloss'],'definition gloss')
@@ -261,7 +277,7 @@ def _validate_definition_shapes(defs, version):
 
 def validate_defs(defs, domains=None, *, version=VERSION):
     domain_aliases = _validate_definition_shapes(defs, version)
-    if version == DEPENDENCY_VERSION:
+    if version in DEPENDENCY_VERSIONS:
         validate_domains(defs, domains)
     expected = _definition_ids(defs, domains, version)
     for alias, record in defs.items():
@@ -412,9 +428,11 @@ def _validate_vocabulary(entries, expressions, defs, parser):
         seen.add(key)
 
 
-def validate_discourse(discourse,defs,parser, *, version=VERSION):
+def validate_discourse(discourse,defs,parser, *, version=VERSION, archived=False):
     need(isinstance(discourse,dict) and set(discourse)=={'current','acts'},'discourse schema')
-    acts=discourse['acts'];need(isinstance(acts,list) and 1<=len(acts)<=100,'discourse act cap')
+    acts=discourse['acts']
+    limit = MAX_LONG_ACTS if version in LONG_VERSIONS else 100
+    need(isinstance(acts,list) and len(acts)>=1 and (archived and version in LONG_VERSIONS or len(acts)<=limit),'discourse act cap')
     seen={}; allowed_ans={'open','yes-no','multiple-choice'}
     def expression(s):
         need(isinstance(s,str) and 0<len(s)<=16000,'discourse expression length')
@@ -426,7 +444,7 @@ def validate_discourse(discourse,defs,parser, *, version=VERSION):
     def references(v):
         need(isinstance(v,list) and len(v)<=24 and all(isinstance(x,str) and x in seen for x in v),'missing or forward act reference')
     fields = {'id','speaker','kind','text','references','expressions','details'}
-    allowed_fields = (fields, fields | {'vocabulary'}) if version == DEPENDENCY_VERSION else (fields,)
+    allowed_fields = (fields, fields | {'vocabulary'}) if version in DEPENDENCY_VERSIONS else (fields,)
     for act in acts:
         need(isinstance(act,dict) and set(act) in allowed_fields,'act fields')
         a=act['id'];k=act['kind'];dt=act['details']
@@ -495,8 +513,9 @@ def resolve_claim_path(parser, expression, path):
          'acknowledgement subclaim must be a proposition or epistemic expression')
     return tree
 
-def validate_acknowledgements(acks,discourse,defs,parser,claims):
-    need(isinstance(acks,list) and len(acks)<=150,'acknowledgement list size')
+def validate_acknowledgements(acks,discourse,defs,parser,claims, *, version=VERSION, archived=False):
+    limit = MAX_LONG_RECORDS if version in LONG_VERSIONS else 150
+    need(isinstance(acks,list) and (archived and version in LONG_VERSIONS or len(acks)<=limit),'acknowledgement list size')
     acts=discourse['acts']; byid={a['id']:a for a in acts}
     positions={a['id']:i for i,a in enumerate(acts)}
     seen=set()
@@ -621,17 +640,17 @@ def orientation_matches(role,kind):
              'clarification':{'question','response'}}
     return role==kind or role in aliases.get(kind,set())
 
-def make_body(orientation,explanation,conclusion,defs,discourse,acks,claims, *, version=VERSION):
+def make_body(orientation,explanation,conclusion,defs,discourse,acks,claims, *, version=VERSION, archived=False):
     parser=Parser(defs);ts=[parser.parse(s) for s in (orientation,explanation,conclusion)]
     need(ts[0][1]=='orientation' and ts[1][1]=='prop','orientation/explanation types')
     need(ts[2][1] in ('prop','epistemic'),'conclusion must be proposition or epistemic report')
-    validate_discourse(discourse,defs,parser,version=version)
-    validate_acknowledgements(acks,discourse,defs,parser,claims)
+    validate_discourse(discourse,defs,parser,version=version,archived=archived)
+    validate_acknowledgements(acks,discourse,defs,parser,claims,version=version,archived=archived)
     declared=' '.join(sorted(g if g in CORE else g+':'+defs[g]['id'] for g in parser.used))
     return ';'.join('['+s+']' for s in (orientation,explanation,conclusion,declared))
 
 def check_revisions(revisions,defs, *, version=VERSION):
-    limit = MAX_DEFINITIONS if version == DEPENDENCY_VERSION else 55
+    limit = MAX_DEFINITIONS if version in DEPENDENCY_VERSIONS else 55
     need(isinstance(revisions,list) and len(revisions)<=limit,'revisions list')
     seen=set()
     for rev in revisions:
@@ -667,8 +686,9 @@ def proof_verdict(explanation, conclusion, proof, defs):
         if 'inconsistent premises' in err:return {'status':'inconsistent-premises','reason':err}
         return {'status':'invalid-proof','reason':err}
 
-def validate_quotes(claims,viewpoints,discourse,parser):
-    need(isinstance(claims,dict) and len(claims)<=150,'claim binding map')
+def validate_quotes(claims,viewpoints,discourse,parser, *, version=VERSION):
+    limit = MAX_LONG_RECORDS if version in LONG_VERSIONS else 150
+    need(isinstance(claims,dict) and len(claims)<=limit,'claim binding map')
     acts={a['id']:a for a in discourse['acts']}
     for cid,c in claims.items():
         need(type(cid) is str and re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,63}',cid),'claim ID')
@@ -677,7 +697,7 @@ def validate_quotes(claims,viewpoints,discourse,parser):
         i=c['expression_index'];need(type(i) is int and 0<=i<len(a['expressions']),'claim expression index')
         need(c['expression']==a['expressions'][i],'quote must exactly bind existing act expression')
         need(parser.parse(c['expression'])[1] in ('prop','epistemic'),'quoted claim type')
-    need(isinstance(viewpoints,list) and len(viewpoints)<=150,'viewpoints list')
+    need(isinstance(viewpoints,list) and len(viewpoints)<=limit,'viewpoints list')
     positions={a['id']:i for i,a in enumerate(discourse['acts'])}; seen={}
     for v in viewpoints:
         need(isinstance(v,dict) and set(v)=={'id','holder','relation','target','source_act','reported_by'},'viewpoint schema')
@@ -700,7 +720,7 @@ def validate_quotes(claims,viewpoints,discourse,parser):
         seen[vid]=v
     return {'quoted_claims':len(claims),'nested_viewpoints':len(viewpoints)}
 
-def check(p):
+def check(p, *, archived=False):
     need(isinstance(p,dict) and set(p)=={'guide','definitions','domains','model','proof','context','body','links','revisions','discourse','acknowledgements','history','claims','viewpoints','integrity'},'packet schema')
     version = packet_version(p)
     need(p['integrity']=={'sha256':packet_id(p)},'packet integrity')
@@ -711,10 +731,10 @@ def check(p):
     need(isinstance(p['context'],dict) and bool(p['context']) and isinstance(p['links'],list),'context/links missing')
     check_revisions(p['revisions'],defs,version=version)
     x=layers(p['body']);parser=Parser(defs);trees=[parser.parse(s) for s in x[:3]]
-    discourse_result=validate_discourse(p['discourse'],defs,parser,version=version)
-    ack_result=validate_acknowledgements(p['acknowledgements'],p['discourse'],defs,parser,p['claims'])
+    discourse_result=validate_discourse(p['discourse'],defs,parser,version=version,archived=archived)
+    ack_result=validate_acknowledgements(p['acknowledgements'],p['discourse'],defs,parser,p['claims'],version=version,archived=archived)
     history_result=validate_history(p['history'],p['discourse'],defs)
-    quote_result=validate_quotes(p['claims'],p['viewpoints'],p['discourse'],parser)
+    quote_result=validate_quotes(p['claims'],p['viewpoints'],p['discourse'],parser,version=version)
     need(trees[0][1]=='orientation' and trees[1][1]=='prop','body layer types')
     expected=' '.join(sorted(g if g in CORE else g+':'+defs[g]['id'] for g in parser.used))
     need(expected==x[3],'used-symbol declaration mismatch')
@@ -743,16 +763,16 @@ def draft_version(draft):
     supplied = [record for record in draft['definitions'].values() if 'id' in record]
     if supplied and all(record['id'] == definition_id(record['definition']) for record in supplied):
         return VERSION
-    return DEPENDENCY_VERSION
+    return LONG_VERSION
 
 
-def build(draft, *, version=VERSION):
+def build(draft, *, version=VERSION, archived=False):
     required={'definitions','domains','model','proof','context','orientation','explanation','conclusion','links','revisions','discourse','acknowledgements','history','claims','viewpoints'}
     need(isinstance(draft,dict) and set(draft)==required,'draft schema')
     embedded_guide = guide(version)
     records = draft['definitions']
     _validate_definition_shapes(records, version)
-    if version == DEPENDENCY_VERSION:
+    if version in DEPENDENCY_VERSIONS:
         validate_domains(records, draft['domains'])
     ids = _definition_ids(records, draft['domains'], version)
     defs = {}
@@ -760,23 +780,26 @@ def build(draft, *, version=VERSION):
         identity = ids[alias]
         need('id' not in record or record['id'] == identity, 'supplied hash mismatch ' + alias)
         defs[alias] = {'definition': record['definition'], 'id': identity}
-    body=make_body(draft['orientation'],draft['explanation'],draft['conclusion'],defs,draft['discourse'],draft['acknowledgements'],draft['claims'],version=version)
+    body=make_body(draft['orientation'],draft['explanation'],draft['conclusion'],defs,draft['discourse'],draft['acknowledgements'],draft['claims'],version=version,archived=archived)
     p={'guide':embedded_guide,'definitions':defs,'domains':draft['domains'],'model':draft['model'],
        'proof':draft['proof'],'context':draft['context'],'body':body,'links':draft['links'], 'revisions':draft['revisions'], 'discourse':draft['discourse'], 'acknowledgements':draft['acknowledgements'], 'history':draft['history'], 'claims':draft['claims'], 'viewpoints':draft['viewpoints']}
-    p['integrity']={'sha256':packet_id(p)};check(p);return p
+    p['integrity']={'sha256':packet_id(p)};check(p,archived=archived);return p
 
-def upgrade_packet(packet):
-    draft = draft_from_packet(packet)
-    if packet_version(packet) == DEPENDENCY_VERSION:
+def upgrade_packet(packet, *, archived=False):
+    version = packet_version(packet)
+    if version == LONG_VERSION:
+        check(packet, archived=archived)
         return packet
 
-    for record in draft['definitions'].values():
-        record.pop('id')
-    identities = _definition_ids(draft['definitions'], draft['domains'], DEPENDENCY_VERSION)
-    for revision in draft['revisions']:
-        revision['old_id'] = identities[revision['old_glyph']]
-        revision['new_id'] = identities[revision['new_glyph']]
-    return build(draft, version=DEPENDENCY_VERSION)
+    draft = draft_from_packet(packet, archived=archived)
+    if version == VERSION:
+        for record in draft['definitions'].values():
+            record.pop('id')
+        identities = _definition_ids(draft['definitions'], draft['domains'], LONG_VERSION)
+        for revision in draft['revisions']:
+            revision['old_id'] = identities[revision['old_glyph']]
+            revision['new_id'] = identities[revision['new_glyph']]
+    return build(draft, version=LONG_VERSION, archived=archived)
 
 
 # Transport: plain, human-readable JSON by default. Optional Brotli lives in tools/.
@@ -815,8 +838,8 @@ def load_json(text):
     check(packet)
     return packet
 
-def draft_from_packet(packet):
-    check(packet)
+def draft_from_packet(packet, *, archived=False):
+    check(packet, archived=archived)
     seg=layers(packet['body'])
     out={k:__import__('copy').deepcopy(v) for k,v in packet.items() if k not in ('guide','body','integrity')}
     out.update(orientation=seg[0],explanation=seg[1],conclusion=seg[2])

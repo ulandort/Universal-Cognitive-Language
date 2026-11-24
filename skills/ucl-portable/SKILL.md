@@ -9,7 +9,11 @@ compatibility: Python 3.12+ and the UCL repository for reference validation and 
 
 Use this skill when the user wants to **read, explain, validate, create, continue, or transmit** a UCL Portable message. UCL is an open, self-contained UTF-8 JSON format with a fully embedded language guide, original concepts, expression history, scoped acknowledgements and local integrity checks. It is **not** a model, a network protocol requiring an account, a theorem prover, or evidence that an invented claim is true.
 
-**Current format:** `UCL/2.1-SAP1-PORTABLE`. The CLI also reads and continues archived `UCL/2.0-SAP1-PORTABLE` packets using their original IDs. The 11 original core glyphs are `@ # = ~ & | ! ? < * {`. Do not introduce a new core glyph.
+**Current format:** `UCL/2.2-SAP1-PORTABLE`. The CLI reads and continues earlier 2.0 and 2.1 packets using their original IDs. The 11 original core glyphs are `@ # = ~ & | ! ? < * {`. Do not introduce a new core glyph.
+
+## Try a packet
+
+Start with the [five-minute quickstart](https://github.com/ulandort/Universal-Cognitive-Language#try-ucl-in-five-minutes) or join the [eight-turn UCL Challenge](https://github.com/ulandort/Universal-Cognitive-Language#ucl-challenge-join-at-turn-nine). The Challenge packet and its embedded guide are sufficient for reading and drafting in a fresh model session.
 
 ## 1. Prepare the local tools
 
@@ -54,4 +58,4 @@ Use this skill when the user wants to **read, explain, validate, create, continu
 
 Distinguish **syntactic validity**, **immutable-ID fidelity**, **model-authored conceptual reasoning**, **semantic understanding**, and **truth**. A local validator proves neither that an AI understood a philosophical argument nor that a claim is empirically true. UCL is not claimed to outperform English in every task; compare efficiency and task-specific effectiveness honestly.
 
-For local commands, an example and troubleshooting, read [references/WORKFLOWS.md](references/WORKFLOWS.md). For normative protocol details, use the repository's [UCL/2.1 specification](https://github.com/ulandort/Universal-Cognitive-Language/blob/main/docs/UCL_2_1_SPECIFICATION.md) and the actual embedded packet guide.
+For local commands, an example and troubleshooting, read [references/WORKFLOWS.md](references/WORKFLOWS.md). For normative protocol details, use the repository's [UCL/2.2 specification](https://github.com/ulandort/Universal-Cognitive-Language/blob/main/docs/UCL_2_2_SPECIFICATION.md) and the actual embedded packet guide.
