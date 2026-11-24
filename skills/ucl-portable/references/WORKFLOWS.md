@@ -74,7 +74,7 @@ Send only `next-ucl2.txt`. The continuation preserves the incoming version. For 
 
 ## Retrieve an earlier source
 
-Use `python src/ucl.py inspect incoming-ucl2.txt --act t37` for a verbatim retained act. Use `--claim theory --path 1` in place of `--act t37` to read one claim branch and its matching acknowledgement records. Treat these views as excerpts and continue the complete incoming Portable file. If the file contains an archive, read its embedded `archive_guide`. The CLI opens the indexed gzip block containing the requested act. Run `check` for a full audit.
+Use `python src/ucl.py inspect incoming-ucl2.txt --act t37` for a verbatim retained act. Use `--claim theory --path 1` in place of `--act t37` to read one claim branch and its matching acknowledgement records. Treat these views as excerpts and continue the complete incoming Portable file. If the file contains an archive, read its embedded `archive_guide`. The CLI opens the indexed gzip block containing the requested act. Run `check` for a full audit. In a focused acknowledgement, `by` identifies the author act and `source_act` identifies the target’s origin. Label the two roles when giving an excerpt to a model.
 
 ## Failure handling and security
 
@@ -89,7 +89,7 @@ Use `python src/ucl.py inspect incoming-ucl2.txt --act t37` for a verbatim retai
 
 These requests should activate `ucl-portable`:
 
-- “Check whether this UCL/2.0 .txt message is structurally valid.”
+- “Check whether this UCL Portable .txt message is structurally valid.”
 - “Read this UCL packet, explain which claim Hal rejected, and identify its exact concept definitions.”
 - “Use the existing UCL exchange to author a new independent counterargument and send a valid Portable reply.”
 - “Help me build a two-agent experiment that validates self-contained UCL packets without a server.”

@@ -1,6 +1,6 @@
 # UCLBench — reproducible benchmarks and conformance tests
 
-UCLBench includes deterministic offline validation and experimental live-model research. **The default public transport is UCL/2.0 Portable**; archived comparison scripts may reproduce experimental profiles, and results from different profiles must not be pooled as if they were the same protocol.
+UCLBench includes deterministic offline validation and experimental live-model research. **The current public transport is UCL/2.2 Portable**; archived comparison scripts may reproduce experimental profiles, and results from different profiles must not be pooled as if they were the same protocol.
 
 ```bash
 python -m unittest discover -s tests -p 'test_release.py' -v
@@ -8,7 +8,11 @@ python -m unittest discover -s benchmarks -p 'test_*.py' -v
 python benchmarks/offline_suite.py --iterations 1000 --seed 2026 --out uclbench-results.json
 ```
 
-The base Python reference is standard-library-only. Full cross-language Portable tests use Node.js and check the frozen 2.0 envelope, exact embedded rulebook, inner packet and optional formula roles; no network or paid service is required. Offline validation shows mechanical conformance, **not** independent semantic comprehension.
+The base Python reference is standard-library-only. Full cross-language Portable tests use Node.js and check current and archived envelopes, embedded rulebooks, inner packets, and optional formula roles; no network or paid service is required. Offline validation shows mechanical conformance, **not** independent semantic comprehension.
+
+## Long-history storage and live retrieval
+
+The [2.2 stress test](../docs/UCL_LONG_CONVERSATIONS.md#100000-act-stress-test) packed 100,000 synthetic acts into 4.02 MB and verified a continuation to act 100,001. The [live archive run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45442609497) used labeled excerpts and validated Clarke’s reply as act 4,097.
 
 ## Independently authored results
 

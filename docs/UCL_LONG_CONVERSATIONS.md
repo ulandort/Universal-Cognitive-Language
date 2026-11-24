@@ -11,7 +11,7 @@ Measurements used canonical Portable JSON. The synthetic packet contains the pub
 | Published 2.1 Challenge, 8 acts | 23,617 | 3,435 | 15,480 | 9,143 |
 | Synthetic 2.1 long conversation, 100 acts | 107,523 | 87,339 | 15,480 | 36,487 |
 
-The published [L50 run](../benchmarks/AUTONOMOUS_50_RESULTS.md) finished at 148,841 bytes with 91 retained acts. It used 2.0 and a different conversation. The 100-act synthetic packet reaches today's retained-act ceiling, even though its bytes fit inside the CLI's file limit. That ceiling requires its own review before supporting substantially more retained acts.
+The published [L50 run](../benchmarks/AUTONOMOUS_50_RESULTS.md) finished at 148,841 bytes with 91 retained acts. It used 2.0 and a different conversation. The 100-act fixture reached the 2.1 retained-act ceiling. Portable 2.2 supports up to 4,096 unpacked acts and larger packed histories within its byte limits.
 
 At 100 synthetic acts, the acts account for about 81% of the bytes. Rearranging or shortening the one embedded guide would buy little room for that conversation. Compression saves bytes in transit. Whether gzip or Base64 saves bytes says little about how many tokens an AI needs to read the decoded text. A file made of opaque compressed history would require a decoder before a cold reader could inspect those acts.
 
@@ -74,6 +74,10 @@ python src/ucl.py inspect long.txt --act t1850
 | Storage reduction | 90.1% |
 
 The uncompressed figure measures the reconstructed JSON before applying unpacked file limits. The fixture uses generated, short and repetitive acts. This measures storage and continuation on that record. File size on a live research conversation depends on the length and variety of its acts.
+
+## Live archive continuation
+
+Clarke received 1,012 bytes of labeled excerpts from a 575,525-byte packed 2.2 file. It quoted the observation from archived act 1,850 and used the typed qualification recorded in act 37. The local tool supplied the excerpts and assembled the contribution fields. Python and Node accepted act 4,097 and verified the prior acts, definitions, claims, and acknowledgements were preserved. Act 1,850 became readable in the new packet because the reply cited it. [Successful run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45442609497)
 
 ## Design explicit condensation for smaller handoffs
 

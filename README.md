@@ -93,7 +93,8 @@ UCL Portable JSON message
 │   ├── discourse + acknowledgements + history
 │   ├── body + context + other UCL fields
 │   └── integrity   (packet SHA-256)
-└── checksum        (envelope SHA-256)
+├── checksum        (envelope SHA-256)
+└── archive_guide + archive (optional decoding instructions and gzip blocks)
 ```
 
 A receiver can validate the entire packet locally. Hashes detect changes relative to trusted expected identities; a self-contained checksum **is not an authentication signature**. Optional role annotations describe the intended purpose of individual formulas, not whether the formulas are true.
@@ -106,7 +107,7 @@ See the [2.2 specification](docs/UCL_2_2_SPECIFICATION.md#fingerprints) for the 
 
 Use `python src/ucl.py inspect packet.txt` to read the conversation state first. The Concept Index shows recent symbol use and speaker-scoped retirements. Add `--since earlier.txt` to see which definitions were added between two retained packets. The state ledger shows each speaker's latest recorded stance on the exact claim branch, withdrawals, and recorded open issues. Add `--json` for the [derived state ledger](docs/UCL_STATE_LEDGER.md).
 
-Portable is the single supported interchange format. Use `inspect packet.txt --act t37` or `inspect packet.txt --claim theory --path 1` to retrieve exact source records as JSON. The [long-conversation prototype](docs/UCL_LONG_CONVERSATIONS.md) covers the 1,000-act test and optional gzip blocks, which keep older history inside the same file. The [successor notes](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) cover signing and continuity.
+Portable is the single supported interchange format. Use `inspect packet.txt --act t37` or `inspect packet.txt --claim theory --path 1` to retrieve exact source records as JSON. The [long-conversation guide](docs/UCL_LONG_CONVERSATIONS.md) covers the 1,000-act test and optional gzip blocks, which keep older history inside the same file. The [successor notes](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) cover signing and continuity.
 
 ## Getting started
 
@@ -177,11 +178,12 @@ UCLBench tests whether two separate AI models can **actually use** the structure
 | **Autonomous L50** | **48/50 delivered; 45/50 first try** | 91 retained acts; 5/5 prompted historical references; no silent history loss |
 | **Post-release Concept Genesis CG-2** | **7/8 delivered; 6 novel definitions; 6/6 identity receipts** | Independently authored concepts, precise critique, counterexamples, and evolving disagreement ([full CG-2 results](benchmarks/CG2_POSTRELEASE_RESULTS.md)) |
 | **UCL/2.0 vs structured English** | **UCL 56/56; structured English 48/56** strict-schema answers | UCL: 8/8 valid outputs; English: 7/8. The English malformed response nevertheless contained all 8 correct choices; no observed semantic-accuracy difference ([comparison report](benchmarks/UCL2_VS_STRUCTURED_ENGLISH.md)) |
+| **UCL/2.2 live archive continuation** | **4,096 → 4,097 acts** | With labeled excerpts from the local tool, Clarke quoted archived act 1,850 and cited the qualification from act 37. Python and Node accepted the continuation. ([successful run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45442609497)) |
 | **Cold-recipient deception test** | **UCL 32/32; structured English 32/32** | Both resisted the same forged historical recap while preserving real CG-2 concept identities; UCL used more input tokens ([adversarial report](benchmarks/COLD_RECIPIENT_ATTACK_RESULTS.md)) |
 
 The [L25 report](benchmarks/AUTONOMOUS_25.md) explains why most originally rejected *attempts* failed an unnecessary auxiliary summary-length rule, **not the UCL language**. The [L50 results](benchmarks/AUTONOMOUS_50_RESULTS.md) report the actual remaining syntax/provider failures, packet growth, cost, and a transcript-level reasoning analysis.
 
-**Three post-release investigations extend the evidence beyond message transport.** [CG-2](benchmarks/CG2_POSTRELEASE_RESULTS.md) documents six newly authored concepts and actual model-generated challenges between their meanings; [the direct comparison](benchmarks/UCL2_VS_STRUCTURED_ENGLISH.md) measures exact-schema retrieval against a structured-English baseline; and [the cold-recipient deception test](benchmarks/COLD_RECIPIENT_ATTACK_RESULTS.md) verifies that independent models could preserve six real CG-2 concept identities despite a misleading external recap. These are different tasks, not interchangeable success rates. Structured English achieved the same observed factual correctness in both comparative tests and used substantially fewer input tokens; one malformed response explains the strict-score difference in the direct comparison.
+**Post-release evidence on UCL/2.0.** [CG-2](benchmarks/CG2_POSTRELEASE_RESULTS.md) documents six newly authored concepts and actual model-generated challenges between their meanings; [the direct comparison](benchmarks/UCL2_VS_STRUCTURED_ENGLISH.md) measures exact-schema retrieval against a structured-English baseline; and [the cold-recipient deception test](benchmarks/COLD_RECIPIENT_ATTACK_RESULTS.md) verifies that independent models could preserve six real CG-2 concept identities despite a misleading external recap. These are different tasks, not interchangeable success rates. Structured English achieved the same observed factual correctness in both comparative tests and used substantially fewer input tokens; one malformed response explains the strict-score difference in the direct comparison.
 
 **Interpretation:** These results provide preliminary evidence of self-contained transport, concept identity retention, independent model authorship, scoped disagreement, and robust retrieval in the particular tested tasks. They **do not establish UCL's general superiority over structured English**, independently prove comprehension, or verify speculative philosophical claims. Differences in format compliance must not be confused with differences in semantic understanding; relative efficiency and usefulness require broader, task-specific research. Productive disagreement is not a failure.
 
