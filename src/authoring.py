@@ -89,8 +89,8 @@ def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, ret
         source, target, action = binding['act'], {'claim': claim, 'path': path}, 'received'
     else:
         core.need(not seed_formula, '--seed-formula requires --claim')
-        core.need(core.packet_version(parent) == core.RETRACTION_VERSION,
-                  'ACK retraction requires Portable 2.3. Run upgrade first')
+        core.need(core.packet_version(parent) in core.RETRACTION_VERSIONS,
+                  'ACK retraction requires Portable 2.3 or later. Run upgrade first')
         original = next((ack for ack in acknowledgements if ack['id'] == retract), None)
         core.need(original and original['action'] in core.RETRACTABLE_ACK_ACTIONS,
                   'retraction must target an existing stance ACK')

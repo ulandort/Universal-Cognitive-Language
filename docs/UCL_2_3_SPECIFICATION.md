@@ -1,5 +1,7 @@
 # UCL 2.3 Portable
 
+See [Portable 2.4](UCL_2_4_SPECIFICATION.md) for the current release. This page documents the 2.3 wire and inherited retraction semantics.
+
 The format identifier is `UCL/2.3-SAP1-PORTABLE` and the embedded grammar version is `UCL/1.3`. The [2.2 specification](UCL_2_2_SPECIFICATION.md) defines the inherited structure, gzip archive layout, and definition identities. Every packet carries its matching guide and authoring rules. Continuing an older packet keeps its original version. An explicit `upgrade` to 2.3 preserves 2.2 definition IDs, claims, acts, acknowledgements, and optional formula roles and recomputes the guide and packet hashes.
 
 ## Exact ACK retraction

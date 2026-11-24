@@ -9,9 +9,9 @@ class SourceLayoutTests(unittest.TestCase):
     def setUpClass(cls):
         cls.packet=core.load_json((ROOT/'examples/cross_model_conversation_8_turns.json').read_text(encoding='utf8'))
     def test_public_version_and_original_grammar(self):
-        self.assertEqual(ucl.VERSION,'UCL/2.3')
+        self.assertEqual(ucl.VERSION,'UCL/2.4')
         self.assertEqual(ucl.PORTABLE_FORMAT,portable.CURRENT_FORMAT)
-        self.assertEqual(ucl.INNER_GRAMMAR_VERSION,'UCL/1.3')
+        self.assertEqual(ucl.INNER_GRAMMAR_VERSION,'UCL/1.4')
         self.assertEqual(ucl.CORE,core.CORE)
         self.assertEqual(ucl.check(self.packet),core.check(self.packet))
         self.assertEqual(ucl.packet_id(self.packet),core.packet_id(self.packet))
@@ -273,6 +273,20 @@ class SourceLayoutTests(unittest.TestCase):
         delta = compare_packets(previous, packet)
         self.assertEqual(delta['new_retractions'][0]['acknowledgement'], 'x5')
         self.assertEqual(delta['stance_changes'][0]['after']['acknowledgement'], 'x6')
+
+    def test_plain_upgrade_preserves_23_retraction_and_definition_ids(self):
+        from inspection import compare_packets
+
+        old = ucl.decode_portable(ucl.read_json_file(ROOT / 'examples/challenge.txt'))
+        legacy = core.build(core.draft_from_packet(old), version=core.RETRACTION_VERSION)
+        contribution = ucl.read_json_file(ROOT / 'examples/challenge_retraction.json')
+        retracted = ucl.decode_portable(ucl.continue_portable(ucl.encode_portable(legacy), contribution))
+        upgraded = core.upgrade_packet(retracted)
+        self.assertIn('reply_authoring', upgraded['guide'])
+        self.assertEqual({k: v for k, v in retracted.items() if k not in {'guide', 'integrity'}},
+                         {k: v for k, v in upgraded.items() if k not in {'guide', 'integrity'}})
+        self.assertEqual(compare_packets(retracted, upgraded)['new_act_count'], 0)
+        self.assertEqual(ucl.encode_portable(upgraded)['format'], ucl.PORTABLE_FORMAT)
 
     def test_portable_cli_rejects_ambiguous_and_oversized_json(self):
         with tempfile.TemporaryDirectory() as directory:

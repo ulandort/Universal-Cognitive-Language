@@ -1,5 +1,7 @@
 # UCL 2.3.0 Portable
 
+These notes document the 2.3.0 release. See the [2.4 release notes](RELEASE_NOTES_2_4.md) for the current release.
+
 UCL 2.3 lets a participant retract an exact earlier stance while keeping the original record and the rest of the discussion intact. The guide, definitions, and full retained history still travel in one self-contained `.txt`, including optional lossless gzip blocks.
 
 - **Exact stance retraction.** Name the speaker's original acknowledgement by ID. If it was the current stance on that branch, Current State shows it as retracted. Newer stances survive and superseded stances stay historical.

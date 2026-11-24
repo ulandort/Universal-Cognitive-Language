@@ -1,6 +1,6 @@
 # UCL/2.2 Portable specification
 
-This document specifies Portable 2.2. See [Portable 2.3](UCL_2_3_SPECIFICATION.md) for the current release. The interchange is one self-contained UTF-8 JSON `.txt` file. The envelope identifies `UCL/2.2-SAP1-PORTABLE` and profile `portable`. The inner guide identifies `UCL/1.2`. The [2.1 specification](UCL_2_1_SPECIFICATION.md) supplies the unchanged definition ID algorithm, named aliases, vocabulary records, expression syntax, and authoring fields. The 11 core glyphs and the packet, rules, and envelope hash domains carry forward.
+This document specifies Portable 2.2. See [Portable 2.4](UCL_2_4_SPECIFICATION.md) for the current release. The interchange is one self-contained UTF-8 JSON `.txt` file. The envelope identifies `UCL/2.2-SAP1-PORTABLE` and profile `portable`. The inner guide identifies `UCL/1.2`. The [2.1 specification](UCL_2_1_SPECIFICATION.md) supplies the unchanged definition ID algorithm, named aliases, vocabulary records, expression syntax, and authoring fields. The 11 core glyphs and the packet, rules, and envelope hash domains carry forward.
 
 ## Long histories and archives
 

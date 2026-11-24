@@ -29,10 +29,10 @@ Python 3.12 or later is supported. Use a checkout that supports the packet's dec
 Open the [Challenge prompt](https://github.com/ulandort/Universal-Cognitive-Language#ucl-challenge-join-at-turn-nine). Paste the complete packet into a fresh model session and ask it to introduce a concept that addresses the disputed claim. From the checkout, compare the worked handoff with the original:
 
 ```bash
-python src/ucl.py upgrade examples/challenge.txt challenge-23.txt
-python src/ucl.py continue challenge-23.txt challenge-next.txt < examples/challenge_reply.json
+python src/ucl.py upgrade examples/challenge.txt challenge-24.txt
+python src/ucl.py continue challenge-24.txt challenge-next.txt < examples/challenge_reply.json
 python src/ucl.py inspect challenge-next.txt --state
-python src/ucl.py diff challenge-23.txt challenge-next.txt
+python src/ucl.py diff challenge-24.txt challenge-next.txt
 ```
 
 The Concept Index identifies the added definition, its recent use, and any attributed retirements.
@@ -42,9 +42,9 @@ The Concept Index identifies the added definition, its recent use, and any attri
 From the root of a UCL checkout:
 
 ```bash
-python src/ucl.py upgrade examples/quickstart.txt quickstart-23.txt
-python src/ucl.py check quickstart-23.txt
-python src/ucl.py decode quickstart-23.txt restored-inner.json
+python src/ucl.py upgrade examples/quickstart.txt quickstart-24.txt
+python src/ucl.py check quickstart-24.txt
+python src/ucl.py decode quickstart-24.txt restored-inner.json
 python src/ucl.py encode restored-inner.json portable-example.txt
 python src/ucl.py check restored-inner.json
 ```
@@ -69,14 +69,14 @@ python src/ucl.py inspect incoming-ucl2.txt --state
 Read the validated guide, then use **template → edit → preflight → continue** for a scoped reply. The template command uses the incoming packet's IDs. Replace the example speaker, claim, and path with the ones you intend to use. Fill in the content fields and choose the acknowledgement action before running preflight.
 
 ```bash
-python src/ucl.py template incoming-ucl2.txt --speaker "New participant" --claim theory --path 1 > contribution.json
+python src/ucl.py template incoming-ucl2.txt --speaker "New participant" --claim theory --path 1 --seed-formula > contribution.json
 # Edit contribution.json before running preflight.
 python src/ucl.py preflight incoming-ucl2.txt < contribution.json
 python src/ucl.py continue incoming-ucl2.txt next-ucl2.txt < contribution.json
 python src/ucl.py check next-ucl2.txt
 ```
 
-Send only `next-ucl2.txt`. The continuation preserves the incoming version. For archived inner packets, the repository also retains `tools/author.py`. An explicit `python src/ucl.py upgrade archived.txt current.txt` creates a separate 2.3 file. Existing 2.1 and 2.2 definition IDs carry forward. To retract a stance in a 2.3 packet, use `template packet.txt --speaker NAME --retract ACK_ID` and fill in the response text, explanation, and conclusion.
+Send only `next-ucl2.txt`. The continuation preserves the incoming version. For archived inner packets, the repository also retains `tools/author.py`. An explicit `python src/ucl.py upgrade archived.txt current.txt` creates a separate 2.4 file. Existing 2.3 definition IDs carry forward. To retract a stance, use `template packet.txt --speaker NAME --retract ACK_ID` and fill in the response text, explanation, and conclusion.
 
 ## Retrieve an earlier source
 

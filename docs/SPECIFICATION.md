@@ -1,6 +1,6 @@
 # UCL/1.0 normative specification (plain JSON profile)
 
-This document specifies the archived 1.0 inner format. See [Portable 2.3](UCL_2_3_SPECIFICATION.md) for the current release.
+This document specifies the archived 1.0 inner format. See [Portable 2.4](UCL_2_4_SPECIFICATION.md) for the current release.
 
 **Version identifier:** exactly `UCL/1.0`. This document describes the normative data profile checked by the Python reference implementation. The source implementation is the operational reference for expression parsing, act-detail schemas and exact validation rules. Other conforming implementations MUST match the declared canonical serialization, definition identities, packet integrity, and language semantics. A private model's interpretation is not a conformance proof.
 
