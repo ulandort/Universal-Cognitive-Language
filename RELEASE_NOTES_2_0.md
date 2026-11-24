@@ -36,3 +36,13 @@ See [UCL/2.0 specification](docs/UCL_2_0_SPECIFICATION.md), [README](README.md),
 ## Release scope and limits
 
 This is a **full stable 2.0 protocol profile** for the specified Portable envelope and typed inner packet; it is **not** a claim of comprehensive AI reasoning accuracy or a third-party security certification. SHA-256 self-checks are not authentication. The independent JavaScript implementation's documented subset is not a full optional proof/model interpreter; Python remains the complete structural reference. Earlier research packets labeled `DRAFT` are archived experimental materials, not wire-compatible 2.0 stable messages. No central registry, new core glyph or on-wire permission service has been introduced.
+
+
+## Portable guide and rules fingerprints
+
+| Object | Base64url SHA-256 without padding |
+|---|---|
+| Inner guide | `pXMaoI0O-dSKfj1D3XFlzl-Wvd9CDdLdOS4R1fNyQ5U` |
+| SAP-1 structural rules | `yrac3Zj4lyiGfI6944ZsmFSLdL-VPiXPnVZEPVKEh-k` |
+
+The guide fingerprint hashes the UCL-CJSON-1 bytes of `packet.guide` directly. The structural rules fingerprint hashes the ASCII prefix `UCL-SAP1-RULES-2.0` followed by one LF byte and the UCL-CJSON-1 bytes of `structural_rules.rules`. Obtain the expected fingerprints from a trusted copy of these notes. The fingerprints identify the rules and guide. Sender authentication requires separate evidence.

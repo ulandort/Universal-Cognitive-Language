@@ -89,4 +89,28 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertEqual(packet['definitions'], self.packet['definitions'])
             self.assertEqual(incoming.read_bytes(), core.canon(wire))
 
+    def test_portable_cli_rejects_ambiguous_and_oversized_json(self):
+        with tempfile.TemporaryDirectory() as directory:
+            packet = Path(directory) / 'packet.txt'
+            wire = core.canon(portable.encode(self.packet))
+            duplicate = wire.replace(b'"profile":"portable"', b'"profile":"portable","profile":"portable"', 1)
+            self.assertNotEqual(duplicate, wire)
+            for source, error in (
+                (duplicate, "duplicate JSON key: 'profile'"),
+                (b' ' * (ucl.MAX_PORTABLE_JSON + 1), 'JSON input exceeds'),
+            ):
+                packet.write_bytes(source)
+                for entry in ('src/ucl.py', 'tools/sap_portable.py'):
+                    command = [sys.executable, str(ROOT / entry), 'check', str(packet)]
+                    result = subprocess.run(command, text=True, capture_output=True, timeout=20)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('REJECTED: ' + error, result.stderr)
+
+            packet.write_bytes(wire)
+            output = Path(directory) / 'next.txt'
+            command = [sys.executable, str(ROOT / 'src/ucl.py'), 'continue', str(packet), str(output)]
+            result = subprocess.run(command, input='{"act":{},"act":{}}', text=True, capture_output=True, timeout=20)
+            self.assertIn("REJECTED: draft on stdin: duplicate JSON key: 'act'", result.stderr)
+            self.assertFalse(output.exists())
+
 if __name__=='__main__':unittest.main()

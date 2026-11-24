@@ -12,11 +12,8 @@ import argparse
 import base64
 import copy
 import hashlib
-import json
 import sys
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1]
-sys.path[:0]=[str(ROOT/'src')]
 import ucl
 import structural_authoring as sap
 
@@ -173,10 +170,11 @@ def decode(env):
     block=env['structural_rules']
     if type(block) is not dict or set(block)!={'rules','sha256'}:
         raise ValueError('SAP portable: rules block invalid')
-    if block['sha256']!=rules_hash(block['rules']):
-        raise ValueError('SAP portable: embedded authoring rules checksum mismatch')
     if block['rules']!=RULES:
         raise ValueError('SAP portable: unknown or altered structural standard')
+    expected_hash = rules_hash(RULES)
+    if block['sha256'] != expected_hash or rules_hash(block['rules']) != expected_hash:
+        raise ValueError('SAP portable: embedded authoring rules checksum mismatch')
     if env['checksum']!=envelope_checksum(env):
         raise ValueError('SAP portable: envelope checksum mismatch')
     pkt=copy.deepcopy(env['packet'])
@@ -195,14 +193,22 @@ def main():
     ap.add_argument('source',type=Path)
     ap.add_argument('output',type=Path,nargs='?')
     a=ap.parse_args()
-    data=json.loads(a.source.read_text(encoding='utf-8'))
+    limit = ucl.MAX_EXPANDED if a.mode == 'encode' else ucl.MAX_PORTABLE_JSON
+    data = ucl.read_json_file(a.source, limit=limit)
     if a.mode=='encode':
         result=encode(data)
     else:
         result=decode(data)
     if a.output:
-        a.output.write_bytes(ucl.canon(result))
+        data = ucl.portable_json_bytes(result) if a.mode == 'encode' else ucl.canon(result)
+        a.output.write_bytes(data)
         print(str(a.output))
     else:
         print('VALID self-contained SAP-1 '+a.mode)
-if __name__=='__main__':main()
+def run_cli():
+    try:
+        main()
+    except (ValueError, TypeError, KeyError, OSError) as exc:
+        sys.exit('REJECTED: ' + str(exc))
+
+if __name__=='__main__':run_cli()

@@ -16,6 +16,7 @@ from pathlib import Path
 VERSION='UCL/2.0'
 PORTABLE_FORMAT='UCL/2.0-SAP1-PORTABLE'
 INNER_GRAMMAR_VERSION=_core.VERSION
+MAX_PORTABLE_JSON=8_000_000
 
 def __getattr__(name):
     """Retain access to internal helper names used by older local consumers."""
@@ -58,24 +59,30 @@ def continue_portable(envelope, contribution):
     decode_portable(result)
     return result
 
+def portable_json_bytes(envelope):
+    data = _core.canon(envelope)
+    if len(data) > MAX_PORTABLE_JSON:
+        raise ValueError(f'Portable JSON output exceeds {MAX_PORTABLE_JSON} bytes')
+    return data
+
 def _continue_cli(args):
     if len(args) != 4:
         raise ValueError('Usage: python src/ucl.py continue incoming.txt next.txt < contribution.json')
     source, output = map(Path, args[2:])
     if source.resolve() == output.resolve() or (output.exists() and source.samefile(output)):
         raise ValueError('choose a different output file to preserve the incoming packet')
-    envelope = json.loads(source.read_text(encoding='utf-8'))
+    envelope = _core.read_json_file(source, limit=MAX_PORTABLE_JSON)
     if sys.stdin.isatty():
         print('Paste the JSON contribution, then press Ctrl-D (Ctrl-Z then Enter on Windows).', file=sys.stderr)
     try:
-        contribution = json.load(sys.stdin)
-    except json.JSONDecodeError as exc:
+        contribution = _core.read_json(sys.stdin.buffer)
+    except ValueError as exc:
         raise ValueError(f'draft on stdin: {exc}') from exc
-    result = continue_portable(envelope, contribution)
+    data = portable_json_bytes(continue_portable(envelope, contribution))
     with NamedTemporaryFile(dir=output.parent, delete=False) as temp:
         staged = Path(temp.name)
         try:
-            temp.write(_core.canon(result))
+            temp.write(data)
             temp.close()
             staged.replace(output)
         finally:
@@ -95,18 +102,18 @@ def main(args):
         raise ValueError('Usage: python src/ucl.py check file.txt | encode inner.json portable.txt | decode portable.txt inner.json | continue incoming.txt next.txt < contribution.json | build/canonicalize/draft ...')
     command=args[1]
     if command=='check' and len(args)==3:
-        data=json.loads(Path(args[2]).read_text(encoding='utf-8'))
+        data=_core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
         if isinstance(data,dict) and data.get('format')==PORTABLE_FORMAT:
             print(json.dumps(check_portable(data),indent=2))
         else:
-            _core.main(args)
+            print(json.dumps(_core.check(data),indent=2))
     elif command=='encode' and len(args)==4:
-        source=_core.load_json(Path(args[2]).read_text(encoding='utf-8'))
+        source=_core.read_json_file(args[2])
         result=encode_portable(source)
-        Path(args[3]).write_bytes(_core.canon(result))
+        Path(args[3]).write_bytes(portable_json_bytes(result))
         print('VALID UCL/2.0 Portable',args[3])
     elif command=='decode' and len(args)==4:
-        source=json.loads(Path(args[2]).read_text(encoding='utf-8'))
+        source=_core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
         result=decode_portable(source)
         Path(args[3]).write_bytes(_core.canon(result))
         print('VALID UCL/2.0 Portable',args[3])

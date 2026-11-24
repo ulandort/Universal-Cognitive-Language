@@ -628,9 +628,32 @@ def dump_json(packet, *, pretty=False):
         return json.dumps(packet,ensure_ascii=True,indent=2,sort_keys=True)+'\n'
     return canon(packet).decode('ascii')+'\n'
 
+def _unique_json_object(pairs):
+    result = {}
+    for key, value in pairs:
+        need(key not in result, f'duplicate JSON key: {key!r}')
+        result[key] = value
+    return result
+
+def parse_json(data, *, limit=MAX_EXPANDED):
+    """Parse bounded UTF-8 JSON and reject ambiguous object keys."""
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    need(len(data) <= limit, f'JSON input exceeds {limit} bytes')
+    try:
+        return json.loads(data.decode('utf-8'), object_pairs_hook=_unique_json_object)
+    except RecursionError as exc:
+        raise ValueError('JSON nesting exceeds parser limit') from exc
+
+def read_json(stream, *, limit=MAX_EXPANDED):
+    return parse_json(stream.read(limit + 1), limit=limit)
+
+def read_json_file(path, *, limit=MAX_EXPANDED):
+    with Path(path).open('rb') as stream:
+        return read_json(stream, limit=limit)
+
 def load_json(text):
-    need(len(text.encode('utf-8'))<=MAX_EXPANDED,'expanded size cap')
-    packet=json.loads(text)
+    packet = parse_json(text)
     check(packet)
     return packet
 
@@ -643,19 +666,20 @@ def draft_from_packet(packet):
 
 def main(args):
     if len(args)==4 and args[1]=='build':
-        draft=json.loads(Path(args[2]).read_text(encoding='utf-8'))
+        draft=read_json_file(args[2])
         p=build(draft)
         Path(args[3]).write_text(dump_json(p,pretty=True),encoding='utf-8')
         print(json.dumps(check(p),indent=2))
     elif len(args)==3 and args[1]=='check':
-        p=load_json(Path(args[2]).read_text(encoding='utf-8'))
+        p=read_json_file(args[2])
         print(json.dumps(check(p),indent=2))
     elif len(args)==4 and args[1]=='canonicalize':
-        p=load_json(Path(args[2]).read_text(encoding='utf-8'))
+        p=read_json_file(args[2])
+        check(p)
         Path(args[3]).write_bytes(canon(p))
         print('canonical UCL-CJSON-1 written')
     elif len(args)==4 and args[1]=='draft':
-        p=load_json(Path(args[2]).read_text(encoding='utf-8'))
+        p=read_json_file(args[2])
         Path(args[3]).write_text(json.dumps(draft_from_packet(p),indent=2,ensure_ascii=True)+'\n',encoding='utf-8')
     else:raise ValueError('Usage: python src/ucl.py build draft.json packet.txt | check packet.txt | canonicalize packet.txt canonical.json | draft packet.txt draft.json')
 

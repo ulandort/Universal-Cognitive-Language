@@ -14,4 +14,4 @@ def __getattr__(name):
     return getattr(_portable,name)
 
 if __name__=='__main__':
-    _portable.main()
+    _portable.run_cli()
