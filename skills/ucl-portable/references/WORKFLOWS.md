@@ -80,7 +80,7 @@ Send only `next-ucl2.txt`. The continuation preserves the incoming version. For 
 
 ## Retrieve an earlier source
 
-Use `python src/ucl.py inspect incoming-ucl2.txt --act t37` for a verbatim retained act. Use `--claim theory --path 1` in place of `--act t37` to read one claim branch and its matching acknowledgement records. Treat these views as excerpts and continue the complete incoming Portable file. If the file contains an archive, read its embedded `archive_guide`. The CLI opens the indexed gzip block containing the requested act. Run `check` for a full audit. In a focused acknowledgement, `by` identifies the author act and `source_act` identifies the target’s origin. Label the two roles when giving an excerpt to a model.
+For a newcomer to a packed file, start with `python src/ucl.py inspect incoming-ucl2.txt --handoff --claim theory --path 1 --include-act t37`. The briefing includes Current State and exact excerpts. Read `ack_id` as the acknowledgement ID, `author_act` as its author act, and `source_act` as the target’s origin. For a single lookup, use `inspect --act t37` or `inspect --claim theory --path 1`. Read the packet’s embedded `archive_guide`, run `check` for a full audit, and continue from the complete Portable file.
 
 ## Failure handling and security
 

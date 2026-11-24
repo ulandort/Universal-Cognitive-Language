@@ -82,7 +82,7 @@ Commands below use `python src/ucl.py` from the repository root.
 
 For a scoped reply, use **template → edit → preflight → continue**. Add `--seed-formula` to copy the selected proposition into the two typed fields for editing. Add `--concept '$control_sensitive' --domain D` to start a typed predicate definition. When qualifying a claim, put the typed condition in `qualification.expression` and its prose explanation in `qualification.explanation`.
 
-The briefing combines Current State, the latest act, and exact requested sources. Use the original Portable packet when validating and continuing. See the [packed handoff exercise](docs/UCL_HANDOFF_TRIAL.md) and [state and diff reference](docs/UCL_STATE_LEDGER.md).
+When inviting a newcomer into a packed conversation, start with `inspect --handoff`. Give them the briefing and make the original Portable packet available for validation and continuation. In the briefing, `ack_id` names the acknowledgement, `author_act` names the turn that wrote it, and `source_act` names the target's origin. See the [packed handoff exercise](docs/UCL_HANDOFF_TRIAL.md) and [state and diff reference](docs/UCL_STATE_LEDGER.md).
 
 ## Compress a long conversation
 

@@ -67,7 +67,8 @@ class HistoryArchiveTests(unittest.TestCase):
         self.assertEqual(brief['archive_blocks_opened'], 1)
         self.assertEqual(brief['current_state']['retained_act_count'], 4096)
         self.assertEqual(brief['claim']['scope']['path'], [1])
-        self.assertTrue(any(ack['by'] == 't37' for ack in brief['claim']['acknowledgements']))
+        self.assertTrue(any(ack['author_act'] == 't37' and ack['ack_id'] == 'condition37'
+                            for ack in brief['claim']['acknowledgements']))
         self.assertEqual([entry['act'] for entry in brief['requested_acts']],
                          self.packet['discourse']['acts'][1849:1851])
 
@@ -112,6 +113,10 @@ class HistoryArchiveTests(unittest.TestCase):
         self.assertEqual(state['recent_retractions'][-1]['retracts'], 'condition37')
         self.assertTrue(state['recent_retractions'][-1]['cleared_current_stance'])
         self.assertTrue({'retract400', 'condition37'} <= {ack['id'] for ack in excerpt['acknowledgements']})
+        briefing = history_archive.inspect_archive_handoff(packed, claim_id='theory', path=[1])
+        retraction, = briefing['current_state']['recent_retractions']
+        self.assertEqual((retraction['ack_id'], retraction['author_act'], retraction['retracts']),
+                         ('retract400', 't400', 'condition37'))
         self.assertEqual(ucl.decode_portable(packed), packet)
         with tempfile.TemporaryDirectory() as directory:
             before = Path(directory) / 'packed-23.txt'
