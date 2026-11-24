@@ -4,13 +4,13 @@
     "kind": "response",
     "speaker": "D",
     "references": ["t8"],
-    "text": "I retract the rejection I recorded in x4 on branch [1]. My position on branch [0] still stands.",
+    "text": "I retract my earlier rejection x4 on branch [1]. I leave open whether Alpha exhibits a repeatable convergence pattern. My position on branch [0] still stands.",
     "expressions": [],
     "details": {"responds_to": "t8", "stance": "undetermined"}
   },
   "orientation": "L",
-  "explanation": "~[B][A]",
-  "conclusion": "~[B][A]",
+  "explanation": "|[~[B][A]][![~[B][A]]]",
+  "conclusion": "|[~[B][A]][![~[B][A]]]",
   "acknowledgements": [
     {
       "id": "x5",

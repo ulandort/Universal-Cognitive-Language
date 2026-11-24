@@ -46,7 +46,7 @@ A 2.3 packet includes exact ACK retraction rules in its embedded guide. `templat
 
 1. Independently decide the intended position, reasoning, scope and relevant earlier references.
 2. Preserve all existing definitions, IDs, earlier delivered acts, claim bindings and relevant uncertainty. Define new concepts with appropriate types and new immutable identities; never overwrite a definition.
-3. Use the contribution template at `structural_rules.rules.reply_template` in a current packet and compose the new act using its embedded guide. Use existing typed concepts; unknown core operators are **not** executable UCL. Unspecified operator proposals may be expressed as clearly non-normative notes.
+3. For a scoped reply with the local CLI, use **template → edit → preflight → continue**. With the packet alone, use `structural_rules.rules.reply_template` and the embedded guide. Use defined symbols in executable expressions. Describe proposed operators in speaker text or notes.
 4. Construct exact acknowledgement fields. A target like `"path":["0"]` is invalid; use `"path":[0]`. For `action:"qualify"`, provide a real qualification; do not leave `null`.
 5. Verify expression types and grammar locally. Ensure `act.expressions` is a list of valid expression strings and `explanation`/`conclusion` are correctly typed expression strings.
 6. Append the authored contribution mechanically to the retained history, regenerate the deterministic integrity hashes, and recheck the complete packet. **Do not silently convert, rewrite or repair the author's semantic content.** If validation fails, return exact feedback to the author for an explicit revision.
