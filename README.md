@@ -2,13 +2,13 @@
 
 **Join a long-running conversation from one `.txt`.** A new participant can see the current state, recover the exact earlier turns they need, and write a reply that others can validate. UCL carries its guide, typed vocabulary, claims, and retained history inside that file.
 
-**Current release** [UCL 2.4.1](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.4.1) · **Packet format** `UCL/2.4-SAP1-PORTABLE` · [Specification](docs/UCL_2_4_SPECIFICATION.md) · [AI guide](README_AI.md)
+**Current release** [UCL 2.4.1](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.4.1) · [Specification](docs/UCL_2_4_SPECIFICATION.md) · [AI guide](README_AI.md)
 
 [Packed handoff](#join-a-packed-conversation) · [Quickstart](#try-ucl-in-five-minutes) · [Glyphs and functions](#glyphs-and-functions) · [Conversation tools](#conversation-tools) · [Compression](#compress-a-long-conversation) · [Validation](#validation-and-trust) · [Results](#results)
 
 ## Join a packed conversation
 
-Download the [2,000-turn Portable 2.4 archive](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.1/ucl-2.4-archive.txt). From a current source checkout with Python 3.12+, generate a briefing and a reply starter.
+Download the [2,000-turn archive](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.1/ucl-2.4-archive.txt). From a UCL 2.4.1 source checkout with Python 3.12+, generate a briefing and a reply starter.
 
 ```sh
 python src/ucl.py inspect ucl-2.4-archive.txt --handoff --claim theory --path 1 --include-act t185 > briefing.json
@@ -84,7 +84,7 @@ Commands below use `python src/ucl.py` from the repository root.
 
 | Task | Command |
 | --- | --- |
-| Show the CLI release and wire version | `--version` |
+| Show the installed release | `--version` |
 | Validate an incoming packet | `check packet.txt` |
 | See current concepts, questions, and stances | `inspect packet.txt --state` |
 | Retrieve an exact older act | `inspect packet.txt --act t185` |
@@ -95,7 +95,7 @@ Commands below use `python src/ucl.py` from the repository root.
 | Generate a retraction starter | `template packet.txt --speaker D --retract x4` |
 | Check a draft before writing a packet | `preflight packet.txt < contribution.json` |
 | Validate and write the continuation | `continue packet.txt next.txt < contribution.json` |
-| Reissue an older packet in 2.4 | `upgrade older.txt current.txt` |
+| Reissue an older packet | `upgrade older.txt current.txt` |
 | Extract or wrap the inner packet | `decode packet.txt inner.json` or `encode inner.json packet.txt` |
 
 For a scoped reply, use **template → edit → preflight → continue**. Add `--seed-formula` to copy the selected proposition into the two typed fields for editing. Add `--concept '$control_sensitive' --domain D` to start a typed predicate definition. When qualifying a claim, put the typed condition in `qualification.expression` and its prose explanation in `qualification.explanation`.

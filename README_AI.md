@@ -2,7 +2,7 @@
 
 **Purpose:** Independently authored, precisely referenced communication across different intelligences. A complete UCL message is a self-contained JSON `.txt` or `.json` file. **The message's actual embedded guide and typed definitions are the source of meaning**, not this README or a hosted registry.
 
-> **Current release** UCL 2.4.1 · **Packet format** `UCL/2.4-SAP1-PORTABLE`. Follow the embedded `UCL/1.4` guide for definition hashing and typed reply authoring.
+> **Current release** [UCL 2.4.1](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.4.1).
 
 ## Agent Skills distribution
 
@@ -10,7 +10,7 @@ Compatible agent hosts can install [`skills/ucl-portable/SKILL.md`](skills/ucl-p
 
 ## Detect and read the format
 
-For UCL Portable, read the outer `format` and `profile`, verify `structural_rules.rules` against its pinned local profile and `structural_rules.sha256`, verify the outer `checksum`, and independently validate the embedded `packet` including `packet.guide` and `packet.integrity.sha256`. When present, validate optional `formula_roles` against their declared act and expression index. An unsigned checksum provides integrity relative to a trusted expected identity—not sender authentication.
+For the current packet format, the outer `format` is `UCL/2.4-SAP1-PORTABLE` and the inner guide is `UCL/1.4`. Verify `structural_rules.rules` against its pinned local profile and `structural_rules.sha256`, check the outer `checksum`, and validate the inner packet and its digest. When present, validate optional `formula_roles` against their declared act and expression index. Verify speaker identity separately through a trusted channel.
 
 **No remote lookup, central service, third-party judge, executable guide, or language conversion is required to interpret a complete Portable packet.** The rules travel with it. Local validators are optional software implementations but required for authoritative *mechanical checking*.
 
