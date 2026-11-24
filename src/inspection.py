@@ -43,7 +43,11 @@ def _new_definitions(packet, previous, *, operation='--since'):
     old_acts = previous['discourse']['acts']
     acts = packet['discourse']['acts']
     versions = (previous['guide']['version'], packet['guide']['version'])
-    same_semantics = versions[0] == versions[1] or versions == (core.LONG_VERSION, core.RETRACTION_VERSION)
+    stable_versions = (core.LONG_VERSION, *core.RETRACTION_VERSIONS)
+    same_semantics = versions[0] == versions[1] or (
+        all(version in stable_versions for version in versions)
+        and stable_versions.index(versions[0]) < stable_versions.index(versions[1])
+    )
     if (not same_semantics or
             acts[:len(old_acts)] != old_acts or
             any(packet[field].get(key) != value

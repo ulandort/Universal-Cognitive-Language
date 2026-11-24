@@ -158,8 +158,6 @@ For your own conversation, ask your AI to draft a JSON contribution using the te
 
 Use **template → edit → preflight → continue** for a scoped reply. The template fills in the response orientation, exact claim path, and unused IDs. Add `--concept '$control_sensitive' --domain D` to this example to draft a predicate over domain `D`.
 
-Add `--seed-formula` to copy the selected proposition into the typed `explanation` and `conclusion` fields. Keep or edit each formula according to your intended reply. Write prose reasoning in `act.text` and put cited act IDs in `act.references`.
-
 ```sh
 python src/ucl.py upgrade examples/challenge.txt challenge-23.txt
 python src/ucl.py template challenge-23.txt --speaker "New participant" --claim theory --path 1 > contribution.json

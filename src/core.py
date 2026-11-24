@@ -11,7 +11,9 @@ DEPENDENCY_VERSION='UCL/1.1'
 LONG_VERSION='UCL/1.2'
 LONG_DRAFT_VERSION='UCL/1.2-DRAFT'
 RETRACTION_VERSION='UCL/1.3'
-LONG_VERSIONS=(LONG_VERSION, LONG_DRAFT_VERSION, RETRACTION_VERSION)
+CURRENT_VERSION='UCL/1.4'
+RETRACTION_VERSIONS=(RETRACTION_VERSION, CURRENT_VERSION)
+LONG_VERSIONS=(LONG_VERSION, LONG_DRAFT_VERSION, *RETRACTION_VERSIONS)
 DEPENDENCY_VERSIONS=(DEPENDENCY_VERSION, *LONG_VERSIONS)
 MAX_LONG_ACTS=4096
 MAX_LONG_RECORDS=8192
@@ -132,7 +134,7 @@ def guide(version=VERSION):
             if version == LONG_DRAFT_VERSION else
             'UCL/1.2 supports larger histories and optional Portable gzip archives. Definition IDs preserve the UCL/1.1 scheme.'
         )
-    if version == RETRACTION_VERSION:
+    if version in RETRACTION_VERSIONS:
         result['stability'] = 'UCL/1.3 adds exact acknowledgement retraction and preserves UCL/1.2 definition IDs.'
         result['acknowledgements'] += (
             ' To retract your own earlier accept, reject, qualify, adopt-for-discussion or withhold-judgment ACK, '
@@ -141,6 +143,22 @@ def guide(version=VERSION):
             'replacement to null. If this was the latest stance at its exact target, it is now retracted '
             'and no older stance resumes. A newer stance remains in effect. Both ACKs remain in the file.'
         )
+    if version == CURRENT_VERSION:
+        result['stability'] = 'UCL/1.4 adds a typed reply example and preserves UCL/1.3 definition IDs and act semantics.'
+        result['reply_authoring'] = {
+            'instructions': (
+                'Use typed UCL formulas in explanation and conclusion. Put prose reasoning in act.text '
+                'and cite retained turn IDs in act.references. Turn IDs and words from prose are not formula symbols. '
+                'Use the symbols defined in the packet or explicitly add typed definitions. The local '
+                'template --seed-formula option can copy a selected proposition for editing. Run preflight before continuing.'
+            ),
+            'example': {
+                'assumes': 'A is a value and B is a predicate accepting its sort. The packet retains act t1.',
+                'explanation': '~[B][A]',
+                'conclusion': '~[B][A]',
+                'act': {'text': 'The earlier observation is relevant to whether A has B.', 'references': ['t1']},
+            },
+        }
     return result
 
 def packet_version(packet):
@@ -530,7 +548,7 @@ def validate_acknowledgements(acks,discourse,defs,parser,claims, *, version=VERS
     acts=discourse['acts']; byid={a['id']:a for a in acts}
     positions={a['id']:i for i,a in enumerate(acts)}
     seen={ack['id'] for ack in prior_acks}
-    if version == RETRACTION_VERSION:
+    if version in RETRACTION_VERSIONS:
         indexed = {ack['id']: ack for ack in prior_acks}
         indexed.update((ack['id'], ack) for ack in acks
                        if isinstance(ack, dict) and isinstance(ack.get('id'), str))
@@ -543,7 +561,7 @@ def validate_acknowledgements(acks,discourse,defs,parser,claims, *, version=VERS
         need(author in byid,'acknowledgement author act absent')
         need(isinstance(target,dict),'acknowledgement target must be object')
         if action == 'retract':
-            need(version == RETRACTION_VERSION, 'ACK retraction requires Portable 2.3. Run upgrade first')
+            need(version in RETRACTION_VERSIONS, 'ACK retraction requires Portable 2.3 or later. Run upgrade first')
             need(set(target) == {'ack'} and isinstance(target['ack'], str),
                  'retraction target must be {"ack":"EARLIER_ACK_ID"}')
             original = indexed.get(target['ack'])
@@ -796,7 +814,7 @@ def draft_version(draft):
     supplied = [record for record in draft['definitions'].values() if 'id' in record]
     if supplied and all(record['id'] == definition_id(record['definition']) for record in supplied):
         return VERSION
-    return RETRACTION_VERSION
+    return CURRENT_VERSION
 
 
 def build(draft, *, version=VERSION, archived=False):
@@ -820,7 +838,7 @@ def build(draft, *, version=VERSION, archived=False):
 
 def upgrade_packet(packet, *, archived=False):
     version = packet_version(packet)
-    if version == RETRACTION_VERSION:
+    if version == CURRENT_VERSION:
         check(packet, archived=archived)
         return packet
 
@@ -828,11 +846,11 @@ def upgrade_packet(packet, *, archived=False):
     if version == VERSION:
         for record in draft['definitions'].values():
             record.pop('id')
-        identities = _definition_ids(draft['definitions'], draft['domains'], RETRACTION_VERSION)
+        identities = _definition_ids(draft['definitions'], draft['domains'], CURRENT_VERSION)
         for revision in draft['revisions']:
             revision['old_id'] = identities[revision['old_glyph']]
             revision['new_id'] = identities[revision['new_glyph']]
-    return build(draft, version=RETRACTION_VERSION, archived=archived)
+    return build(draft, version=CURRENT_VERSION, archived=archived)
 
 
 # Transport: plain, human-readable JSON by default. Optional Brotli lives in tools/.

@@ -113,6 +113,17 @@ class HistoryArchiveTests(unittest.TestCase):
         self.assertTrue(state['recent_retractions'][-1]['cleared_current_stance'])
         self.assertTrue({'retract400', 'condition37'} <= {ack['id'] for ack in excerpt['acknowledgements']})
         self.assertEqual(ucl.decode_portable(packed), packet)
+        with tempfile.TemporaryDirectory() as directory:
+            before = Path(directory) / 'packed-23.txt'
+            after = Path(directory) / 'packed-24.txt'
+            before.write_bytes(ucl.portable_json_bytes(packed))
+            subprocess.run([sys.executable, str(ROOT / 'src/ucl.py'), 'upgrade', str(before), str(after)],
+                           check=True, capture_output=True, timeout=40)
+            upgraded = ucl.read_json_file(after, limit=ucl.MAX_PORTABLE_JSON)
+            self.assertEqual(upgraded['format'], ucl.PORTABLE_FORMAT)
+            self.assertEqual(upgraded['archive'], packed['archive'])
+            expanded = ucl.decode_portable(upgraded)
+            self.assertEqual(expanded, core.upgrade_packet(packet))
 
     def test_cli_continues_past_the_unpacked_act_ceiling(self):
         reply = {
