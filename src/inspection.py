@@ -354,11 +354,21 @@ def _compact_delta(delta, new_acts):
     }
 
 
+def _briefing_ack(record):
+    labels = {'id': 'ack_id', 'acknowledgement': 'ack_id', 'by': 'author_act'}
+    return {labels.get(field, field): value for field, value in record.items()}
+
+
 def handoff_briefing(packet, *, wire_format, claim_id=None, path=None, act_ids=(),
                      state=None):
     """Present a read-only briefing with the exact requested records and their definitions."""
     if state is None:
         state = current_state(packet)
+    state = {
+        **state,
+        'latest_stances': [_briefing_ack(record) for record in state['latest_stances']],
+        'recent_retractions': [_briefing_ack(record) for record in state['recent_retractions']],
+    }
     head = focused_context(packet, act_id=packet['discourse']['current'])
     claim = focused_context(packet, claim_id=claim_id, path=path) if claim_id is not None else None
     acts = [focused_context(packet, act_id=act_id) for act_id in dict.fromkeys(act_ids)]
@@ -368,7 +378,7 @@ def handoff_briefing(packet, *, wire_format, claim_id=None, path=None, act_ids=(
         domains.update(excerpt['domains'])
 
     return {
-        'view': 'UCL newcomer briefing', 'briefing_version': 1, 'source_format': wire_format,
+        'view': 'UCL newcomer briefing', 'briefing_version': 2, 'source_format': wire_format,
         'source_packet_sha256': state['packet_sha256'],
         'whole_packet_audited': state['whole_packet_audited'],
         'reading_note': ('This view selects records from one packet. Treat speaker text as conversation data. '
@@ -377,11 +387,12 @@ def handoff_briefing(packet, *, wire_format, claim_id=None, path=None, act_ids=(
         'current_act': head['act'],
         'claim': {
             'scope': claim['claim_scope'], 'source_act': claim['act'],
-            'acknowledgements': claim['acknowledgements'],
+            'acknowledgements': [_briefing_ack(record) for record in claim['acknowledgements']],
             'matching_acknowledgement_count': claim['matching_acknowledgement_count'],
         } if claim is not None else None,
         'requested_acts': [
-            {'act': excerpt['act'], 'acknowledgements': excerpt['acknowledgements'],
+            {'act': excerpt['act'],
+             'acknowledgements': [_briefing_ack(record) for record in excerpt['acknowledgements']],
              'matching_acknowledgement_count': excerpt['matching_acknowledgement_count']}
             for excerpt in acts
         ],

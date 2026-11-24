@@ -24,6 +24,16 @@ python src/ucl.py inspect packet.txt --handoff --claim theory --path 1 --include
 
 The briefing includes Current State, the exact latest act, the selected claim branch and its source, and the definitions and domain declarations used by the included excerpts. Repeat `--include-act` to retrieve more acts in the requested order. Use `--path root` for the full claim with ACKs targeting that root. Omit `--path` for the full claim and ACKs from all its branches. The briefing includes the source packet digest, match counts for the selected acknowledgement excerpts, and the archive blocks opened. Packed packets open each requested block once. Run `check` to audit the full packed history.
 
+Briefing version 2 uses three distinct reference labels. The labels apply both to focused ACK excerpts and to stance and retraction entries in its Current State.
+
+| Field | Meaning | Example |
+| --- | --- | --- |
+| `ack_id` | The acknowledgement record | `condition37` |
+| `author_act` | The act that authored the acknowledgement | `t37` |
+| `source_act` | The origin of the target claim or expression | `t1` |
+
+The raw `inspect --act`, `inspect --claim`, and `inspect --state` commands retain their existing field names. Packet ACKs still use `id` and `by` on the wire.
+
 Use the original Portable file with the recipient's validator and authoring tools. The briefing is an excerpt for reading and prompting. Try the [outside-reader exercise](UCL_HANDOFF_TRIAL.md) to see whether a new participant can continue from it.
 
 ## JSON fields
