@@ -2,7 +2,7 @@
 /* Independent offline UCL SAP-1 Portable verifier.
    No registry, network, Python runtime, npm modules or cloud dependencies.
    Checks outer guide fingerprint, authenticated-by-trust-anchor rules identity,
-   envelope SHA-256, original UCL 1.0 packet through independent JS checker,
+   envelope SHA-256, the typed packet through an independent JS checker,
    and optional FR-1 annotations. A checksum is NOT a digital signature.
 */
 'use strict';
@@ -16,8 +16,8 @@ const VERSIONS=new Map([
   guide:'ZFIZCtsxvrSp7PH12QlsH2re08Xd_kS78JKFunwYO_M',
  }],
  ['UCL/2.1-SAP1-PORTABLE',{
-  rules:'JJC_P_4nhysFsB-1YOY-m3pWtJR8IBCloH06b4eOsE4',
-  guide:'gwOP2P5TdHQ7ZY92znMm80KFUnN6HJEKxUuyfCWdVKs',
+  rules:'r25PD3nu6aLh1wmkVarFujdVJ2vudu7qUhZyVlRT_-Y',
+  guide:'y9nzzEGsMLesvWT5qAyaugxXnlMCXHtuj3PweHvYFkc',
  }],
 ]);
 const ROLE_GUIDE=('FR-1 draft: act/index identifies an exact expression in packet.discourse.acts; '+

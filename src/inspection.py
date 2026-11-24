@@ -66,6 +66,7 @@ def derive_ledger(packet):
 
     first_use = {}
     recent_symbols = set()
+    vocabulary = []
     for position, act in enumerate(acts):
         parser = core.Parser(definitions)
         for expression in act['expressions']:
@@ -74,6 +75,16 @@ def derive_ledger(packet):
             first_use.setdefault(glyph, act['id'])
             if position >= len(acts) - 5:
                 recent_symbols.add(glyph)
+        for entry in act.get('vocabulary', []):
+            alias = entry['definition']
+            record = {**entry, 'act': act['id'], 'speaker': act['speaker'],
+                      'definition_id': definitions[alias]['id']}
+            if entry['action'] == 'retire':
+                successor = entry['successor']
+                record['successor_id'] = definitions[successor]['id'] if successor is not None else None
+            else:
+                record['expression'] = act['expressions'][entry['expression_index']]
+            vocabulary.append(record)
 
     return {
         'ledger_version': 1,
@@ -90,6 +101,7 @@ def derive_ledger(packet):
         'stances': list(latest.values()),
         'withdrawals': withdrawals,
         'recent_acknowledgements': recent_acknowledgements,
+        'vocabulary': vocabulary,
         'symbols': [
             {
                 'symbol': glyph,
@@ -162,6 +174,19 @@ def describe_packet(packet, label):
     if other_acks:
         lines.extend(('', 'Other recent acknowledgements'))
         lines.extend(_format_acknowledgement(entry) for entry in other_acks)
+
+    vocabulary = ledger['vocabulary']
+    if vocabulary:
+        lines.extend(('', f'Recent vocabulary records ({min(10, len(vocabulary))} of {len(vocabulary)})'))
+        for entry in vocabulary[-10:]:
+            source = f'{_display(entry["speaker"])} ({_display(entry["act"])})'
+            alias = _display(entry['definition'])
+            if entry['action'] == 'retire':
+                successor = entry['successor']
+                suffix = f' | suggested successor: {_display(successor)}' if successor is not None else ''
+                lines.append(f'  {source} retires {alias} for their use{suffix}')
+            else:
+                lines.append(f'  {source} {entry["action"]} for {alias} | {_display(entry["expression"])}')
 
     questions = ledger['questions']
     lines.extend(('', f'Recent retained questions ({min(5, len(questions))} of {len(questions)})'))

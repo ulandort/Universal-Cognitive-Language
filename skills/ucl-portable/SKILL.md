@@ -39,9 +39,9 @@ Use this skill when the user wants to **read, explain, validate, create, continu
 ## 4. Independently author and hand off
 
 1. Decide **your own** new concept, claim, counterargument or stance first. Use the current packet's embedded rules to construct the full UCL contribution; do not just translate English into decorative symbols.
-2. Preserve all earlier delivered acts, definition IDs and meanings. New custom concepts require a fresh permitted symbol with a typed definition; **never overwrite** an earlier meaning under its old identifier.
+2. Preserve all earlier delivered acts, definition IDs and meanings. New custom concepts use a fresh alias such as `$background_sync` and a typed definition in `new_definitions`; **never overwrite** an earlier meaning under its old identifier.
 3. Construct the required act fields, typed expression(s), exact scoped acknowledgement, honest history summary and optional role labels. Ensure IDs and acknowledgement paths are well-typed and refer to retained history.
-4. Save the authored contribution as JSON. Include a `new_definitions` map when declaring a new typed symbol; see `examples/challenge_reply.json`.
+4. Save the authored contribution as JSON. Use optional `act.vocabulary` records for retirement, examples, or counterexamples. The embedded guide defines the record shapes. See `examples/challenge_reply.json` for a worked counterexample.
 5. Use the local CLI to build and check the complete handoff:
    ```bash
    python /path/to/Universal-Cognitive-Language/src/ucl.py continue incoming.txt next.txt < contribution.json

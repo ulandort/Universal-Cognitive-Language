@@ -36,9 +36,7 @@ Start with fully retained history and leave hash-only stubs out of the first rev
 
 [Portable 2.1](UCL_2_1_SPECIFICATION.md) binds every typed domain dependency into the definition ID. Domain mode and membership are part of domain identity. The current dependency graph has domains as leaves. Define the handling of cycles before permitting recursive dependencies.
 
-Record retirement as a new act with the retired ID and an optional successor ID. Keep the original definition and alias bindings for replay. A successor is a proposed replacement and carries its own identity. Specify who can retire a definition and the effect of retirement on later use before adding it to the wire. A future multi-character alias scheme needs unambiguous token boundaries in expressions and the exact symbol declaration. Preserve the 11 core operators and four body layers. Keep finite resource limits even if the alias syntax can express an arbitrarily large vocabulary across conversations.
-
-Allow typed, explicitly labeled examples and counterexamples in an immutable definition record. Define which fields affect its ID. If the examples are part of the immutable record, editing one produces a new ID. Additional examples can be attached through later acts with their own attribution. An example records intended usage and can guide interpretation. It neither establishes general equivalence nor proves the concept is true.
+Portable 2.1 supports named aliases and vocabulary records in retained acts. Speakers can retire a definition for their own use and suggest a successor without removing its binding. They can attach typed examples and counterexamples to existing definitions. A future authenticated revision should attest to these vocabulary records with their parent acts.
 
 Keep the guide and required rule modules embedded in every delivered packet. Local tools may derive a concept index or a shorter view for a particular reply from the complete packet. These views are for inspection within the recipient's workflow. The canonical handoff remains the complete Portable packet.
 

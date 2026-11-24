@@ -1,10 +1,26 @@
 # UCL/2.1 Portable specification
 
-UCL/2.1 is the current development revision of Portable. It uses the single self-contained UTF-8 JSON handoff described in the [2.0 specification](UCL_2_0_SPECIFICATION.md), with the identity and version changes below. The 11 core operators, four body layers, typed expressions, claim paths, and retained conversation model carry forward.
+UCL/2.1 is the current development revision of Portable. It uses the single self-contained UTF-8 JSON handoff described in the [2.0 specification](UCL_2_0_SPECIFICATION.md), with the vocabulary, identity, and version changes below. The 11 core operators, four body layers, typed expressions, claim paths, and retained conversation model carry forward.
 
 ## Version markers
 
 The envelope `format` is `UCL/2.1-SAP1-PORTABLE`, its `profile` is `portable`, and `packet.guide.version` is `UCL/1.1`. The pinned 2.1 authoring rules and inner guide are embedded in every file. A 2.1 validator requires these markers and their corresponding rules and guide to agree. Historical `UCL/2.0-SAP1-PORTABLE` envelopes use the original `UCL/1.0` guide and original definition IDs.
+
+## Named aliases
+
+The catalog accepts up to 512 definitions. In addition to the existing single-character aliases, a named alias starts with `$`, followed by an ASCII letter and up to 63 ASCII letters, digits, or underscores. In an expression such as `~[$background_sync][A]`, consume the whole alias as one symbol. A lone `$` can still be a single-character alias. Alias names are case-sensitive and local to the packet. Read their types and meanings from the embedded definitions.
+
+The exact declaration layer uses the same space-separated `alias:id` entries, sorted as complete entries. A continuation may introduce a new alias and definition while preserving all earlier alias bindings.
+
+## Vocabulary records
+
+An act may add a `vocabulary` array of 1 to 16 records. The parent act supplies the recorded attribution and carries any explanatory text.
+
+- `{"action":"retire","definition":"$background_sync","successor":"$opt_in_sync"}` records the speaker's retirement of the definition for their own use. Both aliases must exist and differ. Set `successor` to null if none is suggested. The original definition, ID, and all earlier expressions remain available. Other speakers can still use it.
+- `{"action":"counterexample","definition":"$background_sync","expression_index":0}` labels that act's indexed expression as a counterexample. Use `example` for an example. The index is a zero-based integer, and the chosen expression must use the named definition. The label communicates the speaker's interpretation.
+- A single act may retire a given alias at most once and may label a given expression at most once per definition. Include the definition alias and any successor alias in the exact declaration layer. The records participate in the packet checksum and preserve the definition IDs.
+
+See the [worked contribution](../examples/challenge_reply.json) for an attributed counterexample. `inspect` shows the recent vocabulary records, and the [JSON ledger](UCL_STATE_LEDGER.md) includes all retained records with their definition IDs.
 
 ## Definition ID
 
@@ -22,9 +38,9 @@ The [quickstart packet](../examples/quickstart.txt) provides a reproducible exam
 
 | Object | Unpadded base64url SHA-256 |
 |---|---|
-| Inner guide, canonical bytes | `MPlJIly50bq9GZiueX9SmlNNBvHXNg0ktOZQi08lUAU` |
-| Inner guide, Node checker pin with `UCL-GUIDE-PIN-2` and LF | `gwOP2P5TdHQ7ZY92znMm80KFUnN6HJEKxUuyfCWdVKs` |
-| SAP-1 rules with `UCL-SAP1-RULES-2.0` and LF | `JJC_P_4nhysFsB-1YOY-m3pWtJR8IBCloH06b4eOsE4` |
+| Inner guide, canonical bytes | `yT1x1BpqfS9bbv55O7hrG6VVpNYA3YCxX4Cxmn7-R3A` |
+| Inner guide, Node checker pin with `UCL-GUIDE-PIN-2` and LF | `y9nzzEGsMLesvWT5qAyaugxXnlMCXHtuj3PweHvYFkc` |
+| SAP-1 rules with `UCL-SAP1-RULES-2.0` and LF | `r25PD3nu6aLh1wmkVarFujdVJ2vudu7qUhZyVlRT_-Y` |
 
 ## Working with archived files
 
@@ -36,4 +52,4 @@ python src/ucl.py check current.txt
 
 Ordinary checking, decoding, inspection, and continuation use the packet's declared version. Fresh drafts without archived IDs built with the CLI use 2.1 identities. The explicit upgrade keeps the source file and writes a separate file. It recalculates definition IDs, the exact symbol declaration, structured revision ID fields, and checksums. It preserves alias bindings, authored prose, acts, acknowledgements, claims, domain declarations, and formula roles. An ID quoted in prose remains a quotation of the original archived ID. Keep the archived packet for verifying references to its original hashes.
 
-Portable 2.1 retains single-character aliases and the existing catalog limit. Explicit retirement, multi-character aliases, and formal examples in the hashed definition schema are separate proposed changes.
+Earlier development snapshots of 2.1 used different pinned guide and rules text. Use the matching development checkout to verify those snapshots. Archived 2.0 files retain their original pins.

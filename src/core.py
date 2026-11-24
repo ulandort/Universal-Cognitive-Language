@@ -9,6 +9,8 @@ from pathlib import Path
 VERSION='UCL/1.0'
 DEPENDENCY_VERSION='UCL/1.1'
 DEPENDENCY_DOMAIN=b'UCL-SEM-10\n'
+MAX_DEFINITIONS=512
+NAMED_ALIAS=re.compile(r'\$[A-Za-z][A-Za-z0-9_]{0,63}')
 SEM_DOMAIN=b'UCL-SEM-9\n'; PACK_DOMAIN=b'UCL-PACKET-7\n'
 CORE={'@':['membership',2],'#':['bound-reference',0],'=':['identity',2],
       '~':['predicate-application','signature'],'&':['and',2],'|':['or',2],
@@ -90,11 +92,28 @@ def guide(version=VERSION):
                 'SHA256 of UCL-PACKET-7 plus LF and canonical packet excluding integrity. '
                 'Checksums do not authenticate speakers.'
             ),
+            limits=result['limits'].replace('<=55 definitions', '<=512 definitions'),
+            grammar=result['grammar'] + (
+                ' A named alias is $ followed by an ASCII letter and up to 63 ASCII letters, digits '
+                'or underscores, e.g. ~[$background_sync][A]. Consume the full name at an expression '
+                'boundary. A lone $ can remain a single-character alias. The declaration uses '
+                'alias:id tokens separated by spaces.'
+            ),
             stability='UCL/1.1 retains the 11 core operators and UCL-CJSON-1; definition IDs bind their domain dependencies.',
             definitions=(
-                'Definitions have immutable IDs. Single-character aliases are local to the packet; '
+                'Definitions have immutable IDs. Single-character and named aliases are local to the packet; '
                 'typed dependencies bind to domain IDs, including the domain declaration. '
                 'Use a fresh alias when introducing a changed definition and preserve the old one.'
+            ),
+            vocabulary=(
+                'An act may include vocabulary, a list of 1 to 16 records. '
+                'A retirement is {"action":"retire","definition":"alias","successor":null} '
+                "or names a different existing alias as successor. It records that speaker's retirement "
+                'stance only. Every earlier binding remains usable and resolves to the same ID. '
+                'An example or counterexample is {"action":"example","definition":"alias","expression_index":0} '
+                'with action example or counterexample. The indexed expression in this act must use the alias. '
+                'Records are attributed to the act speaker and do not change definition IDs or certify truth. '
+                'Declare referenced vocabulary aliases and successors in the exact symbol layer.'
             ),
         )
     return result
@@ -145,7 +164,12 @@ class Parser:
     def parse(self,source):
         def expr(i,scope,depth):
             need(depth<MAX_DEPTH,'expression too deep');need(i<len(source),'missing expression')
-            g=source[i];self.used.add(g);i+=1
+            g = source[i]
+            name = NAMED_ALIAS.match(source, i) if g == '$' else None
+            if name:
+                g = name.group()
+            i += len(g)
+            self.used.add(g)
             if g=='#':
                 m=re.match(r'(0|[1-9][0-9]*)',source[i:]);need(m,'bad variable')
                 idx=int(m.group());need(idx in scope,'unbound variable')
@@ -208,10 +232,13 @@ def render(t):
 
 def conjuncts(t):return conjuncts(t[2][0])+conjuncts(t[2][1]) if t[0]=='&' else [t]
 
-def _validate_definition_shapes(defs):
-    need(isinstance(defs,dict) and 1<=len(defs)<=55,'catalog size')
+def _validate_definition_shapes(defs, version):
+    limit = MAX_DEFINITIONS if version == DEPENDENCY_VERSION else 55
+    need(isinstance(defs,dict) and 1<=len(defs)<=limit,'catalog size')
     for g,rec in defs.items():
-        need(isinstance(g,str) and len(g)==1 and 33<=ord(g)<=126 and g not in RESERVED,'reserved/invalid extension glyph')
+        single = isinstance(g, str) and len(g) == 1 and 33 <= ord(g) <= 126 and g not in RESERVED
+        named = version == DEPENDENCY_VERSION and isinstance(g, str) and NAMED_ALIAS.fullmatch(g)
+        need(single or named, 'reserved/invalid extension glyph ' + repr(g))
         need(isinstance(rec,dict) and set(rec) in ({'definition'}, {'id','definition'}),'definition record')
         d=rec['definition'];need(isinstance(d,dict) and isinstance(d.get('gloss'),str) and d['gloss'],'definition gloss')
         kind=d.get('kind')
@@ -233,7 +260,7 @@ def _validate_definition_shapes(defs):
     return doms
 
 def validate_defs(defs, domains=None, *, version=VERSION):
-    domain_aliases = _validate_definition_shapes(defs)
+    domain_aliases = _validate_definition_shapes(defs, version)
     if version == DEPENDENCY_VERSION:
         validate_domains(defs, domains)
     expected = _definition_ids(defs, domains, version)
@@ -356,7 +383,36 @@ def check_proof(explanation,conclusion,steps,defs):
 # NEVER whether the speakers' claims, analogies, or proposed implications are true.
 ACT_KINDS={'proposal','hypothesis','question','challenge','response','revision','assertion','deductive-argument','model-check','epistemic-report','conditional','analogy','synthesis','clarification'}
 
-def validate_discourse(discourse,defs,parser):
+def _validate_vocabulary(entries, expressions, defs, parser):
+    need(isinstance(entries, list) and 1 <= len(entries) <= 16, 'vocabulary entry list')
+    seen = set()
+    for entry in entries:
+        need(isinstance(entry, dict), 'vocabulary entry object')
+        action, alias = entry.get('action'), entry.get('definition')
+        need(isinstance(alias, str) and alias in defs, 'vocabulary definition must name a declared alias')
+        parser.used.add(alias)
+        if action == 'retire':
+            need(set(entry) == {'action', 'definition', 'successor'}, 'retirement fields')
+            successor = entry['successor']
+            need(successor is None or (isinstance(successor, str) and successor in defs and successor != alias),
+                 'retirement successor must name a different declared alias')
+            if successor is not None:
+                parser.used.add(successor)
+            key = (alias, None)
+        else:
+            need(action in ('example', 'counterexample') and
+                 set(entry) == {'action', 'definition', 'expression_index'}, 'vocabulary example fields')
+            index = entry['expression_index']
+            need(type(index) is int and 0 <= index < len(expressions), 'vocabulary example expression index')
+            example_parser = Parser(defs)
+            example_parser.parse(expressions[index])
+            need(alias in example_parser.used, 'vocabulary example expression must use its definition')
+            key = (alias, index)
+        need(key not in seen, 'duplicate vocabulary entry')
+        seen.add(key)
+
+
+def validate_discourse(discourse,defs,parser, *, version=VERSION):
     need(isinstance(discourse,dict) and set(discourse)=={'current','acts'},'discourse schema')
     acts=discourse['acts'];need(isinstance(acts,list) and 1<=len(acts)<=100,'discourse act cap')
     seen={}; allowed_ans={'open','yes-no','multiple-choice'}
@@ -369,8 +425,10 @@ def validate_discourse(discourse,defs,parser):
         need(isinstance(v,list) and len(v)<=24 and all(isinstance(x,str) and bool(x.strip()) and len(x)<=2048 for x in v),'discourse string list')
     def references(v):
         need(isinstance(v,list) and len(v)<=24 and all(isinstance(x,str) and x in seen for x in v),'missing or forward act reference')
+    fields = {'id','speaker','kind','text','references','expressions','details'}
+    allowed_fields = (fields, fields | {'vocabulary'}) if version == DEPENDENCY_VERSION else (fields,)
     for act in acts:
-        need(isinstance(act,dict) and set(act)=={'id','speaker','kind','text','references','expressions','details'},'act fields')
+        need(isinstance(act,dict) and set(act) in allowed_fields,'act fields')
         a=act['id'];k=act['kind'];dt=act['details']
         need(isinstance(a,str) and re.fullmatch('[a-zA-Z][a-zA-Z0-9_-]{0,63}',a) and a not in seen,'act id collision')
         need(k in ACT_KINDS,'unsupported act kind')
@@ -380,6 +438,8 @@ def validate_discourse(discourse,defs,parser):
         references(act['references'])
         need(isinstance(act['expressions'],list) and len(act['expressions'])<=16,'act expressions')
         for e in act['expressions']:expression(e)
+        if 'vocabulary' in act:
+            _validate_vocabulary(act['vocabulary'], act['expressions'], defs, parser)
         need(isinstance(dt,dict),'act details must be object')
         if k=='question':
             need(set(dt)=={'targets','answer_kind','alternatives'},'question details')
@@ -561,17 +621,18 @@ def orientation_matches(role,kind):
              'clarification':{'question','response'}}
     return role==kind or role in aliases.get(kind,set())
 
-def make_body(orientation,explanation,conclusion,defs,discourse,acks,claims):
+def make_body(orientation,explanation,conclusion,defs,discourse,acks,claims, *, version=VERSION):
     parser=Parser(defs);ts=[parser.parse(s) for s in (orientation,explanation,conclusion)]
     need(ts[0][1]=='orientation' and ts[1][1]=='prop','orientation/explanation types')
     need(ts[2][1] in ('prop','epistemic'),'conclusion must be proposition or epistemic report')
-    validate_discourse(discourse,defs,parser)
+    validate_discourse(discourse,defs,parser,version=version)
     validate_acknowledgements(acks,discourse,defs,parser,claims)
     declared=' '.join(sorted(g if g in CORE else g+':'+defs[g]['id'] for g in parser.used))
     return ';'.join('['+s+']' for s in (orientation,explanation,conclusion,declared))
 
-def check_revisions(revisions,defs):
-    need(isinstance(revisions,list) and len(revisions)<=55,'revisions list')
+def check_revisions(revisions,defs, *, version=VERSION):
+    limit = MAX_DEFINITIONS if version == DEPENDENCY_VERSION else 55
+    need(isinstance(revisions,list) and len(revisions)<=limit,'revisions list')
     seen=set()
     for rev in revisions:
         need(isinstance(rev,dict) and set(rev)=={'old_glyph','new_glyph','old_id','new_id','reason'},'revision fields')
@@ -648,9 +709,9 @@ def check(p):
     if version == VERSION:
         validate_domains(defs, p['domains'])
     need(isinstance(p['context'],dict) and bool(p['context']) and isinstance(p['links'],list),'context/links missing')
-    check_revisions(p['revisions'],defs)
+    check_revisions(p['revisions'],defs,version=version)
     x=layers(p['body']);parser=Parser(defs);trees=[parser.parse(s) for s in x[:3]]
-    discourse_result=validate_discourse(p['discourse'],defs,parser)
+    discourse_result=validate_discourse(p['discourse'],defs,parser,version=version)
     ack_result=validate_acknowledgements(p['acknowledgements'],p['discourse'],defs,parser,p['claims'])
     history_result=validate_history(p['history'],p['discourse'],defs)
     quote_result=validate_quotes(p['claims'],p['viewpoints'],p['discourse'],parser)
@@ -678,7 +739,7 @@ def check(p):
 
 def draft_version(draft):
     """Use the current scheme for new drafts and preserve existing archived IDs."""
-    _validate_definition_shapes(draft['definitions'])
+    _validate_definition_shapes(draft['definitions'], DEPENDENCY_VERSION)
     supplied = [record for record in draft['definitions'].values() if 'id' in record]
     if supplied and all(record['id'] == definition_id(record['definition']) for record in supplied):
         return VERSION
@@ -690,7 +751,7 @@ def build(draft, *, version=VERSION):
     need(isinstance(draft,dict) and set(draft)==required,'draft schema')
     embedded_guide = guide(version)
     records = draft['definitions']
-    _validate_definition_shapes(records)
+    _validate_definition_shapes(records, version)
     if version == DEPENDENCY_VERSION:
         validate_domains(records, draft['domains'])
     ids = _definition_ids(records, draft['domains'], version)
@@ -699,7 +760,7 @@ def build(draft, *, version=VERSION):
         identity = ids[alias]
         need('id' not in record or record['id'] == identity, 'supplied hash mismatch ' + alias)
         defs[alias] = {'definition': record['definition'], 'id': identity}
-    body=make_body(draft['orientation'],draft['explanation'],draft['conclusion'],defs,draft['discourse'],draft['acknowledgements'],draft['claims'])
+    body=make_body(draft['orientation'],draft['explanation'],draft['conclusion'],defs,draft['discourse'],draft['acknowledgements'],draft['claims'],version=version)
     p={'guide':embedded_guide,'definitions':defs,'domains':draft['domains'],'model':draft['model'],
        'proof':draft['proof'],'context':draft['context'],'body':body,'links':draft['links'], 'revisions':draft['revisions'], 'discourse':draft['discourse'], 'acknowledgements':draft['acknowledgements'], 'history':draft['history'], 'claims':draft['claims'], 'viewpoints':draft['viewpoints']}
     p['integrity']={'sha256':packet_id(p)};check(p);return p

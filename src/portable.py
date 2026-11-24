@@ -118,6 +118,13 @@ RULES['type_rules']['local_authoring_preflight']=(
 CURRENT_RULES = {
     **RULES,
     'status': 'stable-2.1',
+    'optional_act_fields': ['vocabulary'],
+    'vocabulary_authoring': (
+        'Use a fresh single-character alias or a name such as $background_sync in new_definitions. '
+        'An act may record a retirement or attach a typed example or counterexample to a definition '
+        'using the vocabulary shapes in packet.guide.vocabulary. Preserve every previous definition, '
+        'including one a speaker retires.'
+    ),
     'definition_identity': (
         'Use packet.guide.hashing for dependency-aware definition IDs. A new typed definition '
         'uses a fresh alias. Preserve prior definitions and domain declarations; local aliases '

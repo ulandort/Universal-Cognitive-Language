@@ -15,8 +15,11 @@ The ledger is a deterministic read view of a validated UCL Portable packet. It c
 | `withdrawals` | Every retained withdrawal, in acknowledgement chronology |
 | `recent_acknowledgements` | Last ten acknowledgements in acknowledgement chronology, including procedural actions |
 | `symbols` | Defined symbols in code point order, including definitions absent from recent expressions |
+| `vocabulary` | Retained retirements, examples, and counterexamples in act and record order, with speaker, act, and resolved definition ID |
 
 Each acknowledgement entry contains `speaker`, `by` (author act ID), `acknowledgement` (ACK ID), `action`, and the original `target`. It also contains the resolved `source_act`, `expression_index`, `path`, and `expression`, plus the original `qualification` and `replacement`. For a whole-act acknowledgement, `expression_index` and `expression` are null. The `expression` is the exact resolved subtree rendered in UCL syntax.
+
+An example or counterexample also includes the referenced expression. A retirement includes the suggested successor and its resolved ID, both null when no successor was given.
 
 Each symbol entry contains `symbol`, `definition_id`, `kind`, `gloss`, `first_retained_expression_act` (an act ID or null), and the boolean `used_in_recent_acts`. Usage counts expressions directly listed in each act's `expressions` field. Recent usage covers the last five retained acts. First retained use does not establish when a symbol was introduced or whether it remains endorsed.
 

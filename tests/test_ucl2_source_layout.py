@@ -129,9 +129,10 @@ class SourceLayoutTests(unittest.TestCase):
             )
             self.assertEqual(inspected.returncode, 0, inspected.stderr)
             self.assertIn('9 retained acts | 12 defined symbols', inspected.stdout)
-            self.assertIn('M (predicate)', inspected.stdout)
+            self.assertIn('$control_sensitive (predicate)', inspected.stdout)
             self.assertIn('first retained act expression: t9', inspected.stdout)
-            self.assertIn('theory path [1] (from t1) ~[B][A] | condition: ~[M][A]', inspected.stdout)
+            self.assertIn('theory path [1] (from t1) ~[B][A] | condition: ~[$control_sensitive][A]', inspected.stdout)
+            self.assertIn('counterexample for $control_sensitive', inspected.stdout)
             before = portable.decode(json.loads(incoming.read_bytes()))
             after = portable.decode(json.loads(outgoing.read_bytes()))
             self.assertEqual(after['discourse']['acts'][:-1], before['discourse']['acts'])
@@ -300,5 +301,80 @@ class SourceLayoutTests(unittest.TestCase):
             crossed['checksum'] = portable.envelope_checksum(crossed)
             with self.assertRaisesRegex(ValueError, 'inner guide version does not match'):
                 portable.decode(crossed)
+
+    def test_named_aliases_expand_the_catalog_and_coexist_with_a_lone_dollar(self):
+        initial = portable.decode(json.loads((ROOT / 'examples/quickstart.txt').read_bytes()))
+        draft = core.draft_from_packet(initial)
+        definitions = draft['definitions']
+        for alias in ('$', '$background_sync', '$background_sync2', '$' + 'a' * 64):
+            definitions[alias] = {
+                'definition': {'kind': 'predicate', 'args': ['D'], 'gloss': 'Behavior ' + alias},
+            }
+        while len(definitions) < core.MAX_DEFINITIONS:
+            alias = f'$behavior_{len(definitions)}'
+            definitions[alias] = {
+                'definition': {'kind': 'predicate', 'args': ['D'], 'gloss': 'Behavior ' + alias},
+            }
+        draft['conclusion'] = '&[~[$][A]][&[~[$background_sync][A]][~[$background_sync2][A]]]'
+        packet = core.build(draft, version=core.DEPENDENCY_VERSION)
+        self.assertEqual(len(packet['definitions']), 512)
+        self.assertIn('$:', packet['body'])
+        self.assertIn('$background_sync:', packet['body'])
+        self._check_node_portable(portable.encode(packet))
+        with self.assertRaisesRegex(ValueError, 'catalog size'):
+            core.build(draft)
+        draft['definitions']['$overflow'] = definitions['$']
+        with self.assertRaisesRegex(ValueError, 'catalog size'):
+            core.build(draft, version=core.DEPENDENCY_VERSION)
+
+    def test_retirement_preserves_definitions_and_examples(self):
+        starter = json.loads((ROOT / 'examples/challenge.txt').read_bytes())
+        contributed = json.loads((ROOT / 'examples/challenge_reply.json').read_bytes())
+        prior = portable.decode(ucl.continue_portable(starter, contributed))
+        retiring = {
+            'act': {
+                'id': 't10', 'kind': 'response', 'speaker': 'New participant',
+                'references': ['t9'], 'text': 'I will use the new term going forward.',
+                'expressions': ['~[$matched_control][A]'],
+                'details': {'responds_to': 't9', 'stance': 'mixed'},
+                'vocabulary': [
+                    {'action': 'retire', 'definition': '$control_sensitive', 'successor': '$matched_control'},
+                    {'action': 'example', 'definition': '$matched_control', 'expression_index': 0},
+                ],
+            },
+            'orientation': 'L',
+            'explanation': '~[$matched_control][A]',
+            'conclusion': '~[$matched_control][A]',
+            'new_definitions': {
+                '$matched_control': {
+                    'kind': 'predicate', 'args': ['D'], 'gloss': 'Shows a result that differs from a matched control.',
+                },
+            },
+        }
+        envelope = ucl.continue_portable(portable.encode(prior), retiring)
+        result = portable.decode(envelope)
+        self.assertEqual(result['definitions']['$control_sensitive'], prior['definitions']['$control_sensitive'])
+        self.assertEqual(result['discourse']['acts'][:-1], prior['discourse']['acts'])
+        from inspection import derive_ledger
+        indexed = derive_ledger(result)['vocabulary']
+        self.assertEqual([entry['action'] for entry in indexed], ['counterexample', 'retire', 'example'])
+        self.assertEqual(indexed[0]['definition_id'], indexed[1]['definition_id'])
+        self.assertEqual(indexed[1]['successor_id'], indexed[2]['definition_id'])
+        self._check_node_portable(envelope)
+        retiring['act']['vocabulary'][1]['definition'] = '$control_sensitive'
+        with self.assertRaisesRegex(ValueError, 'expression must use its definition'):
+            ucl.continue_portable(portable.encode(prior), retiring)
+
+    def _check_node_portable(self, envelope):
+        if not shutil.which('node'):
+            return
+        with tempfile.TemporaryDirectory() as directory:
+            packet = Path(directory) / 'packet.txt'
+            packet.write_bytes(core.canon(envelope))
+            checked = subprocess.run(
+                ['node', str(ROOT / 'tools/check_ucl_portable.js'), str(packet)],
+                text=True, capture_output=True, timeout=20,
+            )
+            self.assertEqual(checked.returncode, 0, checked.stderr)
 
 if __name__=='__main__':unittest.main()

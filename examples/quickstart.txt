@@ -1,5 +1,5 @@
 {
-  "checksum": "uQktgt4MU0ktukr9-lUTs9FV7TXFrTgW-ABvifY7g28",
+  "checksum": "RHd-mCblAzRHAsn0NdOEpDu2KxDKjBgeXhrSx8fYF2U",
   "format": "UCL/2.1-SAP1-PORTABLE",
   "packet": {
     "acknowledgements": [
@@ -189,17 +189,17 @@
           "signature"
         ]
       },
-      "definitions": "Definitions have immutable IDs. Single-character aliases are local to the packet; typed dependencies bind to domain IDs, including the domain declaration. Use a fresh alias when introducing a changed definition and preserve the old one.",
+      "definitions": "Definitions have immutable IDs. Single-character and named aliases are local to the packet; typed dependencies bind to domain IDs, including the domain declaration. Use a fresh alias when introducing a changed definition and preserve the old one.",
       "discourse": "Each message includes a self-contained ordered act graph with explicit speaker, act kind, target references, optional typed expressions and act-specific structured details. Questions, analogies, conditional scenarios, revisions, and multi-claim exchanges are valid unproven communications. Act edges are structural, NOT evidence of truth, provenance authenticity, or valid analogy. Current act kind must agree with orientation.",
       "domain": "Declared domain may have finite members or open symbolic population (including infinite or unspecified). Model evaluation enumerates finite only; open domains are not enumerated or assumed empty.",
       "epistemic": "?[prop] is a sourced epistemic record of uncertainty or conflict, never missing data; epistemic type is not Boolean. Records carry assessor, evidence references, basis, optional confidence [0,1].",
       "equality": "Identity of denotation, not resemblance. Term interpretation is deterministic and typed.",
       "functions": "Total deterministic typed function for finite model checking; symbolic function terms allowed in proof certificates; no causation implied.",
-      "grammar": "Four body layers: [orientation];[explanation];[conclusion];[exact-symbol-declaration]. Prefix expressions; {[#N][domain][prop] exists; universal via negated existential. <[order][a][b] requires named order.",
+      "grammar": "Four body layers: [orientation];[explanation];[conclusion];[exact-symbol-declaration]. Prefix expressions; {[#N][domain][prop] exists; universal via negated existential. <[order][a][b] requires named order. A named alias is $ followed by an ASCII letter and up to 63 ASCII letters, digits or underscores, e.g. ~[$background_sync][A]. Consume the full name at an expression boundary. A lone $ can remain a single-character alias. The declaration uses alias:id tokens separated by spaces.",
       "hashing": "Definition ID: full unpadded Base64url SHA256 of UCL-SEM-10 plus LF and UCL-CJSON-1 of {\"definition\": normalized_definition}. Replace sort, args entries, and returns aliases by their domain IDs wherever present. A domain adds \"domain\": {\"mode\": mode, \"members\": members} to that payload; sort finite members by Unicode scalar value and use null members for open domains. Packet hashing remains SHA256 of UCL-PACKET-7 plus LF and canonical packet excluding integrity. Checksums do not authenticate speakers.",
       "history": "All packets are standalone. history.status is fully-expanded or condensed. Condensed mode MUST disclose non-expanded earlier history, the omitted scope and nature, a meaningful summary, and any unresolved uncertainties. Complete active semantic definitions and all locally referenced acts remain present; no external registry, URL, prior packet or hidden alias may be necessary. A condensed summary is not a verbatim record. Optional reference hashes do not restore missing evidence.",
       "intents": "Orientation declares conversational act: proposal, hypothesis, question, challenge, response, revision, assertion, deductive-argument, model-check, epistemic-report. No proof required for ordinary acts.",
-      "limits": "<=250KB compressed, <=1MB expanded, <=120 parse depth, <=55 definitions, <=256 proof steps, <=8 function arguments, <=100 discourse acts, <=24KB per act, <=150 acknowledgements, <=100 omission notes, finite models <=10000 tuple products per function.",
+      "limits": "<=250KB compressed, <=1MB expanded, <=120 parse depth, <=512 definitions, <=256 proof steps, <=8 function arguments, <=100 discourse acts, <=24KB per act, <=150 acknowledgements, <=100 omission notes, finite models <=10000 tuple products per function.",
       "ordering": "Explicit named strict partial order. Each order definition has a sort; multiple orders may coexist on that sort. Irreflexivity and transitivity checked in finite interpretations.",
       "proof": "Optional attached certificate (not required for conversation): premises from top-level explanation conjuncts; and-elim-left/right, and-intro, modus-ponens for |[![P]][Q], direct copy, equality reflexivity. Certificate may be invalid/unsupported without invalidating the message. Steps reference earlier indices; final formula must equal claim conclusion. No unrestricted proof or empirical truth.",
       "quotation": "Optional claims bind proposition expressions exactly to IDs and retained origin acts. Viewpoints are acyclic nested attributions (asserts/believes/reports/questions), not proofs of belief or truth. Quoted propositions participate in exact-symbol declarations.",
@@ -211,7 +211,8 @@
         "[": -3,
         "]": -4
       },
-      "version": "UCL/1.1"
+      "version": "UCL/1.1",
+      "vocabulary": "An act may include vocabulary, a list of 1 to 16 records. A retirement is {\"action\":\"retire\",\"definition\":\"alias\",\"successor\":null} or names a different existing alias as successor. It records that speaker's retirement stance only. Every earlier binding remains usable and resolves to the same ID. An example or counterexample is {\"action\":\"example\",\"definition\":\"alias\",\"expression_index\":0} with action example or counterexample. The indexed expression in this act must use the alias. Records are attributed to the act speaker and do not change definition IDs or certify truth. Declare referenced vocabulary aliases and successors in the exact symbol layer."
     },
     "history": {
       "omissions": [],
@@ -223,7 +224,7 @@
       ]
     },
     "integrity": {
-      "sha256": "3CGe2WDYjWMIE0p1riJoYLDA_UhPCo8-LpGDhigSvz4"
+      "sha256": "yJnRAPzum4FkIq_pWc1BIb2ahwPTcvY5fYsMYzEFYf4"
     },
     "links": [],
     "model": null,
@@ -280,6 +281,9 @@
         "no_central_registry": "all necessary guide, rules, definitions and conversation context are in this message"
       },
       "language_guide_location": "packet.guide (fully embedded)",
+      "optional_act_fields": [
+        "vocabulary"
+      ],
       "reference_rules": {
         "ack_by": "new act ID",
         "ack_id": "unique non-empty ID absent from earlier acknowledgements; caller may reserve an expected ID",
@@ -374,8 +378,9 @@
         "disjunction": "|[~[P][A]][~[B][A]]",
         "negation": "![~[P][A]]",
         "property": "~[P][A]"
-      }
+      },
+      "vocabulary_authoring": "Use a fresh single-character alias or a name such as $background_sync in new_definitions. An act may record a retirement or attach a typed example or counterexample to a definition using the vocabulary shapes in packet.guide.vocabulary. Preserve every previous definition, including one a speaker retires."
     },
-    "sha256": "JJC_P_4nhysFsB-1YOY-m3pWtJR8IBCloH06b4eOsE4"
+    "sha256": "r25PD3nu6aLh1wmkVarFujdVJ2vudu7qUhZyVlRT_-Y"
   }
 }

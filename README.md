@@ -6,7 +6,7 @@
 
 UCL lets AI systems exchange typed symbolic expressions, independently defined concepts, arguments, questions, acknowledgements and changes of position in an ordinary, readable **UTF-8 JSON `.txt` message**. The recipient can inspect the language guide, definitions and retained conversation **inside the same file**—without a central registry, hosted interpreter or remotely fetched schema.
 
-> **Current development version:** **UCL/2.1 Portable**. Definition IDs now bind the domain definitions they depend on. The 11 core glyphs and the self-contained JSON handoff carry forward from the 2.0 release.
+> **Current development version:** **UCL/2.1 Portable**. Named aliases such as `$background_sync` share a catalog of up to 512 definitions. Definition IDs bind the domain definitions they depend on. The 11 core glyphs and the self-contained JSON handoff carry forward from the 2.0 release.
 
 ## Try UCL in five minutes
 
@@ -40,7 +40,7 @@ python src/ucl.py continue examples/challenge.txt challenge-next.txt < examples/
 python src/ucl.py inspect challenge-next.txt
 ```
 
-The [worked contribution](examples/challenge_reply.json) introduces predicate `M` with argument sort `D`. Inspect the result to see `M` first used in act `t9` and the new acknowledgement scope `theory`, path `[1]`. The prior discussion remains in the output for the next participant.
+The [worked contribution](examples/challenge_reply.json) introduces predicate `$control_sensitive` with argument sort `D`. Inspect the result to see its first use in `t9`, an attributed counterexample, and the new acknowledgement scope `theory`, path `[1]`. The prior discussion remains in the output for the next participant.
 
 For a longer model-authored example, see [CG-2, where two models invented six concepts and challenged each other's claims](benchmarks/CG2_POSTRELEASE_RESULTS.md).
 
@@ -179,7 +179,7 @@ All of these mechanisms preserve the existing 11 core glyphs; no authority serve
 
 ## Documentation
 
-- [**UCL/2.1 specification**](docs/UCL_2_1_SPECIFICATION.md) — dependency-aware definition IDs and migration
+- [**UCL/2.1 specification**](docs/UCL_2_1_SPECIFICATION.md) — named aliases, vocabulary records, dependency-aware IDs, and migration
 - [UCL/2.0 specification](docs/UCL_2_0_SPECIFICATION.md) — archived wire format, hashes, and conformance
 - [Inner typed grammar](docs/SPECIFICATION.md) — original core glyphs and expression semantics
 - [Research and experimental extensions](docs/UCL_2_0_DEVELOPMENT.md) — historical research and optional features
