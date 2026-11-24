@@ -144,16 +144,20 @@ def main(args):
         scope.add_argument('--claim')
         scope.add_argument('--retract', metavar='ACK_ID', help='retract one of this speaker’s earlier stance ACKs')
         parser.add_argument('--path', type=_claim_path)
+        parser.add_argument('--seed-formula', action='store_true',
+                            help='copy the selected proposition into explanation and conclusion for editing')
         parser.add_argument('--concept', help='unused alias for a new predicate definition')
         parser.add_argument('--domain', help='existing domain for a unary predicate')
         options = parser.parse_args(args[2:])
         if options.retract is not None and (options.path is not None or options.concept is not None):
             parser.error('--path and --concept require --claim')
+        if options.seed_formula and options.claim is None:
+            parser.error('--seed-formula requires --claim')
         if options.domain is not None and options.concept is None:
             parser.error('--domain requires --concept')
         draft = reply_template(decode_portable(_portable_file(options.packet)), options.speaker,
                                options.claim, options.path or [], alias=options.concept, domain=options.domain,
-                               retract=options.retract)
+                               retract=options.retract, seed_formula=options.seed_formula)
         print(json.dumps(draft, indent=2, ensure_ascii=False))
     elif command=='diff':
         from inspection import compare_packets
