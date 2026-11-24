@@ -9,7 +9,7 @@ compatibility: Python 3.12+ and the UCL repository for reference validation and 
 
 Use this skill when the user wants to **read, explain, validate, create, continue, or transmit** a UCL Portable message. UCL is an open, self-contained UTF-8 JSON format with a fully embedded language guide, original concepts, expression history, scoped acknowledgements and local integrity checks. It is **not** a model, a network protocol requiring an account, a theorem prover, or evidence that an invented claim is true.
 
-**Current format:** `UCL/2.3-SAP1-PORTABLE`. The CLI reads and continues earlier 2.0, 2.1, and 2.2 packets using their original IDs. The 11 original core glyphs are `@ # = ~ & | ! ? < * {`. Do not introduce a new core glyph.
+**Current format:** `UCL/2.4-SAP1-PORTABLE`. Use `upgrade` to reissue an older packet as 2.4. The 11 original core glyphs are `@ # = ~ & | ! ? < * {`. Do not introduce a new core glyph.
 
 ## Try a packet
 
@@ -17,7 +17,7 @@ Start with the [five-minute quickstart](https://github.com/ulandort/Universal-Co
 
 ## 1. Prepare the local tools
 
-- Inside the [UCL repository](https://github.com/ulandort/Universal-Cognitive-Language), use `src/ucl.py` and `docs/UCL_2_3_SPECIFICATION.md`.
+- Inside the [UCL repository](https://github.com/ulandort/Universal-Cognitive-Language), use `src/ucl.py` and `docs/UCL_2_4_SPECIFICATION.md`.
 - If this skill is installed in another repository, **its own SKILL.md is not the protocol implementation**. Ask permission before retrieving code, then clone or otherwise obtain the UCL repository into an explicitly chosen local directory. Use the commands in [references/WORKFLOWS.md](references/WORKFLOWS.md). Never pretend `src/ucl.py` is installed merely because this skill is.
 - Python 3.12+ reference validator uses the standard library for ordinary plaintext packets. Neither internet access nor an API key is needed to validate packets once code is available. Never install an unrelated hosted interpreter or central registry.
 
@@ -42,7 +42,7 @@ Start with the [five-minute quickstart](https://github.com/ulandort/Universal-Co
 
 ## 4. Independently author and hand off
 
-1. Decide **your own** new concept, claim, counterargument or stance first. For scoped replies with the local CLI, use **template → edit → preflight → continue**. Choose the target from the validated packet. Use `template --claim CLAIM --path PATH` for a claim reply or `template --retract ACK_ID` for a 2.3 retraction. Pass `--speaker NAME` to either command. Use the embedded guide to draft directly when the CLI is unavailable.
+1. Decide **your own** new concept, claim, counterargument or stance first. For scoped replies with the local CLI, use **template → edit → preflight → continue**. Choose the target from the validated packet. Use `template --claim CLAIM --path PATH` for a claim reply or `template --retract ACK_ID` for a retraction. Pass `--speaker NAME` to either command. Use the embedded guide to draft directly when the CLI is unavailable.
 2. Preserve all earlier delivered acts, definition IDs and meanings. New custom concepts use a fresh alias such as `$background_sync` and a typed definition in `new_definitions`; **never overwrite** an earlier meaning under its old identifier.
 3. Construct the required act fields, typed expression(s), exact scoped acknowledgement, honest history summary and optional role labels. Ensure IDs and acknowledgement paths are well-typed and refer to retained history.
 4. Save the authored contribution as JSON. Use optional `act.vocabulary` records for retirement, examples, or counterexamples. The embedded guide defines the record shapes. See `examples/challenge_reply.json` for a worked counterexample.
@@ -59,4 +59,4 @@ Start with the [five-minute quickstart](https://github.com/ulandort/Universal-Co
 
 Distinguish **syntactic validity**, **immutable-ID fidelity**, **model-authored conceptual reasoning**, **semantic understanding**, and **truth**. A local validator proves neither that an AI understood a philosophical argument nor that a claim is empirically true. UCL is not claimed to outperform English in every task; compare efficiency and task-specific effectiveness honestly.
 
-For local commands, an example and troubleshooting, read [references/WORKFLOWS.md](references/WORKFLOWS.md). For normative protocol details, use the repository's [UCL/2.3 specification](https://github.com/ulandort/Universal-Cognitive-Language/blob/main/docs/UCL_2_3_SPECIFICATION.md) and the actual embedded packet guide.
+For local commands, an example and troubleshooting, read [references/WORKFLOWS.md](references/WORKFLOWS.md). For normative protocol details, use the repository's [UCL/2.4 specification](https://github.com/ulandort/Universal-Cognitive-Language/blob/main/docs/UCL_2_4_SPECIFICATION.md) and the actual embedded packet guide.

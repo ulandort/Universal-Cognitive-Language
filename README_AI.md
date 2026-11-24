@@ -2,7 +2,7 @@
 
 **Purpose:** Independently authored, precisely referenced communication across different intelligences. A complete UCL message is a self-contained JSON `.txt` or `.json` file. **The message's actual embedded guide and typed definitions are the source of meaning**, not this README or a hosted registry.
 
-> **Current release:** UCL/2.3 Portable (`UCL/2.3-SAP1-PORTABLE`). Follow the embedded guide for definition hashing. The CLI can verify and continue 2.0, 2.1, and 2.2 packets in their original formats.
+> **Current release:** UCL/2.4 Portable (`UCL/2.4-SAP1-PORTABLE`). Follow the embedded `UCL/1.4` guide for definition hashing and typed reply authoring.
 
 ## Agent Skills distribution
 
@@ -40,13 +40,13 @@ If `history.status` is `condensed`, honor the disclosed omission scope and do no
 
 For a packed Portable file, read its `archive_guide`. Use `inspect --act ACT_ID` to recover an exact older act or `inspect --claim CLAIM_ID --path PATH` to retrieve a branch. In a focused acknowledgement result, `by` identifies the acknowledgement author act, and `source_act` identifies the act containing the target claim or expression. Continue from the complete Portable file.
 
-A 2.3 packet includes exact ACK retraction rules in its embedded guide. `template packet.txt --speaker NAME --retract ACK_ID` seeds a contribution that retracts the named speaker's earlier stance. In inspection output, `retracts` is the original ACK ID and `original_ack_act` is the act that authored it. See the [2.3 specification](docs/UCL_2_3_SPECIFICATION.md).
+A 2.4 packet includes exact ACK retraction rules in its embedded guide. `template packet.txt --speaker NAME --retract ACK_ID` seeds a contribution that retracts the named speaker's earlier stance. In inspection output, `retracts` is the original ACK ID and `original_ack_act` is the act that authored it. See the [2.4 specification](docs/UCL_2_4_SPECIFICATION.md).
 
 ## Author a response
 
 1. Independently decide the intended position, reasoning, scope and relevant earlier references.
 2. Preserve all existing definitions, IDs, earlier delivered acts, claim bindings and relevant uncertainty. Define new concepts with appropriate types and new immutable identities; never overwrite a definition.
-3. For a scoped reply with the local CLI, use **template → edit → preflight → continue**. With the packet alone, use `structural_rules.rules.reply_template` and the embedded guide. Use defined symbols in executable expressions. Describe proposed operators in speaker text or notes.
+3. For a scoped reply with the local CLI, use **template → edit → preflight → continue**. With the packet alone, use `structural_rules.rules.reply_template` and the embedded `packet.guide.reply_authoring` example. Use defined symbols in executable expressions. Describe proposed operators in speaker text or notes.
 4. Construct exact acknowledgement fields. A target like `"path":["0"]` is invalid; use `"path":[0]`. For `action:"qualify"`, provide a real qualification; do not leave `null`.
 5. Verify expression types and grammar locally. Ensure `act.expressions` is a list of valid expression strings and `explanation`/`conclusion` are correctly typed expression strings.
 6. Append the authored contribution mechanically to the retained history, regenerate the deterministic integrity hashes, and recheck the complete packet. **Do not silently convert, rewrite or repair the author's semantic content.** If validation fails, return exact feedback to the author for an explicit revision.
@@ -62,6 +62,6 @@ python src/ucl.py inspect incoming-ucl2.txt
 python src/ucl.py continue incoming-ucl2.txt next.txt < contribution.json
 ```
 
-The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The public Python entry point is `src/ucl.py`, backed by `src/portable.py` and the typed grammar and vocabulary validation in `src/core.py`. The Python reference is the authoritative structural implementation. See the [2.3 specification](docs/UCL_2_3_SPECIFICATION.md).
+The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The public Python entry point is `src/ucl.py`, backed by `src/portable.py` and the typed grammar and vocabulary validation in `src/core.py`. The Python reference is the authoritative structural implementation. See the [2.4 specification](docs/UCL_2_4_SPECIFICATION.md).
 
 For experimental details and actual evidence, see [README](README.md), [L50 live result](benchmarks/AUTONOMOUS_50_RESULTS.md), [historical Portable draft](docs/SAP1_PORTABLE_DRAFT.md) and [release-readiness](docs/UCL_2_0_RELEASE_READINESS.md).

@@ -2,6 +2,12 @@
 
 This project uses versioned protocol profiles. Experimental benchmark artifacts are research evidence rather than evidence of a different live released wire specification.
 
+## UCL/2.4.0 — Newcomer briefings and typed reply starters (November 2026)
+
+- Added `inspect --handoff`, `diff --compact`, and opt-in `template --seed-formula`.
+- Added the embedded typed reply example and published the Portable 2.4 wire and guide fingerprints.
+- Verified that upgrading plain and packed 2.3 conversations preserves their definitions, acts, ACKs, and retractions.
+
 ## UCL/2.3.0 — Exact stance retraction (November 2026)
 
 - Added an ACK action that retracts one of the speaker's earlier stances by ID, with both records retained.

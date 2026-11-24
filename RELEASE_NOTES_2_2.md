@@ -1,6 +1,6 @@
 # UCL 2.2.0 Portable
 
-These notes document the historical 2.2.0 release. See the [2.3 release notes](RELEASE_NOTES_2_3.md) for the current release.
+These notes document the historical 2.2.0 release. See the [2.4 release notes](RELEASE_NOTES_2_4.md) for the current release.
 
 Long conversations can now retain older turns losslessly inside the same self-contained `.txt`. The guide, active records, and newest 1,000 acts stay readable, while optional gzip blocks carry older acts. Each packed file explains how to locate, decode, and verify a block without a server.
 

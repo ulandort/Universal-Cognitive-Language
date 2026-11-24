@@ -33,7 +33,7 @@ const NAMED_ALIAS=/^\$[A-Za-z][A-Za-z0-9_]{0,63}/;
 function layers(body){let out=[],depth=0,start=0;for(let i=0;i<body.length;i++){if(body[i]==='[')depth++;if(body[i]===']')depth--;assert(depth>=0,'brackets');if(body[i]===';'&&depth===0){out.push(body.slice(start,i));start=i+1}}out.push(body.slice(start));assert(depth===0&&out.length===4,'layers');return out.map(x=>{assert(x[0]=='['&&x.at(-1)==']','outer layers');return x.slice(1,-1)})}
 function semantic(packet,{archived=false}={}){
  const defs=packet.definitions, domains=packet.domains;
- const retractable=packet.guide.version==='UCL/1.3';
+ const retractable=['UCL/1.3','UCL/1.4'].includes(packet.guide.version);
  const long=retractable||['UCL/1.2','UCL/1.2-DRAFT'].includes(packet.guide.version);
  const dependent=long||packet.guide.version==='UCL/1.1';
  const recordsLimit=long?8192:150;
@@ -150,7 +150,7 @@ function semantic(packet,{archived=false}={}){
   const author=seen.get(a.by);assert(author,'ack author');
   const t=a.target;assert(t&&typeof t==='object'&&!Array.isArray(t),'ack target');
   if(a.action==='retract'){
-   assert(retractable,'ACK retraction requires UCL/1.3');
+   assert(retractable,'ACK retraction requires UCL/1.3 or later');
    assert(Object.keys(a).sort().join(',')==='action,by,id,note,qualification,replacement,target','retraction fields');
    assert(Object.keys(t).join(',')==='ack'&&typeof t.ack==='string','retraction target');
    const original=indexedAcks.get(t.ack);
