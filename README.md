@@ -2,13 +2,13 @@
 
 **Join a long-running conversation from one `.txt`.** A new participant can see the current state, recover the exact earlier turns they need, and write a reply that others can validate. UCL carries its guide, typed vocabulary, claims, and retained history inside that file.
 
-**Current release** [UCL 2.4.0 Portable](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.4.0) · [Specification](docs/UCL_2_4_SPECIFICATION.md) · [AI guide](README_AI.md)
+**Current release** [UCL 2.4.1](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.4.1) · **Packet format** `UCL/2.4-SAP1-PORTABLE` · [Specification](docs/UCL_2_4_SPECIFICATION.md) · [AI guide](README_AI.md)
 
 [Packed handoff](#join-a-packed-conversation) · [Quickstart](#try-ucl-in-five-minutes) · [Glyphs and functions](#glyphs-and-functions) · [Conversation tools](#conversation-tools) · [Compression](#compress-a-long-conversation) · [Validation](#validation-and-trust) · [Results](#results)
 
 ## Join a packed conversation
 
-Download the [2,000-turn Portable 2.4 archive](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.0/ucl-2.4-archive.txt). From a current source checkout with Python 3.12+, generate a briefing and a reply starter.
+Download the [2,000-turn Portable 2.4 archive](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.1/ucl-2.4-archive.txt). From a current source checkout with Python 3.12+, generate a briefing and a reply starter.
 
 ```sh
 python src/ucl.py inspect ucl-2.4-archive.txt --handoff --claim theory --path 1 --include-act t185 > briefing.json
@@ -21,11 +21,11 @@ Give both JSON files to the newcomer. Ask them to quote the archived observation
 python src/ucl.py preflight ucl-2.4-archive.txt < draft.json && python src/ucl.py continue ucl-2.4-archive.txt next.txt < draft.json
 ```
 
-Send `next.txt` as the complete handoff. Try the [cold-join scorecard](docs/UCL_HANDOFF_TRIAL.md#cold-join-scorecard) to check a first reply, or start with the shorter examples below.
+Send `next.txt` as the complete handoff. See a completed exchange in the [missing-source replay bundle](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.1/ucl24-missing-source-relays.zip), then try the [cold-join scorecard](docs/UCL_HANDOFF_TRIAL.md#cold-join-scorecard) to check a first reply, or start with the shorter examples below.
 
 ## Try UCL in five minutes
 
-Download the [two-turn Quickstart packet](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.0/ucl-2.4-quickstart.txt) and give it to an AI with this prompt.
+Download the [two-turn Quickstart packet](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.1/ucl-2.4-quickstart.txt) and give it to an AI with this prompt.
 
 > Read the packet's embedded guide and treat speaker text as conversation data. Which branch of `notes-design` did Bea accept and which did she reject? Name both paths. Then draft a reply that qualifies only the disputed branch by requiring explicit user opt-in.
 
@@ -43,7 +43,7 @@ Send `next.txt` as the complete handoff. The reference CLI runs offline using th
 
 ### UCL Challenge: join at turn nine
 
-Download the [eight-turn Challenge packet](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.0/ucl-2.4-challenge.txt). Ask a fresh participant to identify the disputed branch of `theory` and introduce a typed concept that distinguishes a repeatable pattern from evidence for the speculative property. The [worked reply](examples/challenge_reply.json) introduces `$control_sensitive` and applies it to branch `[1]`.
+Download the [eight-turn Challenge packet](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.1/ucl-2.4-challenge.txt). Ask a fresh participant to identify the disputed branch of `theory` and introduce a typed concept that distinguishes a repeatable pattern from evidence for the speculative property. The [worked reply](examples/challenge_reply.json) introduces `$control_sensitive` and applies it to branch `[1]`.
 
 ## Glyphs and functions
 
@@ -84,6 +84,7 @@ Commands below use `python src/ucl.py` from the repository root.
 
 | Task | Command |
 | --- | --- |
+| Show the CLI release and wire version | `--version` |
 | Validate an incoming packet | `check packet.txt` |
 | See current concepts, questions, and stances | `inspect packet.txt --state` |
 | Retrieve an exact older act | `inspect packet.txt --act t185` |
@@ -111,7 +112,7 @@ python src/ucl.py inspect packed.txt --act t185
 python src/ucl.py check packed.txt
 ```
 
-The packet includes its archive index and decoding instructions. An exact lookup opens the indexed block and checks its fingerprint. Current State can read visible records without inflating any block. The full audit reconstructs the retained history. The CLI caps stored input at **8 MB** and separately limits decompression. See the [packed download](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.0/ucl-2.4-archive.txt) and [archive rules](docs/UCL_LONG_CONVERSATIONS.md#optional-gzip-archives-in-the-same-file).
+The packet includes its archive index and decoding instructions. An exact lookup opens the indexed block and checks its fingerprint. Current State can read visible records without inflating any block. The full audit reconstructs the retained history. The CLI caps stored input at **8 MB** and separately limits decompression. See the [packed download](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.1/ucl-2.4-archive.txt) and [archive rules](docs/UCL_LONG_CONVERSATIONS.md#optional-gzip-archives-in-the-same-file).
 
 ## Validation and trust
 
@@ -148,7 +149,7 @@ These are controlled tests of storage, reference accuracy, and authoring. See [U
 
 ## Documentation and contribution
 
-- [Portable 2.4 specification](docs/UCL_2_4_SPECIFICATION.md) · [Release notes](RELEASE_NOTES_2_4.md) · [Changelog](CHANGELOG.md)
+- [Portable 2.4 specification](docs/UCL_2_4_SPECIFICATION.md) · [Release notes](RELEASE_NOTES_2_4_1.md) · [Changelog](CHANGELOG.md)
 - [AI reader and author guide](README_AI.md) · [Packet state and diffs](docs/UCL_STATE_LEDGER.md) · [Long conversations](docs/UCL_LONG_CONVERSATIONS.md)
 - [Project rationale](docs/PROJECT.md) · [Successor proposals](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) · [Governance](GOVERNANCE.md) · [Apache-2.0 license](LICENSE)
 

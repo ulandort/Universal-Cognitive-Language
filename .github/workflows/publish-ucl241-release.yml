@@ -1,0 +1,64 @@
+name: Publish UCL 2.4.1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/publish-ucl241-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ucl-2-4-1-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'ulandort/Universal-Cognitive-Language' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run the release candidate test suites
+        run: |
+          python -m pip install -r requirements-optional.txt
+          python -m unittest discover -s tests
+          python -m unittest discover -s benchmarks -p 'test_*.py'
+      - name: Build and validate the release downloads
+        run: |
+          bash tools/build_ucl24_release_assets.sh
+          printf '%s  %s\n' '126b5b1ddf6d814fc5c21ff30ddf3c7cb87978b87eb90999c5b925c45cf2ae6c' 'release-assets/ucl-2.4-archive.txt' | sha256sum -c -
+          cp evidence/ucl24-missing-source-relays.zip release-assets/
+          (cd release-assets && sha256sum ucl24-missing-source-relays.zip >> SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+      - name: Verify a clean source ZIP and replay an existing packet
+        run: |
+          extracted=$(mktemp -d)
+          git archive --format=zip --prefix=Universal-Cognitive-Language-2.4.1/ HEAD > "$extracted/source.zip"
+          python -m zipfile -e "$extracted/source.zip" "$extracted"
+          bash "$extracted/Universal-Cognitive-Language-2.4.1/tools/check_ucl241_source.sh"
+      - name: Publish v2.4.1 from the tested main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v2.4.1 --json tagName >/dev/null 2>&1; then
+            test "$(gh api "repos/$GITHUB_REPOSITORY/commits/v2.4.1" --jq .sha)" = "$GITHUB_SHA"
+          else
+            gh release create v2.4.1 release-assets/* \
+              --target "$GITHUB_SHA" \
+              --title "UCL 2.4.1 — Portable" \
+              --notes-file RELEASE_NOTES_2_4_1.md \
+              --latest
+          fi
+          gh release view v2.4.1 --json tagName,isDraft,isPrerelease,url,assets

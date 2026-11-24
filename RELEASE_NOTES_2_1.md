@@ -1,6 +1,6 @@
 # UCL/2.1 Portable
 
-These notes describe the historical 2.1.0 release. See the [2.4 release notes](RELEASE_NOTES_2_4.md) for the current release.
+These notes describe the historical 2.1.0 release. See the [2.4.1 release notes](RELEASE_NOTES_2_4_1.md) for the current release.
 
 UCL 2.1 expands the vocabulary that participants can build and use together. Each handoff is one self-contained UTF-8 JSON `.txt` file, with the guide, authoring template, definitions, and retained conversation embedded. The 11 core operators and four-layer body carry forward.
 

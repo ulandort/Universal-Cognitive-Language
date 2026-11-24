@@ -2,6 +2,13 @@
 
 This project uses versioned protocol profiles. Experimental benchmark artifacts are research evidence rather than evidence of a different live released wire specification.
 
+## UCL 2.4.1 — Packed handoff walkthrough (November 2026)
+
+- Label ACK and author act IDs explicitly in newcomer briefing v2.
+- Quote a recorded open issue and its location in the original packet.
+- Ship the missing-source replay bundle and a clean source ZIP check.
+- Report both the CLI release and packet format through `--version`.
+
 ## UCL/2.4.0 — Newcomer briefings and typed reply starters (November 2026)
 
 - Added `inspect --handoff`, `diff --compact`, and opt-in `template --seed-formula`.
