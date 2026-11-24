@@ -1,0 +1,39 @@
+name: One-time Portable 2.1 embedded template retest
+
+on:
+  push:
+    branches: [ucl21-embedded-template-once]
+    paths:
+      - '.github/workflows/ucl21-embedded-template-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  vocabulary:
+    if: github.event.created && github.run_attempt == 1 && github.repository == 'ulandort/Universal-Cognitive-Language'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate the starting packet without API access
+        run: python benchmarks/embedded_template_smoke_once.py --dry-run
+      - name: Install the provider SDK
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Run the matched Hal test and retry only on truncation
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+        run: python benchmarks/embedded_template_smoke_once.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portable-vocabulary-smoke
+          path: |
+            vocabulary-smoke-result.json
+            vocabulary-smoke-packet.txt
+          retention-days: 14
