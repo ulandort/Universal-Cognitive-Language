@@ -145,6 +145,13 @@ class SourceLayoutTests(unittest.TestCase):
             brief = json.loads(brief_text)
             self.assertEqual(brief['claim']['scope']['path'], [1])
             self.assertEqual(brief['claim']['source_act']['id'], 't1')
+            self.assertEqual(brief['briefing_version'], 2)
+            qualification = next(ack for ack in brief['claim']['acknowledgements'] if ack['action'] == 'qualify')
+            self.assertEqual((qualification['ack_id'], qualification['author_act'], qualification['source_act']),
+                             ('x5', 't9', 't1'))
+            self.assertNotIn('by', qualification)
+            self.assertTrue(any(ack['ack_id'] == 'x5' and ack['author_act'] == 't9'
+                                for ack in brief['current_state']['latest_stances']))
             self.assertEqual(brief['requested_acts'][0]['act']['id'], 't2')
             self.assertEqual(brief['current_act']['id'], 't9')
             self.assertIn('$control_sensitive', brief['definitions'])

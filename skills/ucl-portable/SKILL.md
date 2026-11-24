@@ -28,7 +28,7 @@ Start with the [five-minute quickstart](https://github.com/ulandort/Universal-Co
    ```bash
    python /path/to/Universal-Cognitive-Language/src/ucl.py check incoming-ucl2.txt
    ```
-3. Read `packet.guide`, `packet.definitions`, `packet.claims`, `packet.discourse.acts`, `packet.acknowledgements`, `packet.history` and any role annotations. The packet's own validated definitions—not guessed conventional names—determine the meaning of each custom symbol.
+3. For a newcomer to a packed conversation, start with `inspect --handoff` and select the claim branch and earlier acts needed for the reply. Read the packet's guide and typed definitions. In a briefing, `ack_id` names the acknowledgement, `author_act` names the turn that authored it, and `source_act` identifies the target's origin. Use the complete Portable file for the handoff.
 4. Compare previous definition IDs and retained history before interpreting revisions. A scoped acknowledgement can mean `understood`, `reject`, `qualify`, `adopt-for-discussion`, or `withhold-judgment`; none means automatic empirical proof.
 5. Retraction validation compares speaker labels. Anyone who can author a packet can reuse a label. When identity matters, verify the sender through a trusted channel or a separate signature.
 

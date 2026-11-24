@@ -38,7 +38,7 @@ An explicit ACK targets a claim and expression path, e.g. `{"claim":"theory","pa
 
 If `history.status` is `condensed`, honor the disclosed omission scope and do not pretend to remember omitted utterances. The live L25/L50 research explicitly retained all delivered acts rather than condensing them.
 
-For a packed Portable file, read its `archive_guide`. Use `inspect --handoff` to combine Current State with an exact branch and selected earlier sources. Use `inspect --act ACT_ID` to recover an exact older act or `inspect --claim CLAIM_ID --path PATH` to retrieve a branch. In a focused acknowledgement result, `by` identifies the acknowledgement author act, and `source_act` identifies the act containing the target claim or expression. Continue from the complete Portable file.
+When joining a packed Portable conversation, start with `inspect --handoff` for Current State, an exact claim branch, and any earlier sources you need. A briefing's `ack_id` identifies the acknowledgement, `author_act` identifies the act that wrote it, and `source_act` identifies the target's origin. The raw focused views label the author act `by`. Use `inspect --act ACT_ID` and `inspect --claim CLAIM_ID --path PATH` for individual lookups. Read the packet's `archive_guide` and continue from the complete Portable file.
 
 A 2.4 packet includes exact ACK retraction rules in its embedded guide. `template packet.txt --speaker NAME --retract ACK_ID` seeds a contribution that retracts the named speaker's earlier stance. In inspection output, `retracts` is the original ACK ID and `original_ack_act` is the act that authored it. See the [2.4 specification](docs/UCL_2_4_SPECIFICATION.md).
 
