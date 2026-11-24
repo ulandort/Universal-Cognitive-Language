@@ -64,4 +64,29 @@ class SourceLayoutTests(unittest.TestCase):
         wire['packet']['integrity']['sha256']='modified'
         with self.assertRaises(ValueError):ucl.decode_portable(wire)
 
+    def test_continue_cli_preserves_history_and_rejects_rewritten_claims(self):
+        contribution = json.loads((ROOT / 'examples/contribution_example.json').read_text(encoding='utf-8'))
+        roles = [{'act': 't1', 'index': 0, 'role': 'hypothesis'}]
+        wire = portable.encode(self.packet, formula_roles=roles)
+        with tempfile.TemporaryDirectory() as directory:
+            incoming = Path(directory) / 'incoming.txt'
+            outgoing = Path(directory) / 'outgoing.txt'
+            incoming.write_bytes(core.canon(wire))
+            command = [sys.executable, str(ROOT / 'src/ucl.py'), 'continue', str(incoming), str(outgoing)]
+            invalid = dict(contribution, claims={'theory': self.packet['claims']['theory']})
+            rejected = subprocess.run(command, input=json.dumps(invalid), text=True, capture_output=True, timeout=20)
+            self.assertNotEqual(rejected.returncode, 0)
+            self.assertIn('cannot replace existing bindings: theory', rejected.stderr)
+            self.assertFalse(outgoing.exists())
+
+            accepted = subprocess.run(command, input=json.dumps(contribution), text=True, capture_output=True, timeout=20)
+            self.assertEqual(accepted.returncode, 0, accepted.stderr)
+            result = json.loads(outgoing.read_bytes())
+            packet = portable.decode(result)
+            self.assertEqual(result['formula_roles'], roles)
+            self.assertEqual(packet['discourse']['acts'], self.packet['discourse']['acts'] + [contribution['act']])
+            self.assertEqual(packet['claims'], self.packet['claims'])
+            self.assertEqual(packet['definitions'], self.packet['definitions'])
+            self.assertEqual(incoming.read_bytes(), core.canon(wire))
+
 if __name__=='__main__':unittest.main()

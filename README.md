@@ -79,13 +79,20 @@ The existing `python tools/sap_portable.py` CLI still works as a small forwardin
 
 The versioned, self-contained wire identifier is **`UCL/2.0-SAP1-PORTABLE`**. The exact canonical serialization, embedded authoring rules and offline validation requirements are defined in the [normative UCL/2.0 specification](docs/UCL_2_0_SPECIFICATION.md).
 
-For constructing a new message from a locally verified prior packet and a model-authored contribution:
+To continue a Portable conversation, run this command, paste a structured JSON contribution, and press Ctrl-D (Ctrl-Z then Enter on Windows):
 
 ```bash
-python tools/author.py examples/cross_model_conversation_8_turns.json examples/contribution_example.json next-message.txt
+python src/ucl.py continue portable-example.txt next-message.txt
 ```
 
-The authoring helper appends original model-authored content and recalculates deterministic integrity metadata; it **does not decide the speaker's stance or silently correct a formula's meaning**.
+To try it with the eight-turn example above, use the included draft:
+
+```bash
+python src/ucl.py continue portable-example.txt next-message.txt < examples/contribution_example.json
+python src/ucl.py check next-message.txt
+```
+
+For your own conversation, ask your AI to draft a JSON contribution using the packet's embedded guide and structural rules. The command checks the incoming packet, appends the authored contribution, and validates the result locally before writing it. If validation fails, revise the draft using the reported error. Send only `next-message.txt` to the next recipient. The optional command comes with this repository and works offline.
 
 ## Install UCL as an Agent Skill
 
