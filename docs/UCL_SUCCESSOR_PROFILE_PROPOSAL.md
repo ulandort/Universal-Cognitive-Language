@@ -2,6 +2,12 @@
 
 Status: design draft for a possible future Portable revision. UCL/2.0 Portable is the single supported interchange format. This document defines no alternate format.
 
+## State-first export
+
+Start with the [local state ledger](UCL_STATE_LEDGER.md). A future Portable revision could export a short reader header, the derived ledger, the pinned guide and rules, then the complete sequence of contribution records. Keep it in one UTF-8 JSON document. The header identifies the format, head, declared history coverage, and trust boundaries. Conversation prose remains speaker data. A verifier must recompute an embedded ledger from the retained records and reject a mismatch. Its concise terminal rendering can guide navigation, while the original records remain available for interpretation and quotation.
+
+Append-only applies to the contribution records. Export regenerates the changing header and ledger, and may rewrite the file. Validate that the prior records form an unchanged prefix before exporting a continuation. If a writer uses a cached ledger, verify it against a complete replay before delivery. An exporter operating on a shared destination should check the expected head before replacing the file.
+
 ## Rule modules
 
 Use a new profile identifier with a pinned interpretation core and a versioned extension map. Each extension declares its identifier, version, criticality, and value. An unknown critical extension makes the message uninterpretable under this profile. An unknown advisory extension can be skipped for interpretation, but its original value remains part of the signed message and must survive a forwarding round trip. Updates to examples, preflight advice, and semantic-review guidance should not require a grammar revision.
@@ -14,22 +20,28 @@ Define a domain-separated canonical signing payload that commits to the format a
 
 The receiver needs an independently trusted binding between a verification key and the identity it represents. A public key carried by the envelope is a discovery hint until that binding is established. An authenticated mode must reject unsigned handoffs or handoffs without the required signature, even if the same recipient also supports a separate unsigned mode.
 
-Distinguish a signature over a delivered snapshot from an author's attestation of a particular contribution. A snapshot signature covers the bytes of the retained history. Authorship of each prior act requires a retained author attestation or equivalent evidence. An authenticated withdrawal must be authorized by the identity responsible for the target act. Define key rotation and revocation separately before deployment.
+Distinguish a signature over a delivered snapshot from an author's attestation of a particular contribution. A snapshot signature covers the bytes of the retained history. A contribution signature commits to that record's act, acknowledgements, definition additions, definition retirements, claim bindings, and any other changes supplied by that author. Cover the previous record hash and sequence as part of the signed record. A later snapshot signer does not inherit authorship of older records.
+
+The genesis record declares the conversation's key roster and signature policy. For an authenticated conversation, verify each required contribution signature against the key authorized for that author at that point in the chain. An authenticated withdrawal must be authorized by the identity responsible for the target act. Report integrity, signature verification, and external identity binding separately. Agree on key registration, rotation, and revocation before enabling authenticated authoring. Unsigned conversations can use the same file structure with an explicit unauthenticated policy.
 
 Formula roles belong at expression scope. A single act may quote one expression and use a second as a counterexample. Bind each authenticated role to its expression, declaring author, and attestation. Any future lossless re-encoding workflow must retain the annotations and their attribution.
 
 ## History continuity
 
-For a signed handoff, commit to a conversation identifier, sequence number, and previous signed handoff identifier. The verifier needs the prior trusted handoff or an independently trusted checkpoint. Compare retained act content, definitions, claim bindings, and acknowledgement records against that predecessor. Validate append-only rules separately from the chain link. Report forks when competing handoffs are observed, and report continuity as unverified when the necessary predecessor is unavailable.
+Give every contribution a domain-separated hash over its canonical payload, which includes its conversation identifier, sequence number, previous record hash, and complete contribution. Genesis starts the sequence and establishes the conversation identifier and initial policy. The head is the final record hash. A full replay can verify internal linkage, sequencing, and replayed state from the included genesis. Compare a trusted earlier head against the corresponding retained record to establish continuity with a previously seen conversation. Report forks when competing successors to the same record are observed. An unanchored chain does not establish that its genesis is the recipient's expected starting point.
 
-Start with fully retained history. A future explicit condensation profile should identify omitted act IDs or ranges, preserve the exact retained claims and their dependencies, and state how the recipient can obtain the originals. An act hash can verify an original supplied later. The hash alone cannot reproduce omitted content. Packet size and act-count limits remain independent of chain design.
+Start with fully retained history and leave hash-only stubs out of the first revision. Any future change to history retention needs explicit omission records and a dependency rule protecting exact targets and the context required to interpret them. A content hash can verify an original supplied later. Packet size and act-count limits remain independent of chain design.
 
 ## Definition identities and local inspection
 
 Use a new hash domain for dependency-closed identities. Bind each reference in a definition to the ID of the definition it resolves to in that packet. For example, predicate argument sort D must bind the identity of D. Specify whether domain membership is part of domain identity or separate instance data. Define the handling of cycles before permitting recursive dependencies. Keep legacy IDs resolvable as legacy IDs and version any migration mapping.
 
+Record retirement as a new act with the retired ID and an optional successor ID. Keep the original definition and alias bindings for replay. A successor is a proposed replacement and carries its own identity. Specify who can retire a definition and the effect of retirement on later use before adding it to the wire. A future multi-character alias scheme needs unambiguous token boundaries in expressions and the exact symbol declaration. Preserve the 11 core operators and four body layers. Keep finite resource limits even if the alias syntax can express an arbitrarily large vocabulary across conversations.
+
+Allow typed, explicitly labeled examples and counterexamples in an immutable definition record. Define which fields affect its ID. If the examples are part of the immutable record, editing one produces a new ID. Additional examples can be attached through later acts with their own attribution. An example records intended usage and can guide interpretation. It neither establishes general equivalence nor proves the concept is true.
+
 Keep the guide and required rule modules embedded in every delivered packet. Local tools may derive a concept index or a shorter view for a particular reply from the complete packet. These views are for inspection within the recipient's workflow. The canonical handoff remains the complete Portable packet.
 
 ## Requirements before implementation
 
-Publish cross-language vectors for canonical signing bytes, attachment and forwarding of advisory extensions, critical-extension rejection, signature removal, re-signed snapshots with changed prior acts, role attribution, dependency changes, and required embedded guides. Include existing Portable packets as compatibility fixtures. Agree on the attestation and dependency schemes before assigning a wire identifier.
+Publish cross-language vectors for canonical signing bytes, attachment and forwarding of advisory extensions, critical-extension rejection, signature removal, changed prior contributions, forks, ledger mismatches, withdrawal authorization, role attribution, dependency changes, and required embedded guides. Include existing Portable packets as compatibility fixtures. Agree on the attestation and dependency schemes before assigning a wire identifier.

@@ -99,7 +99,7 @@ def main(args):
         _continue_cli(args)
         return
     if len(args)<3:
-        raise ValueError('Usage: python src/ucl.py check file.txt | encode inner.json portable.txt | decode portable.txt inner.json | continue incoming.txt next.txt < contribution.json | inspect portable.txt | build/canonicalize/draft ...')
+        raise ValueError('Usage: python src/ucl.py check file.txt | encode inner.json portable.txt | decode portable.txt inner.json | continue incoming.txt next.txt < contribution.json | inspect portable.txt [--json] | build/canonicalize/draft ...')
     command=args[1]
     if command=='check' and len(args)==3:
         data=_core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
@@ -107,11 +107,14 @@ def main(args):
             print(json.dumps(check_portable(data),indent=2))
         else:
             print(json.dumps(_core.check(data),indent=2))
-    elif command=='inspect' and len(args)==3:
-        from inspection import describe_packet
+    elif command=='inspect':
+        if len(args) != 3 and not (len(args) == 4 and args[3] == '--json'):
+            raise ValueError('Usage: python src/ucl.py inspect portable.txt [--json]')
+        from inspection import derive_ledger, describe_packet
 
         envelope = _core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
-        print(describe_packet(decode_portable(envelope)))
+        packet = decode_portable(envelope)
+        print(json.dumps(derive_ledger(packet), indent=2) if len(args) == 4 else describe_packet(packet))
     elif command=='encode' and len(args)==4:
         source=_core.read_json_file(args[2])
         result=encode_portable(source)

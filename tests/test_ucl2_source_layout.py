@@ -138,4 +138,65 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertEqual({glyph: after['definitions'][glyph] for glyph in before['definitions']},
                              before['definitions'])
 
+    def test_state_ledger_resolves_exact_stances_through_a_long_history(self):
+        starter = json.loads((ROOT / 'examples/quickstart.txt').read_bytes())
+        draft = core.draft_from_packet(portable.decode(starter))
+        acts = draft['discourse']['acts']
+        for turn in range(3, 56):
+            speaker = 'Ari' if turn == 53 else 'Bea'
+            acts.append({
+                'id': f't{turn}', 'kind': 'response', 'speaker': speaker,
+                'references': ['t1'], 'text': 'Continuing the design discussion.',
+                'expressions': ['~[B][A]'],
+                'details': {'responds_to': 't1', 'stance': 'undetermined'},
+            })
+        acts[51].update(kind='question', details={
+            'targets': ['When should background sync run?'],
+            'answer_kind': 'open', 'alternatives': [],
+        })
+        draft['discourse']['current'] = 't55'
+
+        def ack(number, turn, action, target, qualification=None):
+            return {
+                'id': f'x{number}', 'by': f't{turn}', 'action': action, 'target': target,
+                'qualification': qualification, 'replacement': None, 'note': '',
+            }
+
+        whole_claim = {'claim': 'notes-design', 'path': []}
+        sync_branch = {'claim': 'notes-design', 'path': [1]}
+        draft['acknowledgements'].extend([
+            ack(3, 54, 'withhold-judgment', sync_branch),
+            ack(4, 55, 'received', sync_branch),
+            ack(5, 4, 'reject', whole_claim),
+            ack(6, 3, 'accept', {'act': 't1', 'expression_index': 0}),
+            ack(7, 53, 'withdraw', sync_branch),
+            ack(8, 54, 'qualify', sync_branch, {'expression': '~[N][A]', 'explanation': ''}),
+        ])
+
+        envelope = portable.encode(core.build(draft))
+        with tempfile.TemporaryDirectory() as directory:
+            incoming = Path(directory) / 'long.txt'
+            incoming.write_bytes(core.canon(envelope))
+            cli = [sys.executable, str(ROOT / 'src/ucl.py'), 'inspect', str(incoming)]
+            result = subprocess.run([*cli, '--json'], text=True, capture_output=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            ledger = json.loads(result.stdout)
+            self.assertEqual(ledger['retained_act_count'], 55)
+            self.assertEqual(ledger['packet_sha256'], envelope['packet']['integrity']['sha256'])
+            self.assertEqual(ledger['recorded_open_issues'], draft['history']['unresolved'])
+            self.assertEqual([question['act'] for question in ledger['questions']], ['t52'])
+            by_scope = {(item['speaker'], tuple(item['path'])): item for item in ledger['stances']}
+            self.assertEqual(
+                {scope: item['acknowledgement'] for scope, item in by_scope.items()},
+                {('Bea', (0,)): 'x1', ('Bea', ()): 'x5', ('Ari', (1,)): 'x7', ('Bea', (1,)): 'x8'},
+            )
+            self.assertEqual(by_scope['Bea', (1,)]['expression'], '~[B][A]')
+            self.assertEqual([withdrawal['acknowledgement'] for withdrawal in ledger['withdrawals']], ['x7'])
+            self.assertEqual(ledger['recent_acknowledgements'][-1]['action'], 'received')
+            rendered = subprocess.run(cli, text=True, capture_output=True, timeout=20)
+            self.assertEqual(rendered.returncode, 0, rendered.stderr)
+            self.assertLess(rendered.stdout.index('Latest recorded stances'),
+                            rendered.stdout.index('Recent acts (5 of 55)'))
+            self.assertEqual(incoming.read_bytes(), core.canon(envelope))
+
 if __name__=='__main__':unittest.main()

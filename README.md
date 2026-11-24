@@ -102,6 +102,8 @@ Run the reference validator to confirm that an incoming packet uses the pinned g
 
 The Portable 2.0 fingerprints are published in the [release notes](RELEASE_NOTES_2_0.md#portable-guide-and-rules-fingerprints). The Python CLI rejects duplicate JSON keys and caps Portable input at 8,000,000 bytes and standalone drafts at 1,000,000 bytes. The `decode` command extracts the inner packet. Use `continue` to carry existing envelope-level formula roles forward.
 
+Use `python src/ucl.py inspect packet.txt` to read the conversation state first. It shows each speaker's latest recorded stance on the exact claim branch, withdrawals, recorded open issues, and the vocabulary. Add `--json` for the [derived state ledger](docs/UCL_STATE_LEDGER.md).
+
 Portable is the single supported interchange format. The [design notes](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) explore extensions, signing, and history continuity for a future revision.
 
 ## Getting started
