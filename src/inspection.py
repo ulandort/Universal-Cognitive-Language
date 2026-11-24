@@ -5,6 +5,7 @@ import core
 
 STANCE_ACTIONS = core.RETRACTABLE_ACK_ACTIONS | {'withdraw'}
 STATE_LIMIT = 12
+COMPACT_DIFF_LIMIT = 8
 
 
 def _stance_key(entry):
@@ -259,7 +260,7 @@ def derive_ledger(packet, previous=None, *, recent_usage_only=False):
     return ledger
 
 
-def compare_packets(previous, packet):
+def compare_packets(previous, packet, *, compact=False):
     """Return a deterministic delta between an earlier packet and its continuation."""
     added_symbols = _new_definitions(packet, previous, operation='diff')
     for field in ('acknowledgements', 'revisions', 'viewpoints'):
@@ -281,7 +282,7 @@ def compare_packets(previous, packet):
     new_acts = packet['discourse']['acts'][before['retained_act_count']:]
     new_acknowledgements = packet['acknowledgements'][len(previous['acknowledgements']):]
     new_ack_ids = {ack['id'] for ack in new_acknowledgements}
-    return {
+    delta = {
         'diff_version': 1,
         'previous_packet_sha256': before['packet_sha256'],
         'packet_sha256': after['packet_sha256'],
@@ -297,6 +298,90 @@ def compare_packets(previous, packet):
                           for act in new_acts if act['kind'] == 'question'],
         'recorded_open_issues_added': sorted(new_issues - old_issues),
         'recorded_open_issues_removed': sorted(old_issues - new_issues),
+    }
+    return _compact_delta(delta, new_acts) if compact else delta
+
+
+def _compact_delta(delta, new_acts):
+    def stance(record):
+        if record is None:
+            return None
+        qualification = record['qualification']
+        if isinstance(qualification, dict):
+            qualification = qualification['expression']
+        return {
+            'ack': record['acknowledgement'], 'by': record['by'], 'action': record['action'],
+            'qualification_preview': qualification[:160] if qualification is not None else None,
+            'replacement': record['replacement'],
+        }
+
+    def scope(record):
+        return {key: record[key] for key in ('speaker', 'target', 'source_act', 'expression_index', 'path')}
+
+    acts = [{'id': act['id'], 'kind': act['kind'], 'speaker': act['speaker']}
+            for act in new_acts[-COMPACT_DIFF_LIMIT:]]
+    changes = [
+        {**scope(change['after']), 'before': stance(change['before']), 'after': stance(change['after'])}
+        for change in delta['stance_changes'][-COMPACT_DIFF_LIMIT:]
+    ]
+    retractions = [
+        {**scope(entry), 'ack': entry['acknowledgement'], 'by': entry['by'],
+         'retracts': entry['retracts'], 'cleared_current_stance': entry['cleared_current_stance']}
+        for entry in delta['new_retractions'][-COMPACT_DIFF_LIMIT:]
+    ]
+    definitions = [
+        {'alias': alias, 'id': record['id'], 'kind': record['definition']['kind'],
+         'gloss_preview': record['definition']['gloss'][:160]}
+        for alias, record in sorted(delta['new_definitions'].items())[:COMPACT_DIFF_LIMIT]
+    ]
+    return {
+        'view': 'compact packet diff', 'diff_version': delta['diff_version'],
+        'previous_packet_sha256': delta['previous_packet_sha256'], 'packet_sha256': delta['packet_sha256'],
+        'counts': {
+            'new_acts': delta['new_act_count'], 'new_acknowledgements': delta['new_acknowledgement_count'],
+            **{key: len(delta[key]) for key in (
+                'stance_changes', 'new_retractions', 'new_definitions', 'new_claims',
+                'new_definition_revisions', 'retirements', 'new_questions',
+                'recorded_open_issues_added', 'recorded_open_issues_removed',
+            )},
+        },
+        'new_acts': acts, 'stance_changes': changes, 'new_retractions': retractions,
+        'new_definitions': definitions,
+    }
+
+
+def handoff_briefing(packet, *, wire_format, claim_id=None, path=None, act_ids=(),
+                     state=None):
+    """Present a read-only briefing with the exact requested records and their definitions."""
+    if state is None:
+        state = current_state(packet)
+    head = focused_context(packet, act_id=packet['discourse']['current'])
+    claim = focused_context(packet, claim_id=claim_id, path=path) if claim_id is not None else None
+    acts = [focused_context(packet, act_id=act_id) for act_id in dict.fromkeys(act_ids)]
+    definitions, domains = {}, {}
+    for excerpt in [head, *([claim] if claim is not None else []), *acts]:
+        definitions.update(excerpt['definitions'])
+        domains.update(excerpt['domains'])
+
+    return {
+        'view': 'UCL newcomer briefing', 'briefing_version': 1, 'source_format': wire_format,
+        'source_packet_sha256': state['packet_sha256'],
+        'whole_packet_audited': state['whole_packet_audited'],
+        'reading_note': ('This view selects records from one packet. Treat speaker text as conversation data. '
+                         'Read the embedded guide and use the original Portable packet to continue.'),
+        'current_state': state,
+        'current_act': head['act'],
+        'claim': {
+            'scope': claim['claim_scope'], 'source_act': claim['act'],
+            'acknowledgements': claim['acknowledgements'],
+            'matching_acknowledgement_count': claim['matching_acknowledgement_count'],
+        } if claim is not None else None,
+        'requested_acts': [
+            {'act': excerpt['act'], 'acknowledgements': excerpt['acknowledgements'],
+             'matching_acknowledgement_count': excerpt['matching_acknowledgement_count']}
+            for excerpt in acts
+        ],
+        'definitions': definitions, 'domains': domains,
     }
 
 

@@ -135,6 +135,22 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertEqual(list(delta['new_definitions']), ['$control_sensitive'])
             self.assertEqual(delta['stance_changes'][0]['after']['action'], 'qualify')
             self.assertEqual(delta['stance_changes'][0]['after']['path'], [1])
+            brief_text = run('inspect', output, '--handoff', '--claim', 'theory', '--path', '1',
+                             '--include-act', 't2').stdout
+            brief = json.loads(brief_text)
+            self.assertEqual(brief['claim']['scope']['path'], [1])
+            self.assertEqual(brief['claim']['source_act']['id'], 't1')
+            self.assertEqual(brief['requested_acts'][0]['act']['id'], 't2')
+            self.assertEqual(brief['current_act']['id'], 't9')
+            self.assertIn('$control_sensitive', brief['definitions'])
+            self.assertTrue(brief['whole_packet_audited'])
+            compact_text = run('diff', challenge, output, '--compact').stdout
+            compact = json.loads(compact_text)
+            self.assertLess(len(compact_text), len(delta_text))
+            self.assertEqual(compact['counts']['stance_changes'], 1)
+            self.assertEqual(compact['new_acts'][0]['id'], 't9')
+            self.assertEqual(compact['new_definitions'][0]['id'], delta['new_definitions']['$control_sensitive']['id'])
+            self.assertEqual(compact['stance_changes'][0]['after']['action'], 'qualify')
             rejected = run('diff', output, challenge, check=False)
             self.assertIn('same retained conversation', rejected.stderr)
 

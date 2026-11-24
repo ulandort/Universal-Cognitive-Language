@@ -235,10 +235,64 @@ def expand(envelope):
     return expanded
 
 
+def _archive_state(envelope):
+    from inspection import STANCE_ACTIONS, current_state
+
+    packet = envelope['packet']
+    archive = envelope['archive']
+    readable = {**packet, 'acknowledgements': [
+        ack for ack in packet['acknowledgements'] if ack['action'] in STANCE_ACTIONS or ack['action'] == 'retract'
+    ]}
+    return {
+        **current_state(readable, whole_packet_audited=False),
+        'archive_block_count': len(archive['blocks']),
+        'retained_act_count': archive['act_count'],
+        'readable_act_count': len(packet['discourse']['acts']),
+        'pinned_act_count': len(archive['pinned']),
+    }
+
+
+def _excerpt_packet(envelope, act_ids, slots, by_act):
+    packet = envelope['packet']
+    acts = packet['discourse']['acts']
+    acks = packet['acknowledgements']
+    blocks = {by_act[act_id]['act_slots'][0]: by_act[act_id] for act_id in act_ids if act_id in by_act}
+    if blocks:
+        readable_positions = (index for index in range(envelope['archive']['act_count']) if index not in slots)
+        positions = list(zip(readable_positions, acts))
+        acks = list(acks)
+        for block in blocks.values():
+            records = _open_block(block)
+            positions.extend(zip(block['act_slots'], records['acts']))
+            acks.extend(ack for _, ack in records['acknowledgements'])
+        acts = [act for _, act in sorted(positions, key=lambda pair: pair[0])]
+    available = {act['id'] for act in acts}
+    acks = [
+        ack for ack in acks if ack['target'].get('act', ack['by']) in available
+        and ('claim' not in ack['target'] or packet['claims'][ack['target']['claim']]['act'] in available)
+    ]
+    return {**packet, 'discourse': {**packet['discourse'], 'acts': acts}, 'acknowledgements': acks}, len(blocks)
+
+
+def inspect_archive_handoff(envelope, *, claim_id=None, path=None, act_ids=()):
+    """Produce a briefing by opening only the explicitly requested records' blocks."""
+    import portable
+    from inspection import handoff_briefing
+
+    portable.validate_envelope(envelope)
+    slots, by_act = _layout(envelope)
+    packet, opened = _excerpt_packet(envelope, act_ids, slots, by_act)
+    return {
+        **handoff_briefing(packet, wire_format=envelope['format'], claim_id=claim_id, path=path,
+                           act_ids=act_ids, state=_archive_state(envelope)),
+        'archive_blocks_opened': opened,
+    }
+
+
 def inspect_archive(envelope, *, act_id=None, claim_id=None, path=None, state=False):
     """Read the current view or a single indexed block without expanding the full packet."""
     import portable
-    from inspection import STANCE_ACTIONS, current_state, focused_context
+    from inspection import focused_context
 
     portable.validate_envelope(envelope)
     slots, by_act = _layout(envelope)
@@ -249,16 +303,7 @@ def inspect_archive(envelope, *, act_id=None, claim_id=None, path=None, state=Fa
         'retained_act_count': archive['act_count'], 'whole_packet_audited': False,
     }
     if state:
-        readable = {**packet, 'acknowledgements': [
-            ack for ack in packet['acknowledgements'] if ack['action'] in STANCE_ACTIONS or ack['action'] == 'retract'
-        ]}
-        return {
-            **current_state(readable, whole_packet_audited=False),
-            'archive_block_count': status['archive_block_count'],
-            'retained_act_count': archive['act_count'],
-            'readable_act_count': len(packet['discourse']['acts']),
-            'pinned_act_count': len(archive['pinned']),
-        }
+        return _archive_state(envelope)
     if act_id is None and claim_id is None:
         return {**status, 'view': 'readable archive overview',
                 'current_act': packet['discourse']['current'],
@@ -266,19 +311,5 @@ def inspect_archive(envelope, *, act_id=None, claim_id=None, path=None, state=Fa
                 'readable_act_count': len(packet['discourse']['acts']),
                 'recent_acts': packet['discourse']['acts'][-5:],
                 'pinned': archive['pinned']}
-    acts = packet['discourse']['acts']
-    acks = packet['acknowledgements']
-    if act_id in by_act:
-        block = by_act[act_id]
-        records = _open_block(block)
-        readable_positions = (index for index in range(archive['act_count']) if index not in slots)
-        positions = [*zip(readable_positions, acts), *zip(block['act_slots'], records['acts'])]
-        acts = [act for _, act in sorted(positions, key=lambda pair: pair[0])]
-        acks = [*acks, *(ack for _, ack in records['acknowledgements'])]
-    available = {act['id'] for act in acts}
-    acks = [
-        ack for ack in acks if ack['target'].get('act', ack['by']) in available
-        and ('claim' not in ack['target'] or packet['claims'][ack['target']['claim']]['act'] in available)
-    ]
-    excerpt = {**packet, 'discourse': {**packet['discourse'], 'acts': acts}, 'acknowledgements': acks}
+    excerpt, _ = _excerpt_packet(envelope, (act_id,), slots, by_act)
     return {**focused_context(excerpt, act_id=act_id, claim_id=claim_id, path=path), **status}

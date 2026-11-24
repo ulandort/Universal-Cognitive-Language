@@ -17,6 +17,12 @@ Append-only applies to the contribution records. Export regenerates the changing
 
 The existing gzip index, exact lookup and `--keep-act` support a working set inside one file. Measure how often newcomers need older blocks before defining another recency tier. Plaintext audience annotations can guide reading and are visible to every recipient. Actual access control would require encryption and key management.
 
+### Reply without a new proposition
+
+The first version should cover an ACK-only retraction or receipt. Propose an explicit procedural act kind and a corresponding declared orientation role in a future version. Give the procedural act ordinary references and speaker text, with an empty expression list and its retained ACK records. Existing claim sources and ACK targets stay resolvable. A procedural act cannot be the source of a new claim binding.
+
+Keep four body layers. Allow empty explanation and conclusion layers only when the head act and its declared orientation are procedural. The draft can represent those two fields as null and the builder can encode them as empty bracketed layers. The declaration still covers every used symbol from the retained record and the procedural orientation. Validate the new rules independently in Python and Node, including a later propositional reply to a procedural act. The pinned version must distinguish the new shape from an incomplete 2.3 reply.
+
 ## Rule modules
 
 Use a new profile identifier with a pinned interpretation core and a versioned extension map. Each extension declares its identifier, version, criticality, and value. An unknown critical extension makes the message uninterpretable under this profile. An unknown advisory extension can be skipped for interpretation, but its original value remains part of the signed message and must survive a forwarding round trip. Updates to examples, preflight advice, and semantic-review guidance should not require a grammar revision.
