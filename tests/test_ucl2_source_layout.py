@@ -9,9 +9,9 @@ class SourceLayoutTests(unittest.TestCase):
     def setUpClass(cls):
         cls.packet=core.load_json((ROOT/'examples/cross_model_conversation_8_turns.json').read_text(encoding='utf8'))
     def test_public_version_and_original_grammar(self):
-        self.assertEqual(ucl.VERSION,'UCL/2.2')
+        self.assertEqual(ucl.VERSION,'UCL/2.3')
         self.assertEqual(ucl.PORTABLE_FORMAT,portable.CURRENT_FORMAT)
-        self.assertEqual(ucl.INNER_GRAMMAR_VERSION,'UCL/1.2')
+        self.assertEqual(ucl.INNER_GRAMMAR_VERSION,'UCL/1.3')
         self.assertEqual(ucl.CORE,core.CORE)
         self.assertEqual(ucl.check(self.packet),core.check(self.packet))
         self.assertEqual(ucl.packet_id(self.packet),core.packet_id(self.packet))
@@ -137,6 +137,83 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertEqual(delta['stance_changes'][0]['after']['path'], [1])
             rejected = run('diff', output, challenge, check=False)
             self.assertIn('same retained conversation', rejected.stderr)
+
+    def test_exact_ack_retraction_and_cross_version_diff(self):
+        from authoring import reply_template
+        from inspection import compare_packets, current_state, focused_context
+
+        old = ucl.decode_portable(ucl.read_json_file(ROOT / 'examples/challenge.txt'))
+        upgraded = core.upgrade_packet(old)
+        self.assertEqual(upgraded['definitions'], old['definitions'])
+        current = ucl.encode_portable(upgraded)
+        with self.assertRaisesRegex(ValueError, 'requires Portable 2.3'):
+            reply_template(old, 'D', None, [], retract='x4')
+        draft = reply_template(upgraded, 'D', None, [], retract='x4')
+        draft['act']['text'] = 'I retract the stance recorded in x4.'
+        draft.update(explanation='~[B][A]', conclusion='~[B][A]')
+        next_wire = ucl.continue_portable(current, draft)
+        after = ucl.decode_portable(next_wire)
+        delta = compare_packets(old, after)
+        self.assertEqual(after['acknowledgements'][:-1], old['acknowledgements'])
+        self.assertEqual(delta['new_retractions'][0]['retracts'], 'x4')
+        self.assertEqual(delta['stance_changes'][0]['before']['acknowledgement'], 'x4')
+        self.assertEqual(delta['stance_changes'][0]['after']['path'], [1])
+        stances = current_state(after)['latest_stances']
+        self.assertTrue(any(a['acknowledgement'] == 'x3' for a in stances))
+        self.assertEqual(stances[-1]['action'], 'retract')
+        excerpt = focused_context(after, claim_id='theory', path=[1])
+        self.assertEqual(excerpt['acknowledgements'][-1]['original_ack_act'], 't8')
+
+        newer_draft = copy.deepcopy(draft)
+        newer = newer_draft['acknowledgements'][0]
+        newer.update(action='accept', target={'claim': 'theory', 'path': [1]})
+        accepted = ucl.continue_portable(current, newer_draft)
+        older_retraction = copy.deepcopy(draft)
+        older_retraction['act'].update(id='t10')
+        older_retraction['acknowledgements'][0].update(id='x6', by='t10')
+        behind = ucl.decode_portable(ucl.continue_portable(accepted, older_retraction))
+        delta = compare_packets(ucl.decode_portable(accepted), behind)
+        self.assertFalse(delta['new_retractions'][0]['cleared_current_stance'])
+        self.assertEqual(delta['stance_changes'], [])
+        newest_retraction = copy.deepcopy(older_retraction)
+        newest_retraction['acknowledgements'][0]['target']['ack'] = 'x5'
+        cleared = ucl.decode_portable(ucl.continue_portable(accepted, newest_retraction))
+        cleared_stance = current_state(cleared)['latest_stances'][-1]
+        self.assertEqual(cleared_stance['action'], 'retract')
+        self.assertEqual(cleared_stance['retracts'], 'x5')
+        with self.assertRaisesRegex(ValueError, 'already retracted'):
+            ucl.continue_portable(next_wire, older_retraction)
+
+        bad = copy.deepcopy(draft)
+        bad['act']['speaker'] = 'A'
+        for label, wire in [('Python', current), ('previous version', ucl.encode_portable(old))]:
+            with self.subTest(label=label):
+                with self.assertRaisesRegex(ValueError, 'another speaker|requires Portable 2.3'):
+                    ucl.continue_portable(wire, bad)
+        bad['act']['speaker'] = 'D'
+        bad['acknowledgements'][0]['target']['ack'] = 'x5'
+        with self.assertRaisesRegex(ValueError, 'existing stance ACK'):
+            ucl.continue_portable(current, bad)
+        bad['acknowledgements'][0]['target']['ack'] = 'x4'
+        bad['acknowledgements'][0]['qualification'] = 'invalid for a retraction'
+        with self.assertRaisesRegex(ValueError, 'null qualification and replacement'):
+            ucl.continue_portable(current, bad)
+
+        if shutil.which('node'):
+            with tempfile.TemporaryDirectory() as folder:
+                path = Path(folder) / 'portable.txt'
+                js = ['node', str(ROOT / 'tools/check_ucl_portable.js'), str(path)]
+                path.write_bytes(core.canon(next_wire))
+                subprocess.run(js, check=True, capture_output=True, timeout=20)
+                altered = copy.deepcopy(next_wire)
+                altered_packet = altered['packet']
+                altered_packet['discourse']['acts'][-1]['speaker'] = 'A'
+                altered_packet['integrity']['sha256'] = core.packet_id(altered_packet)
+                altered['checksum'] = portable.envelope_checksum(altered)
+                path.write_bytes(core.canon(altered))
+                rejected = subprocess.run(js, text=True, capture_output=True, timeout=20)
+                self.assertNotEqual(rejected.returncode, 0)
+                self.assertIn('retraction ownership', rejected.stderr)
 
     def test_portable_cli_rejects_ambiguous_and_oversized_json(self):
         with tempfile.TemporaryDirectory() as directory:

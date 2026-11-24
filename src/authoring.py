@@ -59,19 +59,36 @@ def preflight(parent, contribution, *, archived=False):
         for index, ack in enumerate(acknowledgements):
             if isinstance(ack, Mapping) and isinstance(ack.get('id'), str) and ack['id'] in prior_ids:
                 raise ValueError(f'draft.acknowledgements[{index}].id duplicates an earlier ACK: {ack["id"]}')
+            if isinstance(ack, Mapping) and ack.get('action') == 'retract' and ack.get('by') != act['id']:
+                raise ValueError(f'draft.acknowledgements[{index}].by must name the new act for a retraction')
         _checked('draft.acknowledgements', core.validate_acknowledgements, acknowledgements,
                  {'acts': [*prior, act]}, definitions, parser, {**parent['claims'], **claims},
-                 version=version, archived=archived)
+                 version=version, archived=archived, prior_acks=parent['acknowledgements'])
 
 
-def reply_template(parent, speaker, claim, path, *, alias=None, domain=None):
+def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, retract=None):
     """Seed a reply with exact references and leave its authorship to the participant."""
-    binding = parent['claims'].get(claim)
-    core.need(binding is not None, f'claim not found: {claim}')
     core.need(0 < len(speaker) <= 120, 'speaker must contain 1 to 120 characters')
     definitions = parent['definitions']
-    core.resolve_claim_path(core.Parser(definitions), binding['expression'], path)
     acts = parent['discourse']['acts']
+    acknowledgements = parent['acknowledgements']
+    if retract is None:
+        binding = parent['claims'].get(claim)
+        core.need(binding is not None, f'claim not found: {claim}')
+        core.resolve_claim_path(core.Parser(definitions), binding['expression'], path)
+        source, target, action = binding['act'], {'claim': claim, 'path': path}, 'received'
+    else:
+        core.need(core.packet_version(parent) == core.RETRACTION_VERSION,
+                  'ACK retraction requires Portable 2.3. Run upgrade first')
+        original = next((ack for ack in acknowledgements if ack['id'] == retract), None)
+        core.need(original and original['action'] in core.RETRACTABLE_ACK_ACTIONS,
+                  'retraction must target an existing stance ACK')
+        source = original['by']
+        author = next(act['speaker'] for act in acts if act['id'] == source)
+        core.need(author == speaker, 'cannot retract another speaker’s ACK')
+        core.need(not any(ack['action'] == 'retract' and ack['target']['ack'] == retract
+                          for ack in acknowledgements), 'ACK already retracted')
+        target, action = {'ack': retract}, 'retract'
 
     def next_id(records, prefix):
         used = {record['id'] for record in records}
@@ -88,14 +105,14 @@ def reply_template(parent, speaker, claim, path, *, alias=None, domain=None):
     act_id = next_id(acts, 't')
     draft = {
         'act': {'id': act_id, 'kind': 'response', 'speaker': speaker,
-                'references': list(dict.fromkeys((current, binding['act']))),
+                'references': list(dict.fromkeys((current, source))),
                 'text': '', 'expressions': [],
                 'details': {'responds_to': current, 'stance': 'undetermined'}},
         'orientation': orientation,
         'explanation': '', 'conclusion': '',
         'acknowledgements': [{
-            'id': next_id(parent['acknowledgements'], 'x'), 'by': act_id,
-            'target': {'claim': claim, 'path': path}, 'action': 'received',
+            'id': next_id(acknowledgements, 'x'), 'by': act_id,
+            'target': target, 'action': action,
             'qualification': None, 'replacement': None, 'note': '',
         }],
     }

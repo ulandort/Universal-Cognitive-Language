@@ -73,7 +73,7 @@ def pack(envelope, packet, pinned=()):
     """Pack an already validated expanded long-draft packet."""
     import ucl
 
-    core.need(envelope['format'] in ucl.ARCHIVE_FORMATS, 'upgrade to Portable 2.2 before packing')
+    core.need(envelope['format'] in ucl.ARCHIVE_FORMATS, 'upgrade to an archive-capable Portable version before packing')
     acts = packet['discourse']['acts']
     acks = packet['acknowledgements']
     pinned = sorted(set(pinned))
@@ -250,7 +250,7 @@ def inspect_archive(envelope, *, act_id=None, claim_id=None, path=None, state=Fa
     }
     if state:
         readable = {**packet, 'acknowledgements': [
-            ack for ack in packet['acknowledgements'] if ack['action'] in STANCE_ACTIONS
+            ack for ack in packet['acknowledgements'] if ack['action'] in STANCE_ACTIONS or ack['action'] == 'retract'
         ]}
         return {
             **current_state(readable, whole_packet_audited=False),

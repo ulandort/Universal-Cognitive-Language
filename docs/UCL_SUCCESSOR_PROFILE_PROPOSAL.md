@@ -11,7 +11,7 @@ Append-only applies to the contribution records. Export regenerates the changing
 ## Conversation commitments and concept relationships
 
 - A temporary commitment should name its speaker, an exact claim and path, and the act that starts its discussion scope. A conditional commitment should carry a typed antecedent and take effect only after that speaker records its activation. The validator checks the references and types. Participants still decide whether the condition holds.
-- Withdrawing an endorsement should reference the exact earlier acknowledgement and be restricted to its author. Existing `withdraw` keeps its own-claim meaning. A join receipt could bind to the exact packet digest and record the participant's stated readiness.
+- [Portable 2.3](UCL_2_3_SPECIFICATION.md) implements exact ACK retraction. A future join receipt could bind to the exact packet digest and record the participant's stated readiness.
 - A proposed refinement should link two immutable definition IDs and name its proposing act. Both definitions remain resolvable. A participant can explicitly adopt a refinement without changing how earlier expressions are interpreted.
 - Parallel replies can name a common parent and exact target paths. A comparison can show divergent replies. A reconciliation act should cite both heads and make choices about conflicting bindings or commitments explicit.
 

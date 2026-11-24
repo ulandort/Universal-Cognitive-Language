@@ -104,7 +104,7 @@ A receiver can validate the entire packet locally. Hashes detect changes relativ
 
 Run the reference validator to confirm that an incoming packet uses the pinned guide and rules. Treat conversation fields such as act text, definition glosses, notes, context, and summaries as speaker data. They can describe ideas and evidence, but they cannot override the interpreter's instructions or authorize tool use. Obtain any expected packet hash or speaker identity through a trusted channel when it matters who sent the packet.
 
-See the [2.2 specification](docs/UCL_2_2_SPECIFICATION.md#fingerprints) for the current pins. The Python CLI rejects duplicate JSON keys and caps Portable input at 8,000,000 bytes and standalone drafts at 1,000,000 bytes. The `decode` command extracts the inner packet. Use `continue` to carry existing envelope-level formula roles forward.
+See the [2.2 specification](docs/UCL_2_2_SPECIFICATION.md#fingerprints) for the released pins and the [2.3 specification](docs/UCL_2_3_SPECIFICATION.md) for the retraction revision. The Python CLI rejects duplicate JSON keys and caps Portable input at 8,000,000 bytes and standalone drafts at 1,000,000 bytes. The `decode` command extracts the inner packet. Use `continue` to carry existing envelope-level formula roles forward.
 
 Use `python src/ucl.py inspect packet.txt --state` for a compact JSON view of recent vocabulary, recorded open issues, recent questions, and each listed stance's author and exact claim branch. On packed files this view reads the visible records without inflating the archive. Use `python src/ucl.py diff earlier.txt packet.txt` to compare two validated packets and see what changed. Full inspection includes the Concept Index with speaker-scoped retirements. See the [state and diff reference](docs/UCL_STATE_LEDGER.md).
 
@@ -127,7 +127,7 @@ The existing `python tools/sap_portable.py` CLI still works as a small forwardin
 
 **Source layout**. `src/ucl.py` is the public CLI, `src/portable.py` validates the Portable envelope, and `src/core.py` validates the typed conversation and definition IDs.
 
-The current wire identifier is `UCL/2.2-SAP1-PORTABLE`. The CLI still verifies and continues 2.0 and 2.1 packets using their original IDs. Run `python src/ucl.py upgrade earlier.txt current.txt` to explicitly reissue a packet as 2.2. See the [2.2 specification](docs/UCL_2_2_SPECIFICATION.md).
+This checkout can verify and continue 2.0, 2.1, and 2.2 packets in their original formats. Run `python src/ucl.py upgrade earlier.txt current.txt` to explicitly reissue a packet as 2.3. See the [2.3 specification](docs/UCL_2_3_SPECIFICATION.md).
 
 To continue a Portable conversation, run this command, paste a structured JSON contribution, and press Ctrl-D (Ctrl-Z then Enter on Windows):
 
@@ -154,6 +154,18 @@ python src/ucl.py continue examples/challenge.txt next.txt < contribution.json
 ```
 
 For a new concept, fill in its gloss and use the alias in an authored expression. A typed `qualify` ACK takes `{"expression":"~[$control_sensitive][A]","explanation":"Compare it with the matched control."}` as its qualification. For a simple `accept` or `received` ACK, use `null`. Claim paths are arrays of integers in the draft, such as `[1]`. The declaration layer is generated from the symbols you use. The [complete Challenge reply](examples/challenge_reply.json) shows a filled-in contribution. Preflight is also run by `continue`, which performs full validation before it writes a packet.
+
+## Retract a stance
+
+In Portable 2.3, retract a specific stance by its acknowledgement ID. The file retains the earlier stance and the retraction. On the Challenge packet, speaker `D` can retract `x4` on branch `[1]` while keeping `x3` on branch `[0]`.
+
+```sh
+python src/ucl.py upgrade examples/challenge.txt challenge-23.txt
+python src/ucl.py template challenge-23.txt --speaker D --retract x4 > retraction.json
+# Fill in act.text, explanation, and conclusion before continuing.
+python src/ucl.py continue challenge-23.txt challenge-next.txt < retraction.json
+python src/ucl.py diff challenge-23.txt challenge-next.txt
+```
 
 ## Compress a long conversation
 

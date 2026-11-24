@@ -14,13 +14,14 @@ import sys
 from tempfile import NamedTemporaryFile
 from pathlib import Path
 
-VERSION='UCL/2.2'
-PORTABLE_FORMAT='UCL/2.2-SAP1-PORTABLE'
+VERSION='UCL/2.3'
+PORTABLE_FORMAT='UCL/2.3-SAP1-PORTABLE'
+V22_PORTABLE_FORMAT='UCL/2.2-SAP1-PORTABLE'
 V21_PORTABLE_FORMAT='UCL/2.1-SAP1-PORTABLE'
 LEGACY_PORTABLE_FORMAT='UCL/2.0-SAP1-PORTABLE'
 LONG_DRAFT_FORMAT='UCL/2.2-SAP1-PORTABLE-DRAFT'
-ARCHIVE_FORMATS=(PORTABLE_FORMAT, LONG_DRAFT_FORMAT)
-INNER_GRAMMAR_VERSION=_core.LONG_VERSION
+ARCHIVE_FORMATS=(PORTABLE_FORMAT, V22_PORTABLE_FORMAT, LONG_DRAFT_FORMAT)
+INNER_GRAMMAR_VERSION=_core.RETRACTION_VERSION
 MAX_PORTABLE_JSON=8_000_000
 
 def __getattr__(name):
@@ -139,15 +140,20 @@ def main(args):
         parser = argparse.ArgumentParser(prog='python src/ucl.py template')
         parser.add_argument('packet')
         parser.add_argument('--speaker', required=True)
-        parser.add_argument('--claim', required=True)
-        parser.add_argument('--path', type=_claim_path, default=[])
+        scope = parser.add_mutually_exclusive_group(required=True)
+        scope.add_argument('--claim')
+        scope.add_argument('--retract', metavar='ACK_ID', help='retract one of this speaker’s earlier stance ACKs')
+        parser.add_argument('--path', type=_claim_path)
         parser.add_argument('--concept', help='unused alias for a new predicate definition')
         parser.add_argument('--domain', help='existing domain for a unary predicate')
         options = parser.parse_args(args[2:])
+        if options.retract is not None and (options.path is not None or options.concept is not None):
+            parser.error('--path and --concept require --claim')
         if options.domain is not None and options.concept is None:
             parser.error('--domain requires --concept')
         draft = reply_template(decode_portable(_portable_file(options.packet)), options.speaker,
-                               options.claim, options.path, alias=options.concept, domain=options.domain)
+                               options.claim, options.path or [], alias=options.concept, domain=options.domain,
+                               retract=options.retract)
         print(json.dumps(draft, indent=2, ensure_ascii=False))
     elif command=='diff':
         from inspection import compare_packets

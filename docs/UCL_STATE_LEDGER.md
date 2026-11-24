@@ -23,6 +23,7 @@ For packed files, the excerpt verifies the envelope checksum and archive layout 
 | `questions` | All retained question acts in act order, with `act`, `speaker`, and verbatim `targets` |
 | `stances` | Latest recorded stance per speaker and exact target, ordered by the selected acknowledgements' chronology |
 | `withdrawals` | Every retained withdrawal, in acknowledgement chronology |
+| `retractions` | Every retained 2.3 stance retraction, including the original ACK ID and author act and whether it cleared the stance at that point |
 | `recent_acknowledgements` | Last ten acknowledgements in acknowledgement chronology, including procedural actions |
 | `symbols` | Defined symbols in code point order, including definitions absent from recent expressions |
 | `comparison` | Present with `--since earlier.txt`. Includes `previous_packet_sha256` and the code-point-sorted `added_symbols` |
@@ -39,7 +40,8 @@ Each symbol entry contains `symbol`, `definition_id`, `kind`, `gloss`, `first_re
 1. Read acknowledgements in the order of their author acts. Break ties within an act using their order in the packet's acknowledgement array.
 2. Resolve each target to a retained source act, an expression index or null for a whole act, and a zero-based subtree path. A claim binding with an empty path and a direct reference to the same expression name the same target. Whole acts, whole expressions, and subtrees remain distinct.
 3. For each pair of speaker label and resolved target, retain the last `accept`, `reject`, `qualify`, `adopt-for-discussion`, `withhold-judgment`, or `withdraw`. Receipt, understanding, clarification, revision proposals, and custom acknowledgement actions stay in the record without replacing such a stance.
-4. Record every withdrawal separately. A withdrawal concerns its exact target and author. The ledger does not apply it to other speakers, related branches, or the content of the original act.
+4. Record every withdrawal separately. A withdrawal concerns its exact target and author.
+5. Record every retraction separately. If it names the latest stance at that speaker and exact target, replace the current entry with the retraction marker. Earlier stances stay in history and do not resume. A retraction of a superseded ACK leaves the newer stance in effect. The diff lists new retractions even when the current stance stays the same.
 
 This projection records attributed statements without deciding their truth. Portable speaker labels are unauthenticated. A response, revision, or reference to a question does not establish that it was resolved. Question acts and author-recorded open issues are shown separately. Omitted acts cannot supply evidence about earlier stances.
 

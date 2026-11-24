@@ -10,7 +10,8 @@ VERSION='UCL/1.0'
 DEPENDENCY_VERSION='UCL/1.1'
 LONG_VERSION='UCL/1.2'
 LONG_DRAFT_VERSION='UCL/1.2-DRAFT'
-LONG_VERSIONS=(LONG_VERSION, LONG_DRAFT_VERSION)
+RETRACTION_VERSION='UCL/1.3'
+LONG_VERSIONS=(LONG_VERSION, LONG_DRAFT_VERSION, RETRACTION_VERSION)
 DEPENDENCY_VERSIONS=(DEPENDENCY_VERSION, *LONG_VERSIONS)
 MAX_LONG_ACTS=4096
 MAX_LONG_RECORDS=8192
@@ -130,6 +131,15 @@ def guide(version=VERSION):
             'UCL/1.2-DRAFT tests larger retained histories and preserves UCL/1.1 definition IDs.'
             if version == LONG_DRAFT_VERSION else
             'UCL/1.2 supports larger histories and optional Portable gzip archives. Definition IDs preserve the UCL/1.1 scheme.'
+        )
+    if version == RETRACTION_VERSION:
+        result['stability'] = 'UCL/1.3 adds exact acknowledgement retraction and preserves UCL/1.2 definition IDs.'
+        result['acknowledgements'] += (
+            ' To retract your own earlier accept, reject, qualify, adopt-for-discussion or withhold-judgment ACK, '
+            'set action to "retract" and target to {"ack":"EARLIER_ACK_ID"}. The original ACK must be authored '
+            'by an earlier act with the same speaker label and may be retracted once. Set qualification and '
+            'replacement to null. If this was the latest stance at its exact target, it is now retracted '
+            'and no older stance resumes. A newer stance remains in effect. Both ACKs remain in the file.'
         )
     return result
 
@@ -500,6 +510,7 @@ def validate_discourse(discourse,defs,parser, *, version=VERSION, archived=False
 # Each target points to a retained act in this same packet; no external context may be required.
 ACK_ACTIONS={'received','understood','accept','reject','qualify','clarify',
              'propose-revision','adopt-for-discussion','withhold-judgment','withdraw'}
+RETRACTABLE_ACK_ACTIONS=frozenset({'accept','reject','qualify','adopt-for-discussion','withhold-judgment'})
 
 def resolve_claim_path(parser, expression, path):
     tree = parser.parse(expression)
@@ -513,12 +524,17 @@ def resolve_claim_path(parser, expression, path):
          'acknowledgement subclaim must be a proposition or epistemic expression')
     return tree
 
-def validate_acknowledgements(acks,discourse,defs,parser,claims, *, version=VERSION, archived=False):
+def validate_acknowledgements(acks,discourse,defs,parser,claims, *, version=VERSION, archived=False, prior_acks=()):
     limit = MAX_LONG_RECORDS if version in LONG_VERSIONS else 150
-    need(isinstance(acks,list) and (archived and version in LONG_VERSIONS or len(acks)<=limit),'acknowledgement list size')
+    need(isinstance(acks,list) and (archived and version in LONG_VERSIONS or len(prior_acks)+len(acks)<=limit),'acknowledgement list size')
     acts=discourse['acts']; byid={a['id']:a for a in acts}
     positions={a['id']:i for i,a in enumerate(acts)}
-    seen=set()
+    seen={ack['id'] for ack in prior_acks}
+    if version == RETRACTION_VERSION:
+        indexed = {ack['id']: ack for ack in prior_acks}
+        indexed.update((ack['id'], ack) for ack in acks
+                       if isinstance(ack, dict) and isinstance(ack.get('id'), str))
+        retracted = {ack['target']['ack'] for ack in prior_acks if ack['action'] == 'retract'}
     for ack in acks:
         need(isinstance(ack,dict) and set(ack)=={'id','by','target','action','qualification','replacement','note'},'acknowledgement fields')
         ident=ack['id'];need(isinstance(ident,str) and re.fullmatch(r'[a-zA-Z][a-zA-Z0-9_-]{0,63}',ident) and ident not in seen,'duplicate/invalid acknowledgement ID')
@@ -526,6 +542,23 @@ def validate_acknowledgements(acks,discourse,defs,parser,claims, *, version=VERS
         author=ack['by'];target=ack['target'];action=ack['action']
         need(author in byid,'acknowledgement author act absent')
         need(isinstance(target,dict),'acknowledgement target must be object')
+        if action == 'retract':
+            need(version == RETRACTION_VERSION, 'ACK retraction requires Portable 2.3. Run upgrade first')
+            need(set(target) == {'ack'} and isinstance(target['ack'], str),
+                 'retraction target must be {"ack":"EARLIER_ACK_ID"}')
+            original = indexed.get(target['ack'])
+            need(original is not None and original.get('action') in RETRACTABLE_ACK_ACTIONS,
+                 'retraction must target an existing stance ACK')
+            dest = original.get('by')
+            need(dest in positions and positions[dest] < positions[author],
+                 'retraction must target an ACK from an earlier act')
+            need(byid[author]['speaker'] == byid[dest]['speaker'], 'cannot retract another speaker’s ACK')
+            need(target['ack'] not in retracted, 'ACK already retracted')
+            need(ack['qualification'] is None and ack['replacement'] is None,
+                 'retraction requires null qualification and replacement')
+            need(isinstance(ack['note'], str) and len(ack['note']) <= 2048, 'acknowledgement note')
+            retracted.add(target['ack'])
+            continue
         if set(target)=={'act','expression_index'}:
             # Legacy act/whole-expression target remains available.
             dest=target['act'];need(dest in byid,'acknowledgement target act missing')
@@ -606,7 +639,7 @@ def condense_draft(draft,omit_ids,summary,reason='Reduce historical packet size'
         need(ack['by'] not in remove,'cannot remove acknowledgement author')
         target=ack['target']
         if 'act' in target:need(target['act'] not in remove,'cannot remove acknowledgement target')
-        else:
+        elif 'claim' in target:
             claim=result['claims'].get(target.get('claim'))
             need(claim is not None and claim['act'] not in remove,'cannot remove quoted acknowledgement source')
         if ack['replacement'] is not None:need(ack['replacement'] not in remove,'cannot remove replacement')
@@ -763,7 +796,7 @@ def draft_version(draft):
     supplied = [record for record in draft['definitions'].values() if 'id' in record]
     if supplied and all(record['id'] == definition_id(record['definition']) for record in supplied):
         return VERSION
-    return LONG_VERSION
+    return RETRACTION_VERSION
 
 
 def build(draft, *, version=VERSION, archived=False):
@@ -787,7 +820,7 @@ def build(draft, *, version=VERSION, archived=False):
 
 def upgrade_packet(packet, *, archived=False):
     version = packet_version(packet)
-    if version == LONG_VERSION:
+    if version == RETRACTION_VERSION:
         check(packet, archived=archived)
         return packet
 
@@ -795,11 +828,11 @@ def upgrade_packet(packet, *, archived=False):
     if version == VERSION:
         for record in draft['definitions'].values():
             record.pop('id')
-        identities = _definition_ids(draft['definitions'], draft['domains'], LONG_VERSION)
+        identities = _definition_ids(draft['definitions'], draft['domains'], RETRACTION_VERSION)
         for revision in draft['revisions']:
             revision['old_id'] = identities[revision['old_glyph']]
             revision['new_id'] = identities[revision['new_glyph']]
-    return build(draft, version=LONG_VERSION, archived=archived)
+    return build(draft, version=RETRACTION_VERSION, archived=archived)
 
 
 # Transport: plain, human-readable JSON by default. Optional Brotli lives in tools/.
