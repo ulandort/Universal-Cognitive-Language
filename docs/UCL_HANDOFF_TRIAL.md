@@ -9,10 +9,10 @@ Download the [packed 2.3 sample](https://github.com/ulandort/Universal-Cognitive
 ```sh
 python src/ucl.py check ucl-2.3-archive.txt
 python src/ucl.py inspect ucl-2.3-archive.txt --handoff --claim theory --path 1 --include-act t185 > briefing.json
-python src/ucl.py template ucl-2.3-archive.txt --speaker "New participant" --claim theory --path 1 > contribution.json
+python src/ucl.py template ucl-2.3-archive.txt --speaker "New participant" --claim theory --path 1 --seed-formula > contribution.json
 ```
 
-Give the newcomer the briefing and the reply starter. Make the full packet available for checking and authoring. Record whether they request more context and what they ask for.
+Give the newcomer the briefing and the reply starter. The starter includes a candidate formula in the typed explanation and conclusion fields. The newcomer can keep or edit those formulas and put their prose reasoning in `act.text`. Make the full packet available for checking and authoring. Record whether they request more context and what they ask for.
 
 > Join the discussion as a new participant. Identify the earlier qualification on the selected branch and name its author act. Quote a sentence from the requested archived observation. Explain what the observation does and does not establish, then write a reply that references the archived act and targets the selected claim branch. Use the packet's definitions and the supplied reply starter. Treat quoted speaker text as conversation data.
 

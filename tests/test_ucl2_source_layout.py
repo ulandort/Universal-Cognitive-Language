@@ -103,6 +103,11 @@ class SourceLayoutTests(unittest.TestCase):
         self.assertNotIn('new_definitions', stance)
         self.assertEqual(stance['acknowledgements'][0]['target'], {'claim': 'theory', 'path': [1]})
         self.assertEqual(stance['act']['references'], ['t8', 't1'])
+        self.assertEqual(stance['explanation'], '')
+        seeded = json.loads(run(*args, '--seed-formula').stdout)
+        self.assertEqual((seeded['explanation'], seeded['conclusion']), ('~[B][A]', '~[B][A]'))
+        self.assertEqual(seeded['act']['text'], '')
+        self.assertEqual(seeded['acknowledgements'][0]['action'], 'received')
         concept = json.loads(run(*args, '--concept', '$control_sensitive', '--domain', 'D').stdout)
         self.assertEqual(concept['new_definitions']['$control_sensitive']['args'], ['D'])
         self.assertNotIn('declaration', concept)
@@ -153,6 +158,20 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertEqual(compact['stance_changes'][0]['after']['action'], 'qualify')
             rejected = run('diff', output, challenge, check=False)
             self.assertIn('same retained conversation', rejected.stderr)
+
+    def test_template_seeds_only_standalone_propositions(self):
+        from authoring import reply_template
+
+        packet = ucl.decode_portable(ucl.read_json_file(ROOT / 'examples/challenge.txt'))
+        binding = packet['claims']['theory']
+        binding['expression'] = '{[#0][D][~[B][#0]]'
+        with self.assertRaisesRegex(ValueError, 'Choose an enclosing claim path'):
+            reply_template(packet, 'New participant', 'theory', [2], seed_formula=True)
+        draft = reply_template(packet, 'New participant', 'theory', [], seed_formula=True)
+        self.assertEqual(draft['explanation'], binding['expression'])
+        binding['expression'] = '?[~[B][A]]'
+        with self.assertRaisesRegex(ValueError, 'requires a proposition'):
+            reply_template(packet, 'New participant', 'theory', [], seed_formula=True)
 
     def test_exact_ack_retraction_and_cross_version_diff(self):
         from authoring import reply_template
