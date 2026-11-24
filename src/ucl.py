@@ -15,6 +15,7 @@ from tempfile import NamedTemporaryFile
 from pathlib import Path
 
 VERSION='UCL/2.4'
+RELEASE_VERSION='2.4.1'
 PORTABLE_FORMAT='UCL/2.4-SAP1-PORTABLE'
 V23_PORTABLE_FORMAT='UCL/2.3-SAP1-PORTABLE'
 V22_PORTABLE_FORMAT='UCL/2.2-SAP1-PORTABLE'
@@ -119,6 +120,9 @@ def _continue_cli(args):
 def main(args):
     """Dispatch current and archived Portable packets by their version markers."""
     import portable
+    if len(args) == 2 and args[1] == '--version':
+        print(f'UCL CLI {RELEASE_VERSION} ({PORTABLE_FORMAT}, guide {INNER_GRAMMAR_VERSION})')
+        return
     if len(args) > 1 and args[1] == 'continue':
         _continue_cli(args)
         return

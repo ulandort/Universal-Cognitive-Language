@@ -2,7 +2,7 @@
 
 **Purpose:** Independently authored, precisely referenced communication across different intelligences. A complete UCL message is a self-contained JSON `.txt` or `.json` file. **The message's actual embedded guide and typed definitions are the source of meaning**, not this README or a hosted registry.
 
-> **Current release:** UCL/2.4 Portable (`UCL/2.4-SAP1-PORTABLE`). Follow the embedded `UCL/1.4` guide for definition hashing and typed reply authoring.
+> **Current release** UCL 2.4.1 · **Packet format** `UCL/2.4-SAP1-PORTABLE`. Follow the embedded `UCL/1.4` guide for definition hashing and typed reply authoring.
 
 ## Agent Skills distribution
 

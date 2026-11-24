@@ -1,5 +1,7 @@
 # UCL 2.4.0 Portable
 
+See the [2.4.1 release notes](RELEASE_NOTES_2_4_1.md) for the current tooling release.
+
 Portable 2.4 makes it easier to join a long-running conversation. Every packet carries the `UCL/1.4` guide with a worked example that distinguishes typed formulas, prose reasoning, and retained turn references. The full conversation still travels in one `.txt`.
 
 - `inspect --handoff` produces a briefing with Current State, the exact latest act, a selected claim branch, and any archived acts you request. Packed briefings open only the requested archive blocks.

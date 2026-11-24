@@ -1,6 +1,6 @@
 # UCL 2.3.0 Portable
 
-These notes document the 2.3.0 release. See the [2.4 release notes](RELEASE_NOTES_2_4.md) for the current release.
+These notes document the 2.3.0 release. See the [2.4.1 release notes](RELEASE_NOTES_2_4_1.md) for the current release.
 
 UCL 2.3 lets a participant retract an exact earlier stance while keeping the original record and the rest of the discussion intact. The guide, definitions, and full retained history still travel in one self-contained `.txt`, including optional lossless gzip blocks.
 

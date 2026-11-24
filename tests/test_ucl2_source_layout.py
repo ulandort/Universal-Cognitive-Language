@@ -15,6 +15,11 @@ class SourceLayoutTests(unittest.TestCase):
         self.assertEqual(ucl.CORE,core.CORE)
         self.assertEqual(ucl.check(self.packet),core.check(self.packet))
         self.assertEqual(ucl.packet_id(self.packet),core.packet_id(self.packet))
+    def test_cli_release_version_is_distinct_from_wire_and_guide(self):
+        result = subprocess.run([sys.executable, str(ROOT / 'src/ucl.py'), '--version'],
+                                check=True, capture_output=True, text=True, timeout=20)
+        self.assertEqual(result.stdout.strip(),
+                         'UCL CLI 2.4.1 (UCL/2.4-SAP1-PORTABLE, guide UCL/1.4)')
     def test_exact_portable_bytes_and_checksum_not_modified_by_reorganization(self):
         sys.path.insert(0,str(ROOT/'tools'))
         import sap_portable as legacy_entry

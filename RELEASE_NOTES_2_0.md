@@ -1,6 +1,6 @@
 # UCL/2.0 — stable public release notes
 
-These notes describe the historical 2.0.0 release. See the [2.4 release notes](RELEASE_NOTES_2_4.md) for the current release.
+These notes describe the historical 2.0.0 release. See the [2.4.1 release notes](RELEASE_NOTES_2_4_1.md) for the current release.
 
 **Universal Cognitive Language 2.0** is the first public stable, self-contained **Portable** interchange profile for independent cognitive systems. The earlier standalone UCL/1.0 transport is retired as the project's default release interface. Its 11 original core glyphs and typed inner grammar remain unchanged and are embedded in the 2.0 packet.
 

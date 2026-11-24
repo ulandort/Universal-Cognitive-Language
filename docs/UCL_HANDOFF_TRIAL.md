@@ -4,7 +4,7 @@ Use this exercise with a person or model who is new to the conversation. The goa
 
 ## Prepare the briefing
 
-Download the [packed 2.4 sample](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.0/ucl-2.4-archive.txt) and run these commands with the current checkout.
+Download the [packed 2.4 sample](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.1/ucl-2.4-archive.txt) and run these commands with the current checkout.
 
 ```sh
 python src/ucl.py check ucl-2.4-archive.txt
