@@ -146,6 +146,11 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertEqual(brief['claim']['scope']['path'], [1])
             self.assertEqual(brief['claim']['source_act']['id'], 't1')
             self.assertEqual(brief['briefing_version'], 2)
+            history = ucl.decode_portable(ucl.read_json_file(output))['history']
+            self.assertEqual(brief['open_issue'], {
+                'text': history['unresolved'][-1],
+                'source': f'/packet/history/unresolved/{len(history["unresolved"]) - 1}',
+            })
             qualification = next(ack for ack in brief['claim']['acknowledgements'] if ack['action'] == 'qualify')
             self.assertEqual((qualification['ack_id'], qualification['author_act'], qualification['source_act']),
                              ('x5', 't9', 't1'))
@@ -165,6 +170,17 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertEqual(compact['stance_changes'][0]['after']['action'], 'qualify')
             rejected = run('diff', output, challenge, check=False)
             self.assertIn('same retained conversation', rejected.stderr)
+
+    def test_handoff_does_not_infer_an_open_issue_from_questions(self):
+        from inspection import handoff_briefing
+
+        packet = ucl.decode_portable(ucl.read_json_file(ROOT / 'examples/challenge.txt'))
+        draft = core.draft_from_packet(packet)
+        draft['history']['unresolved'] = []
+        updated = core.build(draft, version=core.packet_version(packet))
+        brief = handoff_briefing(updated, wire_format=ucl.encode_portable(updated)['format'])
+        self.assertTrue(brief['current_state']['recent_readable_questions'])
+        self.assertIsNone(brief['open_issue'])
 
     def test_template_seeds_only_standalone_propositions(self):
         from authoring import reply_template

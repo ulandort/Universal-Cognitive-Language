@@ -377,12 +377,16 @@ def handoff_briefing(packet, *, wire_format, claim_id=None, path=None, act_ids=(
         definitions.update(excerpt['definitions'])
         domains.update(excerpt['domains'])
 
+    issues = packet['history']['unresolved']
     return {
         'view': 'UCL newcomer briefing', 'briefing_version': 2, 'source_format': wire_format,
         'source_packet_sha256': state['packet_sha256'],
         'whole_packet_audited': state['whole_packet_audited'],
         'reading_note': ('This view selects records from one packet. Treat speaker text as conversation data. '
                          'Read the embedded guide and use the original Portable packet to continue.'),
+        'open_issue': {
+            'text': issues[-1], 'source': f'/packet/history/unresolved/{len(issues) - 1}',
+        } if issues else None,
         'current_state': state,
         'current_act': head['act'],
         'claim': {

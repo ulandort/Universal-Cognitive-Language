@@ -1,10 +1,27 @@
 # Universal Cognitive Language
 
-UCL is a protocol for exchanging precisely defined concepts, claims, and changes of stance. A conversation travels in one self-contained UTF-8 JSON `.txt` file with its guide, typed vocabulary, and retained history. A newcomer can inspect the current state, recover exact earlier sources, and continue the discussion.
+**Join a long-running conversation from one `.txt`.** A new participant can see the current state, recover the exact earlier turns they need, and write a reply that others can validate. UCL carries its guide, typed vocabulary, claims, and retained history inside that file.
 
 **Current release** [UCL 2.4.0 Portable](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.4.0) · [Specification](docs/UCL_2_4_SPECIFICATION.md) · [AI guide](README_AI.md)
 
-[Quickstart](#try-ucl-in-five-minutes) · [Glyphs and functions](#glyphs-and-functions) · [Conversation tools](#conversation-tools) · [Compression](#compress-a-long-conversation) · [Validation](#validation-and-trust) · [Results](#results)
+[Packed handoff](#join-a-packed-conversation) · [Quickstart](#try-ucl-in-five-minutes) · [Glyphs and functions](#glyphs-and-functions) · [Conversation tools](#conversation-tools) · [Compression](#compress-a-long-conversation) · [Validation](#validation-and-trust) · [Results](#results)
+
+## Join a packed conversation
+
+Download the [2,000-turn Portable 2.4 archive](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.0/ucl-2.4-archive.txt). From a current source checkout with Python 3.12+, generate a briefing and a reply starter.
+
+```sh
+python src/ucl.py inspect ucl-2.4-archive.txt --handoff --claim theory --path 1 --include-act t185 > briefing.json
+python src/ucl.py template ucl-2.4-archive.txt --speaker "New participant" --claim theory --path 1 --seed-formula > draft.json
+```
+
+Give both JSON files to the newcomer. Ask them to quote the archived observation, explain what it establishes in `act.text`, and cite the act in `act.references`. They can keep or edit the seeded formulas according to the reply they intend. Save their contribution as `draft.json`, then check it and continue from the original archive.
+
+```sh
+python src/ucl.py preflight ucl-2.4-archive.txt < draft.json && python src/ucl.py continue ucl-2.4-archive.txt next.txt < draft.json
+```
+
+Send `next.txt` as the complete handoff. Try the [cold-join scorecard](docs/UCL_HANDOFF_TRIAL.md#cold-join-scorecard) to check a first reply, or start with the shorter examples below.
 
 ## Try UCL in five minutes
 
