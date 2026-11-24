@@ -4,40 +4,22 @@ Usage: python tools/author.py existing_packet.txt contribution.json next_packet.
 Inputs never need to include the previous full discourse. This helper does NOT
 silently rewrite earlier definitions, choose a stance, or infer truth.
 """
-import sys,json,copy
+import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
 import ucl
 
-def author(parent, contribution):
-    draft=ucl.draft_from_packet(parent)
-    acts=draft['discourse']['acts']
-    act=contribution['act']
-    if act['id'] in {x['id'] for x in acts}:raise ValueError('new act ID must be unique')
-    for glyph,definition in contribution.get('new_definitions',{}).items():
-        if glyph in draft['definitions']:raise ValueError('cannot overwrite immutable glyph '+glyph)
-        draft['definitions'][glyph]={'definition':definition}
-        if definition['kind']=='domain':draft['domains'][glyph]=contribution.get('new_domains',{}).get(glyph,{'mode':'open','members':None})
-    acts.append(act)
-    draft['discourse']['current']=act['id']
-    draft['acknowledgements'].extend(contribution.get('acknowledgements',[]))
-    draft['revisions'].extend(contribution.get('revisions',[]))
-    draft['claims'].update(contribution.get('claims',{}))
-    draft['viewpoints'].extend(contribution.get('viewpoints',[]))
-    draft['orientation']=contribution['orientation']
-    draft['explanation']=contribution['explanation']
-    draft['conclusion']=contribution['conclusion']
-    if 'context_updates' in contribution:draft['context'].update(contribution['context_updates'])
-    hist=draft['history']
-    hist['summary']=contribution.get('history_summary',hist['summary']+' New act '+act['id']+' appended.')
-    hist['unresolved'].extend(contribution.get('new_unresolved',[]))
-    return ucl.build(draft)
+from authoring import author
 
 def main():
     if len(sys.argv)!=4:raise SystemExit('Usage: python tools/author.py prior_packet.txt contribution.json out.txt')
-    prior=ucl.load_json(Path(sys.argv[1]).read_text())
-    contribution=json.loads(Path(sys.argv[2]).read_text())
+    prior=ucl.read_json_file(sys.argv[1])
+    contribution=ucl.read_json_file(sys.argv[2])
     pkt=author(prior,contribution)
     Path(sys.argv[3]).write_text(ucl.dump_json(pkt,pretty=True))
     print('VALID',pkt['integrity']['sha256'])
-if __name__=='__main__':main()
+if __name__=='__main__':
+    try:
+        main()
+    except (ValueError, TypeError, KeyError, OSError) as exc:
+        sys.exit('REJECTED: ' + str(exc))

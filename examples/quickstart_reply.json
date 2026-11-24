@@ -1,0 +1,32 @@
+{
+  "act": {
+    "id": "t3",
+    "kind": "response",
+    "speaker": "Casey",
+    "references": ["t2", "t1"],
+    "text": "Allow background sync only if the user explicitly opts in.",
+    "expressions": ["|[![~[B][A]]][~[N][A]]"],
+    "details": {
+      "responds_to": "t2",
+      "stance": "mixed"
+    }
+  },
+  "orientation": "L",
+  "explanation": "|[![~[B][A]]][~[N][A]]",
+  "conclusion": "|[![~[B][A]]][~[N][A]]",
+  "acknowledgements": [
+    {
+      "id": "x3",
+      "by": "t3",
+      "target": {"claim": "notes-design", "path": [1]},
+      "action": "qualify",
+      "qualification": {
+        "expression": "~[N][A]",
+        "explanation": "Explicit user opt-in is required before background sync."
+      },
+      "replacement": null,
+      "note": "This condition applies to the background-sync branch."
+    }
+  ],
+  "history_summary": "All three acts are retained. Casey qualified background sync by requiring explicit user opt-in."
+}

@@ -1,4 +1,4 @@
-# Agent-facing UCL/2.0 workflows
+# Agent-facing UCL Portable workflows
 
 ## Install the skill
 
@@ -20,7 +20,7 @@ cd Universal-Cognitive-Language
 python --version
 ```
 
-Python 3.12 or later is supported. You may pin a stable release tag such as `v2.0.1` for a reproducible development or deployment environment.
+Python 3.12 or later is supported. Use a checkout that supports the packet's declared version.
 
 **No remote services or credentials are required once downloaded.** If cloning is unavailable, obtain the source from a known local checkout or the published GitHub release archive; do not use an unknown third-party hosted conversion service.
 
@@ -29,9 +29,9 @@ Python 3.12 or later is supported. You may pin a stable release tag such as `v2.
 From the root of a UCL checkout:
 
 ```bash
-python src/ucl.py encode examples/cross_model_conversation_8_turns.json portable-example.txt
-python src/ucl.py check portable-example.txt
-python src/ucl.py decode portable-example.txt restored-inner.json
+python src/ucl.py check examples/quickstart.txt
+python src/ucl.py decode examples/quickstart.txt restored-inner.json
+python src/ucl.py encode restored-inner.json portable-example.txt
 python src/ucl.py check restored-inner.json
 ```
 
@@ -49,18 +49,17 @@ From the checkout:
 
 ```bash
 python src/ucl.py check incoming-ucl2.txt
-python src/ucl.py decode incoming-ucl2.txt previous-inner.json
+python src/ucl.py inspect incoming-ucl2.txt
 ```
 
 Now read the trusted/validated embedded guide, definitions, act references and history. **Author** a `contribution.json` appropriate to the current act IDs and scoped acknowledgement. The contribution must be model-authored and verified; do not copy outdated fixed IDs or fields from an unrelated example. Use the optional `examples/contribution_example.json` to inspect shape only, not as a guaranteed template for every message kind.
 
 ```bash
-python tools/author.py previous-inner.json contribution.json next-inner.json
-python src/ucl.py encode next-inner.json next-ucl2.txt
+python src/ucl.py continue incoming-ucl2.txt next-ucl2.txt < contribution.json
 python src/ucl.py check next-ucl2.txt
 ```
 
-Send only `next-ucl2.txt`. A full Portable packet travels alone and should be independently checked by the receiver.
+Send only `next-ucl2.txt`. The continuation preserves the incoming version. For archived inner packets, the repository also retains `tools/author.py`. An explicit `python src/ucl.py upgrade archived.txt current.txt` recalculates definition IDs in a separate 2.1 file.
 
 ## Failure handling and security
 

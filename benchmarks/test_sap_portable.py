@@ -33,8 +33,12 @@ class TestSelfContainedSAP(unittest.TestCase):
     def test_tamper_rule_hash_and_envelope_hash(self):
         valid=p.encode(self.baseline)
         altered=copy.deepcopy(valid)
+        altered['structural_rules']['sha256']='forged'
+        with self.assertRaisesRegex(ValueError,'rules checksum mismatch'):
+            p.decode(altered)
+        altered=copy.deepcopy(valid)
         altered['structural_rules']['rules']['reference_rules']['ack_id']='Anything allowed'
-        with self.assertRaisesRegex(ValueError,'checksum mismatch'):
+        with self.assertRaisesRegex(ValueError,'unknown or altered'):
             p.decode(altered)
         altered['structural_rules']['sha256']=p.rules_hash(
             altered['structural_rules']['rules'])

@@ -1,4 +1,4 @@
-/* Independent, from-scratch JavaScript subset semantic validator for UCL/1.0.
+/* Independent JavaScript subset semantic validator for UCL inner packets.
    Does not import Python source. Validates definitions, type checking, discussion
    graph, acknowledgement targets, 4-layer declaration, and content hashes.
    Limitations: not a complete proof/model interpreter, no Brotli here.
@@ -29,14 +29,18 @@ function canonical(v,depth=0){
 function hash(prefix,v){return crypto.createHash('sha256').update(prefix).update(canonical(v)).digest('base64url')}
 const CORE={'@':2,'#':0,'=':2,'~':-1,'&':2,'|':2,'!':1,'?':1,'<':3,'*':-1,'{':3};
 const RESERVED=new Set(' @ # = ~ & | ! ? < * { : ; [ ] -'.trim().split(' '));
+const NAMED_ALIAS=/^\$[A-Za-z][A-Za-z0-9_]{0,63}/;
 function layers(body){let out=[],depth=0,start=0;for(let i=0;i<body.length;i++){if(body[i]==='[')depth++;if(body[i]===']')depth--;assert(depth>=0,'brackets');if(body[i]===';'&&depth===0){out.push(body.slice(start,i));start=i+1}}out.push(body.slice(start));assert(depth===0&&out.length===4,'layers');return out.map(x=>{assert(x[0]=='['&&x.at(-1)==']','outer layers');return x.slice(1,-1)})}
 function semantic(packet){
  const defs=packet.definitions, domains=packet.domains;
- assert(Object.keys(defs).length>=1&&Object.keys(defs).length<=55,'definition count');
+ const dependent=packet.guide.version==='UCL/1.1';
+ assert(dependent||packet.guide.version==='UCL/1.0','inner version');
+ assert(Object.keys(defs).length>=1&&Object.keys(defs).length<=(dependent?512:55),'definition count');
  const ids=new Set();
  for(const [g,rec] of Object.entries(defs)){
-  assert(g.length===1&&!RESERVED.has(g)&&g.charCodeAt(0)>=33&&g.charCodeAt(0)<=126,'bad glyph');
-  assert(rec.id===hash('UCL-SEM-9\n',rec.definition),'definition hash');assert(!ids.has(rec.id),'duplicate id');ids.add(rec.id);
+  const single=g.length===1&&!RESERVED.has(g)&&g.charCodeAt(0)>=33&&g.charCodeAt(0)<=126;
+  assert(single||(dependent&&g.match(NAMED_ALIAS)?.[0]===g),'bad glyph');
+  assert(!ids.has(rec.id),'duplicate id');ids.add(rec.id);
   const d=rec.definition;assert(typeof d.gloss==='string'&&d.gloss.length>0,'gloss');
   const fields={orientation:['kind','role','gloss'],domain:['kind','role','gloss'],value:['kind','sort','denotes','gloss'],predicate:['kind','args','gloss'],function:['kind','args','returns','gloss'],order:['kind','sort','role','gloss'],acknowledgement:['kind','role','gloss']}[d.kind];
   assert(fields&&canonical(Object.keys(d).sort())===canonical(fields.sort()),'definition fields');
@@ -51,8 +55,35 @@ function semantic(packet){
   if(d.kind==='order')assert(defs[d.sort]?.definition.kind==='domain','ordering sort');
  }
  assert(canonical(Object.keys(domains).sort())===canonical(Object.keys(defs).filter(g=>defs[g].definition.kind==='domain').sort()),'domain set');
+ const domainIds=new Map();
+ if(dependent){
+  for(const [alias, declaration] of Object.entries(domains)){
+   assert(declaration&&canonical(Object.keys(declaration).sort())===canonical(['members','mode']),'domain declaration shape');
+   const {mode,members}=declaration;
+   assert(mode==='open'?members===null:mode==='finite'&&Array.isArray(members)&&
+    members.every(member=>typeof member==='string')&&new Set(members).size===members.length,'domain membership');
+   const domain={mode,members:members===null?null:members.slice().sort(cpCompare)};
+   domainIds.set(alias,hash('UCL-SEM-10\n',{definition:defs[alias].definition,domain}));
+  }
+ }
+ for(const [alias,rec] of Object.entries(defs)){
+  let expected;
+  if(!dependent)expected=hash('UCL-SEM-9\n',rec.definition);
+  else if(domainIds.has(alias))expected=domainIds.get(alias);
+  else{
+   const definition={...rec.definition};
+   for(const field of ['sort','returns']){
+    if(Object.hasOwn(definition,field))definition[field]=domainIds.get(definition[field]);
+   }
+   if(Object.hasOwn(definition,'args'))definition.args=definition.args.map(sort=>domainIds.get(sort));
+   expected=hash('UCL-SEM-10\n',{definition});
+  }
+  assert(rec.id===expected,'definition hash '+alias);
+ }
  let used=new Set();const src=layers(packet.body);let domainSet=new Set(Object.keys(domains));
- function parse(s){let i=0;function one(scope={},depth=0){assert(depth<120,'depth');assert(i<s.length,'eof');const g=s[i++];used.add(g);
+ function parse(s,occurrences){let i=0;function one(scope={},depth=0){assert(depth<120,'depth');assert(i<s.length,'eof');
+  const name=s[i]==='$'?NAMED_ALIAS.exec(s.slice(i)):null;
+  const g=name?name[0]:s[i];i+=g.length;used.add(g);occurrences?.add(g);
   if(g==='#'){const m=/^(0|[1-9][0-9]*)/.exec(s.slice(i));assert(m,'variable');i+=m[0].length;assert(scope[m[0]]!==undefined,'unbound');return scope[m[0]];}
   if(defs[g]){const d=defs[g].definition;return d.kind==='value'?d.sort:d.kind;}
   assert(Object.hasOwn(CORE,g),'operator');function arg(sc=scope){assert(s[i++]==='[','argument opening');let typ=one(sc,depth+1);assert(s[i++ ]===']','argument closing');return typ}
@@ -76,6 +107,32 @@ function semantic(packet){
   if(a.kind==='synthesis')assert(d.integrates.length>0&&d.integrates.every(x=>seen.has(x)),'synthesis refs');
   if(a.kind==='conditional'){assert(parse(d.antecedent)==='prop','conditional ante');assert(d.consequents.length>0&&d.consequents.every(x=>parse(x)==='prop'),'conditional consequents');}
   if(a.kind==='analogy')assert(d.mappings.length>0&&typeof d.limits==='string'&&d.limits.length>0,'analogy');
+  if(Object.hasOwn(a,'vocabulary')){
+   assert(dependent&&Array.isArray(a.vocabulary)&&a.vocabulary.length>=1&&a.vocabulary.length<=16,'vocabulary entry list');
+   const entries=new Set();
+   for(const entry of a.vocabulary){
+    assert(entry&&typeof entry.definition==='string'&&Object.hasOwn(defs,entry.definition),'vocabulary definition alias');
+    const {action,definition}=entry;
+    used.add(definition);
+    let key=definition;
+    if(action==='retire'){
+     assert(Object.keys(entry).sort().join(',')==='action,definition,successor','retirement fields');
+     const successor=entry.successor;
+     assert(successor===null||(typeof successor==='string'&&successor!==definition&&Object.hasOwn(defs,successor)),'retirement successor');
+     if(successor!==null)used.add(successor);
+    }else{
+     assert(['example','counterexample'].includes(action)&&Object.keys(entry).sort().join(',')==='action,definition,expression_index','vocabulary example fields');
+     const index=entry.expression_index;
+     assert(Number.isInteger(index)&&index>=0&&index<a.expressions.length,'vocabulary example expression index');
+     const occurrences=new Set();
+     parse(a.expressions[index],occurrences);
+     assert(occurrences.has(definition),'vocabulary example expression must use its definition');
+     key+=':'+index;
+    }
+    assert(!entries.has(key),'duplicate vocabulary entry');
+    entries.add(key);
+   }
+  }
   seen.set(a.id,a);
  }
  assert(packet.discourse.current===acts.at(-1).id,'current act');
@@ -150,7 +207,7 @@ function semantic(packet){
  assert(typeof hist.summary==='string'&&hist.summary.trim()&&typeof hist.scope==='string'&&hist.scope.trim(),'history summary/scope');
  assert(Array.isArray(hist.omissions),'omission structure');
  assert(hist.status==='condensed'?hist.omissions.length>0:hist.omissions.length===0,'history omission disclosure');
- const decl=[...used].sort().map(g=>Object.hasOwn(CORE,g)?g:g+':'+defs[g].id).join(' ');
+ const decl=[...used].map(g=>Object.hasOwn(CORE,g)?g:g+':'+defs[g].id).sort().join(' ');
  assert(src[3]===decl,'exact symbol declaration');
  assert(packet.integrity.sha256===hash('UCL-PACKET-7\n',Object.fromEntries(Object.entries(packet).filter(([k])=>k!=='integrity'))),'packet hash');
  return {valid:true,acts:acts.length,acknowledgements:packet.acknowledgements.length,definitions:Object.keys(defs).length,mode:packet.history.status,claims:Object.keys(claims).length,viewpoints:viewpoints.size};

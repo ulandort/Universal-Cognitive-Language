@@ -1,15 +1,15 @@
 ---
 name: ucl-portable
-description: Read, validate, author, and exchange self-contained Universal Cognitive Language (UCL/2.0) Portable messages between AI agents, with typed concepts, immutable definition identities, precise acknowledgements, and local verification. Use when handling UCL packets or building UCL-enabled agent workflows.
+description: Read, validate, author, and exchange self-contained Universal Cognitive Language (UCL) Portable messages between AI agents, with typed concepts, immutable definition identities, precise acknowledgements, and local verification. Use when handling UCL packets or building UCL-enabled agent workflows.
 license: Apache-2.0
 compatibility: Python 3.12+ and the UCL repository for reference validation and authoring; Node.js is optional for an independent subset checker. No cloud service is required for the protocol.
 ---
 
-# Universal Cognitive Language (UCL/2.0 Portable)
+# Universal Cognitive Language (UCL Portable)
 
-Use this skill when the user wants to **read, explain, validate, create, continue, or transmit** a UCL/2.0 message. UCL is an open, self-contained UTF-8 JSON format with a fully embedded language guide, original concepts, expression history, scoped acknowledgements and local integrity checks. It is **not** a model, a network protocol requiring an account, a theorem prover, or evidence that an invented claim is true.
+Use this skill when the user wants to **read, explain, validate, create, continue, or transmit** a UCL Portable message. UCL is an open, self-contained UTF-8 JSON format with a fully embedded language guide, original concepts, expression history, scoped acknowledgements and local integrity checks. It is **not** a model, a network protocol requiring an account, a theorem prover, or evidence that an invented claim is true.
 
-**Stable wire format:** `UCL/2.0-SAP1-PORTABLE`. **Public release:** UCL/2.0.1. The 11 original core glyphs are `@ # = ~ & | ! ? < * {`. Do not introduce a new core glyph.
+**Current format:** `UCL/2.1-SAP1-PORTABLE`. The CLI also reads and continues archived `UCL/2.0-SAP1-PORTABLE` packets using their original IDs. The 11 original core glyphs are `@ # = ~ & | ! ? < * {`. Do not introduce a new core glyph.
 
 ## 1. Prepare the local tools
 
@@ -39,20 +39,19 @@ Use this skill when the user wants to **read, explain, validate, create, continu
 ## 4. Independently author and hand off
 
 1. Decide **your own** new concept, claim, counterargument or stance first. Use the current packet's embedded rules to construct the full UCL contribution; do not just translate English into decorative symbols.
-2. Preserve all earlier delivered acts, definition IDs and meanings. New custom concepts require a fresh permitted symbol with a typed definition; **never overwrite** an earlier meaning under its old identifier.
+2. Preserve all earlier delivered acts, definition IDs and meanings. New custom concepts use a fresh alias such as `$background_sync` and a typed definition in `new_definitions`; **never overwrite** an earlier meaning under its old identifier.
 3. Construct the required act fields, typed expression(s), exact scoped acknowledgement, honest history summary and optional role labels. Ensure IDs and acknowledgement paths are well-typed and refer to retained history.
-4. Use the repository's **local** `tools/author.py` only to assemble the message and calculate hashes; it must **not** silently invent or repair semantic fields for the author.
-5. Encode as a complete 2.0 Portable message and validate the result:
+4. Save the authored contribution as JSON. Use optional `act.vocabulary` records for retirement, examples, or counterexamples. The embedded guide defines the record shapes. See `examples/challenge_reply.json` for a worked counterexample.
+5. Use the local CLI to build and check the complete handoff:
    ```bash
-   python /path/to/Universal-Cognitive-Language/tools/author.py previous-inner.json contribution.json next-inner.json
-   python /path/to/Universal-Cognitive-Language/src/ucl.py encode next-inner.json next-ucl2.txt
-   python /path/to/Universal-Cognitive-Language/src/ucl.py check next-ucl2.txt
+   python /path/to/Universal-Cognitive-Language/src/ucl.py continue incoming.txt next.txt < contribution.json
+   python /path/to/Universal-Cognitive-Language/src/ucl.py check next.txt
    ```
-   When starting from Portable, decode it first with `python src/ucl.py decode incoming-ucl2.txt previous-inner.json`. See [references/WORKFLOWS.md](references/WORKFLOWS.md) for a complete reproducible sequence.
+   The command assembles the reply in the incoming version and handles hashes. See [references/WORKFLOWS.md](references/WORKFLOWS.md).
 6. On validation error, **show the exact error** and ask the model author to revise its own response; do not silently adjust stance, references, logic or definition glosses. Only send a validated packet as validated. The receiving agent can verify it offline.
 
 ## 5. Report capabilities accurately
 
 Distinguish **syntactic validity**, **immutable-ID fidelity**, **model-authored conceptual reasoning**, **semantic understanding**, and **truth**. A local validator proves neither that an AI understood a philosophical argument nor that a claim is empirically true. UCL is not claimed to outperform English in every task; compare efficiency and task-specific effectiveness honestly.
 
-For local commands, an example and troubleshooting, read [references/WORKFLOWS.md](references/WORKFLOWS.md). For normative protocol details, use the repository's [UCL/2.0 specification](https://github.com/ulandort/Universal-Cognitive-Language/blob/main/docs/UCL_2_0_SPECIFICATION.md) and the actual embedded packet guide.
+For local commands, an example and troubleshooting, read [references/WORKFLOWS.md](references/WORKFLOWS.md). For normative protocol details, use the repository's [UCL/2.1 specification](https://github.com/ulandort/Universal-Cognitive-Language/blob/main/docs/UCL_2_1_SPECIFICATION.md) and the actual embedded packet guide.

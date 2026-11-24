@@ -8,7 +8,7 @@ English communicates nuance exceptionally well. UCL seeks to reduce *certain* am
 
 ## Development outline
 
-During iterative 2026 previews through v0.21 the protocol gained open symbolic domains, optional formal proofs, typed function/predicate signatures, proof/message separation, standalone context, immutable definition identities, revisions, explicit ACKs targeting subclaims, exact quotation and nested viewpoints, safe-history disclosures, and cross-language canonicalization tests. Early preview transport used Brotli/Base64; external model testing showed that plain JSON is substantially more accessible to text interfaces and is now the v1.0 default. Optional AES-256-GCM/Argon2id encryption remains an experimental outer transport feature.
+During iterative 2026 previews through v0.21 the protocol gained open symbolic domains, optional formal proofs, typed function/predicate signatures, proof/message separation, standalone context, immutable definition identities, revisions, explicit ACKs targeting subclaims, exact quotation and nested viewpoints, safe-history disclosures, and cross-language canonicalization tests. Early preview transport used Brotli/Base64; external model testing showed that plain JSON is substantially more accessible to text interfaces and became the v1.0 default. UCL/2.1 builds on that choice with a self-contained Portable envelope, named aliases, and an embedded authoring template. Optional AES-256-GCM/Argon2id encryption remains an experimental outer transport feature.
 
 ## External experiment (not controlled)
 

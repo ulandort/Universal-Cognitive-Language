@@ -1,26 +1,25 @@
 #!/usr/bin/env python3
-"""Self-contained UCL/2.0 Portable wire envelope and validation.
+"""Self-contained UCL Portable wire envelope and validation.
 
 An ordinary UTF-8 JSON (.txt or .json) file embeds BOTH the entire checked
 typed UCL inner conversation packet/guide and the complete human-readable SAP-1
 authoring rules. No URI, central registry, hosted service, network access,
 or external schema download is needed to read or verify a packet.
-The existing typed grammar is preserved inside the stable 2.0 transport.
+Current and historical versions carry their respective pinned guides.
 """
 from __future__ import annotations
 import argparse
 import base64
 import copy
 import hashlib
-import json
 import sys
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1]
-sys.path[:0]=[str(ROOT/'src')]
 import ucl
 import structural_authoring as sap
 
-FORMAT='UCL/2.0-SAP1-PORTABLE'
+FORMAT=ucl.LEGACY_PORTABLE_FORMAT  # Retained for archived release tooling.
+CURRENT_FORMAT=ucl.PORTABLE_FORMAT
+FORMAT_BY_VERSION={ucl.INNER_GRAMMAR_VERSION: CURRENT_FORMAT, 'UCL/1.0': FORMAT}
 RULE_DOMAIN=b'UCL-SAP1-RULES-2.0\n'
 ENVELOPE_DOMAIN=b'UCL-SAP1-ENVELOPE-2.0\n'
 ROLES=frozenset(('hypothesis','example','counterexample','quotation','question'))
@@ -116,6 +115,73 @@ RULES['type_rules']['local_authoring_preflight']=(
     'corrections. Never silently rewrite semantic intent; no network.'
 )
 
+CURRENT_RULES = {
+    **RULES,
+    'status': 'stable-2.1',
+    'optional_act_fields': ['vocabulary'],
+    'vocabulary_authoring': (
+        'Use a fresh single-character alias or a name such as $background_sync in new_definitions. '
+        'An act may record a retirement or attach a typed example or counterexample to a definition '
+        'using the vocabulary shapes in packet.guide.vocabulary. Preserve every previous definition, '
+        'including one a speaker retires.'
+    ),
+    'definition_identity': (
+        'Use packet.guide.hashing for dependency-aware definition IDs. A new typed definition '
+        'uses a fresh alias. Preserve prior definitions and domain declarations; local aliases '
+        'are resolved to domain IDs before hashing.'
+    ),
+    'reply_template': {
+        'instructions': (
+            'Author only the contribution object below. Use it as a template, not as conversation data. '
+            'Replace sample IDs, speaker, references, claim path, aliases, expressions, and prose '
+            'with values from your task and this packet. JSON path and expression indexes are integers. '
+            'Use your own definition, reasoning, and stance. Include retire only when retiring a '
+            'declared definition for your own use. Omit vocabulary or new_definitions when unneeded. '
+            'The local tool carries forward history and computes IDs and checksums.'
+        ),
+        'contribution': {
+            'act': {
+                'id': 't10',
+                'kind': 'response',
+                'speaker': 'Your speaker name',
+                'references': ['t9', 't1'],
+                'text': 'Explain your concept and why it addresses the earlier claim.',
+                'expressions': ['~[$example_predicate][A]'],
+                'details': {'responds_to': 't9', 'stance': 'mixed'},
+                'vocabulary': [
+                    {'action': 'example', 'definition': '$example_predicate', 'expression_index': 0},
+                    {'action': 'retire', 'definition': '$previous_alias', 'successor': '$example_predicate'},
+                ],
+            },
+            'orientation': 'L',
+            'explanation': '~[$example_predicate][A]',
+            'conclusion': '~[$example_predicate][A]',
+            'new_definitions': {
+                '$example_predicate': {'kind': 'predicate', 'args': ['D'], 'gloss': 'Define your predicate.'},
+            },
+            'acknowledgements': [{
+                'id': 'x6',
+                'by': 't10',
+                'target': {'claim': 'theory', 'path': [1]},
+                'action': 'qualify',
+                'qualification': {
+                    'expression': '~[$example_predicate][A]',
+                    'explanation': 'Explain when this qualification applies.',
+                },
+                'replacement': None,
+                'note': 'Describe the scope of your qualification.',
+            }],
+            'history_summary': 'Summarize the new act and retained history.',
+        },
+    },
+}
+RULES_BY_FORMAT = {FORMAT: RULES, CURRENT_FORMAT: CURRENT_RULES}
+
+
+def label(format_id):
+    return format_id.split('-')[0] + ' Portable'
+
+
 def fingerprint(domain,obj):
     return base64.urlsafe_b64encode(
         hashlib.sha256(domain+ucl.canon(obj)).digest()
@@ -153,8 +219,9 @@ def _validate_formula_roles(packet,roles):
 
 def encode(packet,formula_roles=None):
     ucl.check(packet)
-    rules=copy.deepcopy(RULES)
-    env={'format':FORMAT,'profile':'portable',
+    format_id = FORMAT_BY_VERSION[ucl.packet_version(packet)]
+    rules = copy.deepcopy(RULES_BY_FORMAT[format_id])
+    env={'format':format_id,'profile':'portable',
          'structural_rules':{'rules':rules,'sha256':rules_hash(rules)},
          'packet':copy.deepcopy(packet)}
     if formula_roles is not None:
@@ -168,21 +235,24 @@ def decode(env):
     required={'format','profile','structural_rules','packet','checksum'}
     if type(env) is not dict or set(env) not in (required,required|{'formula_roles','formula_role_guide'}):
         raise ValueError('SAP portable: envelope fields invalid')
-    if env['format']!=FORMAT or env['profile']!='portable':
+    format_id = env['format']
+    if not isinstance(format_id, str) or format_id not in RULES_BY_FORMAT or env['profile']!='portable':
         raise ValueError('SAP portable: unsupported profile')
     block=env['structural_rules']
     if type(block) is not dict or set(block)!={'rules','sha256'}:
         raise ValueError('SAP portable: rules block invalid')
-    if block['sha256']!=rules_hash(block['rules']):
-        raise ValueError('SAP portable: embedded authoring rules checksum mismatch')
-    if block['rules']!=RULES:
+    expected_rules = RULES_BY_FORMAT[format_id]
+    if block['rules']!=expected_rules:
         raise ValueError('SAP portable: unknown or altered structural standard')
+    expected_hash = rules_hash(expected_rules)
+    if block['sha256'] != expected_hash or rules_hash(block['rules']) != expected_hash:
+        raise ValueError('SAP portable: embedded authoring rules checksum mismatch')
     if env['checksum']!=envelope_checksum(env):
         raise ValueError('SAP portable: envelope checksum mismatch')
     pkt=copy.deepcopy(env['packet'])
     ucl.check(pkt)
-    if type(pkt.get('guide')) is not dict:
-        raise ValueError('SAP portable: missing full embedded UCL guide')
+    if FORMAT_BY_VERSION[ucl.packet_version(pkt)] != format_id:
+        raise ValueError('SAP portable: inner guide version does not match the envelope format')
     if 'formula_roles' in env:
         if env['formula_role_guide']!=ROLE_GUIDE:
             raise ValueError('SAP portable: unknown formula role profile')
@@ -195,14 +265,21 @@ def main():
     ap.add_argument('source',type=Path)
     ap.add_argument('output',type=Path,nargs='?')
     a=ap.parse_args()
-    data=json.loads(a.source.read_text(encoding='utf-8'))
+    data = ucl.read_json_file(a.source, limit=ucl.MAX_PORTABLE_JSON)
     if a.mode=='encode':
         result=encode(data)
     else:
         result=decode(data)
     if a.output:
-        a.output.write_bytes(ucl.canon(result))
+        data = ucl.portable_json_bytes(result) if a.mode == 'encode' else ucl.canon(result)
+        a.output.write_bytes(data)
         print(str(a.output))
     else:
         print('VALID self-contained SAP-1 '+a.mode)
-if __name__=='__main__':main()
+def run_cli():
+    try:
+        main()
+    except (ValueError, TypeError, KeyError, OSError) as exc:
+        sys.exit('REJECTED: ' + str(exc))
+
+if __name__=='__main__':run_cli()

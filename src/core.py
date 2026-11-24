@@ -7,6 +7,10 @@ import base64, hashlib, itertools, json, re, sys
 from pathlib import Path
 
 VERSION='UCL/1.0'
+DEPENDENCY_VERSION='UCL/1.1'
+DEPENDENCY_DOMAIN=b'UCL-SEM-10\n'
+MAX_DEFINITIONS=512
+NAMED_ALIAS=re.compile(r'\$[A-Za-z][A-Za-z0-9_]{0,63}')
 SEM_DOMAIN=b'UCL-SEM-9\n'; PACK_DOMAIN=b'UCL-PACKET-7\n'
 CORE={'@':['membership',2],'#':['bound-reference',0],'=':['identity',2],
       '~':['predicate-application','signature'],'&':['and',2],'|':['or',2],
@@ -53,8 +57,9 @@ def unb64(s):
 def definition_id(d):return b64(hashlib.sha256(SEM_DOMAIN+canon(d)).digest())
 def packet_id(p):return b64(hashlib.sha256(PACK_DOMAIN+canon({k:v for k,v in p.items() if k!='integrity'})).digest())
 
-def guide():
-    return {'version':VERSION,'core':CORE,'structural':STRUCT,
+def guide(version=VERSION):
+    need(version in (VERSION, DEPENDENCY_VERSION), 'unknown inner guide version')
+    result = {'version':VERSION,'core':CORE,'structural':STRUCT,
       'grammar':'Four body layers: [orientation];[explanation];[conclusion];[exact-symbol-declaration]. Prefix expressions; {[#N][domain][prop] exists; universal via negated existential. <[order][a][b] requires named order.',
       'domain':'Declared domain may have finite members or open symbolic population (including infinite or unspecified). Model evaluation enumerates finite only; open domains are not enumerated or assumed empty.',
       'equality':'Identity of denotation, not resemblance. Term interpretation is deterministic and typed.',
@@ -75,6 +80,74 @@ def guide():
       'quotation':'Optional claims bind proposition expressions exactly to IDs and retained origin acts. Viewpoints are acyclic nested attributions (asserts/believes/reports/questions), not proofs of belief or truth. Quoted propositions participate in exact-symbol declarations.',
       'history':'All packets are standalone. history.status is fully-expanded or condensed. Condensed mode MUST disclose non-expanded earlier history, the omitted scope and nature, a meaningful summary, and any unresolved uncertainties. Complete active semantic definitions and all locally referenced acts remain present; no external registry, URL, prior packet or hidden alias may be necessary. A condensed summary is not a verbatim record. Optional reference hashes do not restore missing evidence.'}
 
+    if version == DEPENDENCY_VERSION:
+        result.update(
+            version=version,
+            hashing=(
+                'Definition ID: full unpadded Base64url SHA256 of UCL-SEM-10 plus LF and '
+                'UCL-CJSON-1 of {"definition": normalized_definition}. Replace sort, args entries, and '
+                'returns aliases by their domain IDs wherever present. A domain adds "domain": '
+                '{"mode": mode, "members": members} to that payload; sort finite members by Unicode '
+                'scalar value and use null members for open domains. Packet hashing remains '
+                'SHA256 of UCL-PACKET-7 plus LF and canonical packet excluding integrity. '
+                'Checksums do not authenticate speakers.'
+            ),
+            limits=result['limits'].replace('<=55 definitions', '<=512 definitions'),
+            grammar=result['grammar'] + (
+                ' A named alias is $ followed by an ASCII letter and up to 63 ASCII letters, digits '
+                'or underscores, e.g. ~[$background_sync][A]. Consume the full name at an expression '
+                'boundary. A lone $ can remain a single-character alias. The declaration uses '
+                'alias:id tokens separated by spaces.'
+            ),
+            stability='UCL/1.1 retains the 11 core operators and UCL-CJSON-1; definition IDs bind their domain dependencies.',
+            definitions=(
+                'Definitions have immutable IDs. Single-character and named aliases are local to the packet; '
+                'typed dependencies bind to domain IDs, including the domain declaration. '
+                'Use a fresh alias when introducing a changed definition and preserve the old one.'
+            ),
+            vocabulary=(
+                'An act may include vocabulary, a list of 1 to 16 records. '
+                'A retirement is {"action":"retire","definition":"alias","successor":null} '
+                "or names a different existing alias as successor. It records that speaker's retirement "
+                'stance only. Every earlier binding remains usable and resolves to the same ID. '
+                'An example or counterexample is {"action":"example","definition":"alias","expression_index":0} '
+                'with action example or counterexample. The indexed expression in this act must use the alias. '
+                'Records are attributed to the act speaker and do not change definition IDs or certify truth. '
+                'Declare referenced vocabulary aliases and successors in the exact symbol layer.'
+            ),
+        )
+    return result
+
+def packet_version(packet):
+    header = packet.get('guide')
+    version = header.get('version') if isinstance(header, dict) else None
+    need(version in (VERSION, DEPENDENCY_VERSION) and header == guide(version), 'guide mismatch')
+    return version
+
+def _definition_ids(defs, domains, version):
+    if version == VERSION:
+        return {glyph: definition_id(record['definition']) for glyph, record in defs.items()}
+
+    ids = {}
+    for glyph, declaration in domains.items():
+        members = declaration['members']
+        payload = {
+            'definition': defs[glyph]['definition'],
+            'domain': {'mode': declaration['mode'], 'members': sorted(members) if members is not None else None},
+        }
+        ids[glyph] = b64(hashlib.sha256(DEPENDENCY_DOMAIN + canon(payload)).digest())
+    for glyph, record in defs.items():
+        if glyph in domains:
+            continue
+        normalized = record['definition'].copy()
+        for field in ('sort', 'returns'):
+            if field in normalized:
+                normalized[field] = ids[normalized[field]]
+        if 'args' in normalized:
+            normalized['args'] = [ids[alias] for alias in normalized['args']]
+        ids[glyph] = b64(hashlib.sha256(DEPENDENCY_DOMAIN + canon({'definition': normalized})).digest())
+    return ids
+
 def layers(body):
     need(isinstance(body,str) and body.isascii(),'body must be ASCII')
     out=[]; depth=0; start=0
@@ -91,7 +164,12 @@ class Parser:
     def parse(self,source):
         def expr(i,scope,depth):
             need(depth<MAX_DEPTH,'expression too deep');need(i<len(source),'missing expression')
-            g=source[i];self.used.add(g);i+=1
+            g = source[i]
+            name = NAMED_ALIAS.match(source, i) if g == '$' else None
+            if name:
+                g = name.group()
+            i += len(g)
+            self.used.add(g)
             if g=='#':
                 m=re.match(r'(0|[1-9][0-9]*)',source[i:]);need(m,'bad variable')
                 idx=int(m.group());need(idx in scope,'unbound variable')
@@ -154,20 +232,20 @@ def render(t):
 
 def conjuncts(t):return conjuncts(t[2][0])+conjuncts(t[2][1]) if t[0]=='&' else [t]
 
-def validate_defs(defs):
-    need(isinstance(defs,dict) and 1<=len(defs)<=55,'catalog size')
-    ids=set()
+def _validate_definition_shapes(defs, version):
+    limit = MAX_DEFINITIONS if version == DEPENDENCY_VERSION else 55
+    need(isinstance(defs,dict) and 1<=len(defs)<=limit,'catalog size')
     for g,rec in defs.items():
-        need(isinstance(g,str) and len(g)==1 and 33<=ord(g)<=126 and g not in RESERVED,'reserved/invalid extension glyph')
-        need(isinstance(rec,dict) and set(rec)=={'id','definition'},'definition record')
+        single = isinstance(g, str) and len(g) == 1 and 33 <= ord(g) <= 126 and g not in RESERVED
+        named = version == DEPENDENCY_VERSION and isinstance(g, str) and NAMED_ALIAS.fullmatch(g)
+        need(single or named, 'reserved/invalid extension glyph ' + repr(g))
+        need(isinstance(rec,dict) and set(rec) in ({'definition'}, {'id','definition'}),'definition record')
         d=rec['definition'];need(isinstance(d,dict) and isinstance(d.get('gloss'),str) and d['gloss'],'definition gloss')
         kind=d.get('kind')
         signatures={'orientation':{'kind','role','gloss'},'domain':{'kind','role','gloss'},
           'value':{'kind','sort','denotes','gloss'},'predicate':{'kind','args','gloss'},
           'function':{'kind','args','returns','gloss'},'order':{'kind','sort','role','gloss'}, 'acknowledgement':{'kind','role','gloss'}}
         need(kind in signatures and set(d)==signatures[kind],'definition signature')
-        need(rec['id']==definition_id(d),'definition SHA-256 mismatch '+g)
-        need(rec['id'] not in ids,'duplicate definition identity');ids.add(rec['id'])
     doms={g for g,v in defs.items() if v['definition']['kind']=='domain'}
     need(bool(doms),'at least one domain required')
     for g,r in defs.items():
@@ -180,6 +258,16 @@ def validate_defs(defs):
         elif kind=='acknowledgement':need(isinstance(d['role'],str) and bool(d['role'].strip()),'acknowledgement extension role')
         elif kind=='orientation':need(d['role'] in ('proposal','hypothesis','question','challenge','response','revision','assertion','deductive-argument','model-check','epistemic-report'),'orientation role')
     return doms
+
+def validate_defs(defs, domains=None, *, version=VERSION):
+    domain_aliases = _validate_definition_shapes(defs, version)
+    if version == DEPENDENCY_VERSION:
+        validate_domains(defs, domains)
+    expected = _definition_ids(defs, domains, version)
+    for alias, record in defs.items():
+        need(record.get('id') == expected[alias], 'definition SHA-256 mismatch ' + alias)
+    need(len(set(expected.values())) == len(defs), 'duplicate definition identity')
+    return domain_aliases
 
 def validate_domains(defs,domains):
     domain_glyphs={g for g,x in defs.items() if x['definition']['kind']=='domain'}
@@ -295,7 +383,36 @@ def check_proof(explanation,conclusion,steps,defs):
 # NEVER whether the speakers' claims, analogies, or proposed implications are true.
 ACT_KINDS={'proposal','hypothesis','question','challenge','response','revision','assertion','deductive-argument','model-check','epistemic-report','conditional','analogy','synthesis','clarification'}
 
-def validate_discourse(discourse,defs,parser):
+def _validate_vocabulary(entries, expressions, defs, parser):
+    need(isinstance(entries, list) and 1 <= len(entries) <= 16, 'vocabulary entry list')
+    seen = set()
+    for entry in entries:
+        need(isinstance(entry, dict), 'vocabulary entry object')
+        action, alias = entry.get('action'), entry.get('definition')
+        need(isinstance(alias, str) and alias in defs, 'vocabulary definition must name a declared alias')
+        parser.used.add(alias)
+        if action == 'retire':
+            need(set(entry) == {'action', 'definition', 'successor'}, 'retirement fields')
+            successor = entry['successor']
+            need(successor is None or (isinstance(successor, str) and successor in defs and successor != alias),
+                 'retirement successor must name a different declared alias')
+            if successor is not None:
+                parser.used.add(successor)
+            key = (alias, None)
+        else:
+            need(action in ('example', 'counterexample') and
+                 set(entry) == {'action', 'definition', 'expression_index'}, 'vocabulary example fields')
+            index = entry['expression_index']
+            need(type(index) is int and 0 <= index < len(expressions), 'vocabulary example expression index')
+            example_parser = Parser(defs)
+            example_parser.parse(expressions[index])
+            need(alias in example_parser.used, 'vocabulary example expression must use its definition')
+            key = (alias, index)
+        need(key not in seen, 'duplicate vocabulary entry')
+        seen.add(key)
+
+
+def validate_discourse(discourse,defs,parser, *, version=VERSION):
     need(isinstance(discourse,dict) and set(discourse)=={'current','acts'},'discourse schema')
     acts=discourse['acts'];need(isinstance(acts,list) and 1<=len(acts)<=100,'discourse act cap')
     seen={}; allowed_ans={'open','yes-no','multiple-choice'}
@@ -308,8 +425,10 @@ def validate_discourse(discourse,defs,parser):
         need(isinstance(v,list) and len(v)<=24 and all(isinstance(x,str) and bool(x.strip()) and len(x)<=2048 for x in v),'discourse string list')
     def references(v):
         need(isinstance(v,list) and len(v)<=24 and all(isinstance(x,str) and x in seen for x in v),'missing or forward act reference')
+    fields = {'id','speaker','kind','text','references','expressions','details'}
+    allowed_fields = (fields, fields | {'vocabulary'}) if version == DEPENDENCY_VERSION else (fields,)
     for act in acts:
-        need(isinstance(act,dict) and set(act)=={'id','speaker','kind','text','references','expressions','details'},'act fields')
+        need(isinstance(act,dict) and set(act) in allowed_fields,'act fields')
         a=act['id'];k=act['kind'];dt=act['details']
         need(isinstance(a,str) and re.fullmatch('[a-zA-Z][a-zA-Z0-9_-]{0,63}',a) and a not in seen,'act id collision')
         need(k in ACT_KINDS,'unsupported act kind')
@@ -319,6 +438,8 @@ def validate_discourse(discourse,defs,parser):
         references(act['references'])
         need(isinstance(act['expressions'],list) and len(act['expressions'])<=16,'act expressions')
         for e in act['expressions']:expression(e)
+        if 'vocabulary' in act:
+            _validate_vocabulary(act['vocabulary'], act['expressions'], defs, parser)
         need(isinstance(dt,dict),'act details must be object')
         if k=='question':
             need(set(dt)=={'targets','answer_kind','alternatives'},'question details')
@@ -362,6 +483,18 @@ def validate_discourse(discourse,defs,parser):
 ACK_ACTIONS={'received','understood','accept','reject','qualify','clarify',
              'propose-revision','adopt-for-discussion','withhold-judgment','withdraw'}
 
+def resolve_claim_path(parser, expression, path):
+    tree = parser.parse(expression)
+    for index in path:
+        parts = tree[2]
+        need(type(parts) is tuple and index < len(parts) and
+             type(parts[index]) is tuple and len(parts[index]) == 3,
+             'acknowledgement path not an expression node')
+        tree = parts[index]
+    need(tree[1] in ('prop', 'epistemic'),
+         'acknowledgement subclaim must be a proposition or epistemic expression')
+    return tree
+
 def validate_acknowledgements(acks,discourse,defs,parser,claims):
     need(isinstance(acks,list) and len(acks)<=150,'acknowledgement list size')
     acts=discourse['acts']; byid={a['id']:a for a in acts}
@@ -388,13 +521,7 @@ def validate_acknowledgements(acks,discourse,defs,parser,claims):
                  binding['expression']==byid[dest]['expressions'][binding['expression_index']],
                  'acknowledgement claim binding not exact')
             path=target['path'];need(type(path) is list and len(path)<=32 and all(type(i) is int and 0<=i<=15 for i in path),'acknowledgement subclaim path invalid')
-            tree=parser.parse(binding['expression'])
-            for index in path:
-                parts=tree[2]
-                need(type(parts) is tuple and index<len(parts) and type(parts[index]) is tuple and len(parts[index])==3,
-                     'acknowledgement path not an expression node')
-                tree=parts[index]
-            need(tree[1] in ('prop','epistemic'),'acknowledgement subclaim must be a proposition or epistemic expression')
+            resolve_claim_path(parser, binding['expression'], path)
             # The path identifies the exact subtree, not an unverified prose description.
         else:raise ValueError('acknowledgement target shape')
         need(positions[dest]<positions[author],'acknowledgement must target earlier retained act')
@@ -494,17 +621,18 @@ def orientation_matches(role,kind):
              'clarification':{'question','response'}}
     return role==kind or role in aliases.get(kind,set())
 
-def make_body(orientation,explanation,conclusion,defs,discourse,acks,claims):
+def make_body(orientation,explanation,conclusion,defs,discourse,acks,claims, *, version=VERSION):
     parser=Parser(defs);ts=[parser.parse(s) for s in (orientation,explanation,conclusion)]
     need(ts[0][1]=='orientation' and ts[1][1]=='prop','orientation/explanation types')
     need(ts[2][1] in ('prop','epistemic'),'conclusion must be proposition or epistemic report')
-    validate_discourse(discourse,defs,parser)
+    validate_discourse(discourse,defs,parser,version=version)
     validate_acknowledgements(acks,discourse,defs,parser,claims)
     declared=' '.join(sorted(g if g in CORE else g+':'+defs[g]['id'] for g in parser.used))
     return ';'.join('['+s+']' for s in (orientation,explanation,conclusion,declared))
 
-def check_revisions(revisions,defs):
-    need(isinstance(revisions,list) and len(revisions)<=55,'revisions list')
+def check_revisions(revisions,defs, *, version=VERSION):
+    limit = MAX_DEFINITIONS if version == DEPENDENCY_VERSION else 55
+    need(isinstance(revisions,list) and len(revisions)<=limit,'revisions list')
     seen=set()
     for rev in revisions:
         need(isinstance(rev,dict) and set(rev)=={'old_glyph','new_glyph','old_id','new_id','reason'},'revision fields')
@@ -574,13 +702,16 @@ def validate_quotes(claims,viewpoints,discourse,parser):
 
 def check(p):
     need(isinstance(p,dict) and set(p)=={'guide','definitions','domains','model','proof','context','body','links','revisions','discourse','acknowledgements','history','claims','viewpoints','integrity'},'packet schema')
-    need(p['guide']==guide(),'guide mismatch')
+    version = packet_version(p)
     need(p['integrity']=={'sha256':packet_id(p)},'packet integrity')
-    defs=p['definitions'];validate_defs(defs);validate_domains(defs,p['domains'])
+    defs = p['definitions']
+    validate_defs(defs, p['domains'], version=version)
+    if version == VERSION:
+        validate_domains(defs, p['domains'])
     need(isinstance(p['context'],dict) and bool(p['context']) and isinstance(p['links'],list),'context/links missing')
-    check_revisions(p['revisions'],defs)
+    check_revisions(p['revisions'],defs,version=version)
     x=layers(p['body']);parser=Parser(defs);trees=[parser.parse(s) for s in x[:3]]
-    discourse_result=validate_discourse(p['discourse'],defs,parser)
+    discourse_result=validate_discourse(p['discourse'],defs,parser,version=version)
     ack_result=validate_acknowledgements(p['acknowledgements'],p['discourse'],defs,parser,p['claims'])
     history_result=validate_history(p['history'],p['discourse'],defs)
     quote_result=validate_quotes(p['claims'],p['viewpoints'],p['discourse'],parser)
@@ -604,21 +735,48 @@ def check(p):
     if p['proof'] is not None:
         if trees[2][1]!='prop':result['proof']={'status':'invalid-proof','reason':'epistemic result is not a proposition'}
         else:result['proof']=proof_verdict(trees[1],trees[2],p['proof'],defs)
-    return {'status':'VALID '+VERSION,'mode':role,'definitions':len(defs),'discourse':discourse_result,'acknowledgements':ack_result,'history':history_result,'quotation':quote_result,'result':result,'packet_sha256':p['integrity']['sha256']}
+    return {'status':'VALID '+version,'mode':role,'definitions':len(defs),'discourse':discourse_result,'acknowledgements':ack_result,'history':history_result,'quotation':quote_result,'result':result,'packet_sha256':p['integrity']['sha256']}
 
-def build(draft):
+def draft_version(draft):
+    """Use the current scheme for new drafts and preserve existing archived IDs."""
+    _validate_definition_shapes(draft['definitions'], DEPENDENCY_VERSION)
+    supplied = [record for record in draft['definitions'].values() if 'id' in record]
+    if supplied and all(record['id'] == definition_id(record['definition']) for record in supplied):
+        return VERSION
+    return DEPENDENCY_VERSION
+
+
+def build(draft, *, version=VERSION):
     required={'definitions','domains','model','proof','context','orientation','explanation','conclusion','links','revisions','discourse','acknowledgements','history','claims','viewpoints'}
     need(isinstance(draft,dict) and set(draft)==required,'draft schema')
-    defs={}
-    for g,record in draft['definitions'].items():
-        need(isinstance(record,dict) and 'definition' in record and set(record)<={'definition','id'},'draft definition record')
-        d=record['definition'];hid=definition_id(d)
-        if 'id' in record:need(record['id']==hid,'supplied hash mismatch')
-        defs[g]={'definition':d,'id':hid}
-    body=make_body(draft['orientation'],draft['explanation'],draft['conclusion'],defs,draft['discourse'],draft['acknowledgements'],draft['claims'])
-    p={'guide':guide(),'definitions':defs,'domains':draft['domains'],'model':draft['model'],
+    embedded_guide = guide(version)
+    records = draft['definitions']
+    _validate_definition_shapes(records, version)
+    if version == DEPENDENCY_VERSION:
+        validate_domains(records, draft['domains'])
+    ids = _definition_ids(records, draft['domains'], version)
+    defs = {}
+    for alias, record in records.items():
+        identity = ids[alias]
+        need('id' not in record or record['id'] == identity, 'supplied hash mismatch ' + alias)
+        defs[alias] = {'definition': record['definition'], 'id': identity}
+    body=make_body(draft['orientation'],draft['explanation'],draft['conclusion'],defs,draft['discourse'],draft['acknowledgements'],draft['claims'],version=version)
+    p={'guide':embedded_guide,'definitions':defs,'domains':draft['domains'],'model':draft['model'],
        'proof':draft['proof'],'context':draft['context'],'body':body,'links':draft['links'], 'revisions':draft['revisions'], 'discourse':draft['discourse'], 'acknowledgements':draft['acknowledgements'], 'history':draft['history'], 'claims':draft['claims'], 'viewpoints':draft['viewpoints']}
     p['integrity']={'sha256':packet_id(p)};check(p);return p
+
+def upgrade_packet(packet):
+    draft = draft_from_packet(packet)
+    if packet_version(packet) == DEPENDENCY_VERSION:
+        return packet
+
+    for record in draft['definitions'].values():
+        record.pop('id')
+    identities = _definition_ids(draft['definitions'], draft['domains'], DEPENDENCY_VERSION)
+    for revision in draft['revisions']:
+        revision['old_id'] = identities[revision['old_glyph']]
+        revision['new_id'] = identities[revision['new_glyph']]
+    return build(draft, version=DEPENDENCY_VERSION)
 
 
 # Transport: plain, human-readable JSON by default. Optional Brotli lives in tools/.
@@ -628,9 +786,32 @@ def dump_json(packet, *, pretty=False):
         return json.dumps(packet,ensure_ascii=True,indent=2,sort_keys=True)+'\n'
     return canon(packet).decode('ascii')+'\n'
 
+def _unique_json_object(pairs):
+    result = {}
+    for key, value in pairs:
+        need(key not in result, f'duplicate JSON key: {key!r}')
+        result[key] = value
+    return result
+
+def parse_json(data, *, limit=MAX_EXPANDED):
+    """Parse bounded UTF-8 JSON and reject ambiguous object keys."""
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    need(len(data) <= limit, f'JSON input exceeds {limit} bytes')
+    try:
+        return json.loads(data.decode('utf-8'), object_pairs_hook=_unique_json_object)
+    except RecursionError as exc:
+        raise ValueError('JSON nesting exceeds parser limit') from exc
+
+def read_json(stream, *, limit=MAX_EXPANDED):
+    return parse_json(stream.read(limit + 1), limit=limit)
+
+def read_json_file(path, *, limit=MAX_EXPANDED):
+    with Path(path).open('rb') as stream:
+        return read_json(stream, limit=limit)
+
 def load_json(text):
-    need(len(text.encode('utf-8'))<=MAX_EXPANDED,'expanded size cap')
-    packet=json.loads(text)
+    packet = parse_json(text)
     check(packet)
     return packet
 
@@ -643,19 +824,20 @@ def draft_from_packet(packet):
 
 def main(args):
     if len(args)==4 and args[1]=='build':
-        draft=json.loads(Path(args[2]).read_text(encoding='utf-8'))
+        draft=read_json_file(args[2])
         p=build(draft)
         Path(args[3]).write_text(dump_json(p,pretty=True),encoding='utf-8')
         print(json.dumps(check(p),indent=2))
     elif len(args)==3 and args[1]=='check':
-        p=load_json(Path(args[2]).read_text(encoding='utf-8'))
+        p=read_json_file(args[2])
         print(json.dumps(check(p),indent=2))
     elif len(args)==4 and args[1]=='canonicalize':
-        p=load_json(Path(args[2]).read_text(encoding='utf-8'))
+        p=read_json_file(args[2])
+        check(p)
         Path(args[3]).write_bytes(canon(p))
         print('canonical UCL-CJSON-1 written')
     elif len(args)==4 and args[1]=='draft':
-        p=load_json(Path(args[2]).read_text(encoding='utf-8'))
+        p=read_json_file(args[2])
         Path(args[3]).write_text(json.dumps(draft_from_packet(p),indent=2,ensure_ascii=True)+'\n',encoding='utf-8')
     else:raise ValueError('Usage: python src/ucl.py build draft.json packet.txt | check packet.txt | canonicalize packet.txt canonical.json | draft packet.txt draft.json')
 
