@@ -104,7 +104,7 @@ See the [2.1 specification](docs/UCL_2_1_SPECIFICATION.md#guide-and-rules-finger
 
 Use `python src/ucl.py inspect packet.txt` to read the conversation state first. The Concept Index shows recent symbol use and speaker-scoped retirements. Add `--since earlier.txt` to see which definitions were added between two retained packets. The state ledger shows each speaker's latest recorded stance on the exact claim branch, withdrawals, and recorded open issues. Add `--json` for the [derived state ledger](docs/UCL_STATE_LEDGER.md).
 
-Portable is the single supported interchange format. The [long-conversation design](docs/UCL_LONG_CONVERSATIONS.md) explores reducing file size and model input while keeping one self-contained handoff. The [successor notes](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) cover signing and continuity.
+Portable is the single supported interchange format. Use `inspect packet.txt --act t37` or `inspect packet.txt --claim theory --path 1` to retrieve exact source records as JSON. The [long-conversation prototype](docs/UCL_LONG_CONVERSATIONS.md) explains the draft validator and how to reproduce the 1,000-act test. The [successor notes](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) cover signing and continuity.
 
 ## Getting started
 

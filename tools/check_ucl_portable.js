@@ -19,6 +19,10 @@ const VERSIONS=new Map([
   rules:'IwfCnyR6owRSz6XBEGi1er4u_4Zksy1DrlgyiB7XvmI',
   guide:'y9nzzEGsMLesvWT5qAyaugxXnlMCXHtuj3PweHvYFkc',
  }],
+ ['UCL/2.2-SAP1-PORTABLE-DRAFT',{
+  rules:'4u9lbsfKp11t9K_rsmO-bXneadKN5SCybC_bulnzDUE',
+  guide:'pxkeIcZ2pxM3Rq1000KmzZpDa3941lAKNh6WYUlZz0I',
+ }],
 ]);
 const ROLE_GUIDE=('FR-1 draft: act/index identifies an exact expression in packet.discourse.acts; '+
 'role is an author-declared purpose (hypothesis, example, counterexample, '+

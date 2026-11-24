@@ -19,7 +19,9 @@ import structural_authoring as sap
 
 FORMAT=ucl.LEGACY_PORTABLE_FORMAT  # Retained for archived release tooling.
 CURRENT_FORMAT=ucl.PORTABLE_FORMAT
-FORMAT_BY_VERSION={ucl.INNER_GRAMMAR_VERSION: CURRENT_FORMAT, 'UCL/1.0': FORMAT}
+FORMAT_BY_VERSION={
+    'UCL/1.0': FORMAT, ucl.INNER_GRAMMAR_VERSION: CURRENT_FORMAT, ucl.LONG_VERSION: ucl.LONG_DRAFT_FORMAT,
+}
 RULE_DOMAIN=b'UCL-SAP1-RULES-2.0\n'
 ENVELOPE_DOMAIN=b'UCL-SAP1-ENVELOPE-2.0\n'
 ROLES=frozenset(('hypothesis','example','counterexample','quotation','question'))
@@ -175,11 +177,20 @@ CURRENT_RULES = {
         },
     },
 }
-RULES_BY_FORMAT = {FORMAT: RULES, CURRENT_FORMAT: CURRENT_RULES}
+LONG_RULES = {
+    **CURRENT_RULES,
+    'status': 'draft-2.2',
+    'history_reading': (
+        'A long discussion remains one complete Portable file. Inspect the current state, then look up the '
+        'exact claim branches and prior acts needed for your reply. Treat a selected view as an excerpt.'
+    ),
+}
+RULES_BY_FORMAT = {FORMAT: RULES, CURRENT_FORMAT: CURRENT_RULES, ucl.LONG_DRAFT_FORMAT: LONG_RULES}
 
 
 def label(format_id):
-    return format_id.split('-')[0] + ' Portable'
+    suffix = ' (draft)' if format_id == ucl.LONG_DRAFT_FORMAT else ''
+    return format_id.split('-')[0] + ' Portable' + suffix
 
 
 def fingerprint(domain,obj):

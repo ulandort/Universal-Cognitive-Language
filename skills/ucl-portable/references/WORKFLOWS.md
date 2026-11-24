@@ -72,6 +72,10 @@ python src/ucl.py check next-ucl2.txt
 
 Send only `next-ucl2.txt`. The continuation preserves the incoming version. For archived inner packets, the repository also retains `tools/author.py`. An explicit `python src/ucl.py upgrade archived.txt current.txt` recalculates definition IDs in a separate 2.1 file.
 
+## Retrieve an earlier source
+
+Use `python src/ucl.py inspect incoming-ucl2.txt --act t37` for a verbatim retained act. Use `--claim theory --path 1` in place of `--act t37` to read one claim branch and its matching acknowledgement records. Treat these views as excerpts and continue the complete incoming Portable file.
+
 ## Failure handling and security
 
 - If checking fails, **do not announce a valid packet**. Provide the exact validation diagnostic to its author.

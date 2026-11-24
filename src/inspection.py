@@ -34,6 +34,95 @@ def _new_definitions(packet, previous):
     return sorted(packet['definitions'].keys() - previous['definitions'].keys())
 
 
+def focused_context(packet, *, act_id=None, claim_id=None, path=None):
+    """Return a bounded excerpt of a validated packet, with exact source records."""
+    acts = packet['discourse']['acts']
+    by_id = {act['id']: act for act in acts}
+    definitions = packet['definitions']
+    parser = core.Parser(definitions)
+    scope = None
+    if claim_id is not None:
+        binding = packet['claims'].get(claim_id)
+        if binding is None:
+            raise ValueError(f'claim not found: {claim_id}')
+        act_id = binding['act']
+        tree = core.resolve_claim_path(parser, binding['expression'], path or [])
+        scope = {'claim': claim_id, **binding, 'path': path, 'selected_expression': core.render(tree)}
+
+    act = by_id.get(act_id)
+    if act is None:
+        raise ValueError(f'act not found: {act_id}')
+    bound_claims = {
+        name: binding for name, binding in packet['claims'].items()
+        if binding['act'] == act_id and (scope is None or binding['expression_index'] == scope['expression_index'])
+    }
+    for expression in act['expressions']:
+        parser.parse(expression)
+    if act['kind'] == 'conditional':
+        for expression in [act['details']['antecedent'], *act['details']['consequents']]:
+            parser.parse(expression)
+    for record in act.get('vocabulary', []):
+        parser.used.add(record['definition'])
+        if record.get('successor') is not None:
+            parser.used.add(record['successor'])
+
+    def related(ack):
+        target = ack['target']
+        if scope is None and ack['by'] == act_id:
+            return True
+        if 'claim' in target:
+            return target['claim'] in bound_claims and (path is None or target['path'] == path)
+        return target['act'] == act_id and (scope is None or (
+            not path and target['expression_index'] == scope['expression_index']
+        ))
+
+    positions = {act['id']: index for index, act in enumerate(acts)}
+    matches = sorted((ack for ack in packet['acknowledgements'] if related(ack)),
+                     key=lambda ack: positions[ack['by']])
+    selected = matches
+    if len(matches) > 12:
+        substantive = [ack for ack in matches if ack['action'] in STANCE_ACTIONS]
+        selected = substantive or matches
+        if len(selected) > 12:
+            selected = [*selected[:2], *selected[-10:]]
+    acknowledgements = []
+    for ack in selected:
+        source, index, target_path, expression = _resolve_target(packet, by_id, ack['target'])
+        if expression is not None:
+            origin = by_id[source]['expressions'][index]
+            parser.parse(origin)
+        qualification = ack['qualification']
+        if isinstance(qualification, dict):
+            parser.parse(qualification['expression'])
+        if ack['action'].startswith('ext:'):
+            parser.used.add(ack['action'][4:])
+        acknowledgements.append({
+            **ack, 'speaker': by_id[ack['by']]['speaker'], 'source_act': source,
+            'expression_index': index, 'path': target_path, 'expression': expression,
+        })
+
+    aliases = parser.used.intersection(definitions)
+    for alias in list(aliases):
+        definition = definitions[alias]['definition']
+        aliases.update(definition.get('args', []))
+        aliases.update(definition[field] for field in ('sort', 'returns') if field in definition)
+    return {
+        'view': 'selected excerpt',
+        'packet_sha256': packet['integrity']['sha256'],
+        'history_status': packet['history']['status'],
+        'retained_act_count': len(acts),
+        'current_act': packet['discourse']['current'],
+        'act': act,
+        'claim_scope': scope,
+        'claim_ids_at_source': sorted(bound_claims)[:12],
+        'claim_count_at_source': len(bound_claims),
+        'acknowledgements': acknowledgements,
+        'matching_acknowledgement_count': len(matches),
+        'definitions': {alias: definitions[alias] for alias in sorted(aliases)},
+        'domains': {alias: packet['domains'][alias] for alias in sorted(aliases) if alias in packet['domains']},
+    }
+
+
 def derive_ledger(packet, previous=None):
     """Project retained records without inferring agreement or question resolution."""
     definitions = packet['definitions']

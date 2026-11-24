@@ -15,11 +15,21 @@ The published [L50 run](../benchmarks/AUTONOMOUS_50_RESULTS.md) finished at 148,
 
 At 100 synthetic acts, the acts account for about 81% of the bytes. Rearranging or shortening the one embedded guide would buy little room for that conversation. Compression saves bytes in transit. Whether gzip or Base64 saves bytes says little about how many tokens an AI needs to read the decoded text. A file made of opaque compressed history would require a decoder before a cold reader could inspect those acts.
 
-## First build a focused local view
+## Focused reading and the long-history draft
 
-Keep one complete Portable file as the handoff. Let a local agent read a selected act or claim and its exact source, the recent relevant acts, and the definitions those acts use. Include the dependency closure of the relevant expressions and the scoped stance records. Mark selected excerpts and the source packet digest. Allow lookup of any omitted-from-view act by its ID using the same local file.
+The local CLI can now retrieve an original act or a scoped claim from a validated file. A focused view prints its source packet digest, the exact source act, relevant typed definitions and domain declarations, and a bounded set of matching acknowledgements. Each acknowledgement names the act to look up for its verbatim wording. If more than 12 acknowledgements match, the view reports the total and prioritizes substantive stances over receipts and procedural records. If the selected group still exceeds 12, the view shows its earliest two and latest ten in act order. Direct references are preserved as IDs for further lookups. Continue and validate against the complete file.
 
-A local view is an input to an agent working with the full file. Continue and validate against the complete file. No new wire field or format is needed. This approach reduces model input for agents with local file access. Someone pasting the entire file into chat still pays the model's full input cost.
+```bash
+python benchmarks/long_join.py --out long.txt
+python src/ucl.py inspect long.txt --act t1000
+python src/ucl.py inspect long.txt --claim theory --path 1
+python src/ucl.py inspect long.txt --act t37
+node tools/check_ucl_portable.js long.txt
+```
+
+The unreleased 2.2 draft uses the same single-file Portable envelope and retains the existing definition IDs. Python and Node accept up to 4,096 retained acts and up to 8,192 each of acknowledgements, claim bindings, and viewpoints, subject to the 8 MB CLI input ceiling and the existing per-record limits. Released 2.0 and 2.1 keep their original limits and hashes. To try the draft with a released packet, run `python src/ucl.py upgrade incoming.txt experimental.txt --long-draft` and continue the resulting file with this checkout.
+
+The 1,000-act fixture is 420,889 bytes in canonical JSON. Looking up `theory` at path `[1]` returns a 2,771-byte canonical excerpt, including the typed condition from act `t37`. The test appends a reply as act 1,001 and preserves all previous acts and IDs. A 4,096-act run of the same fixture was 1,671,673 bytes and returned a 2,772-byte excerpt. Python and Node accepted both sizes. These are byte measurements for a synthetic fixture. Agents reading selected excerpts can avoid sending the whole record to the model. A chat user who pastes the whole file still pays the full input cost.
 
 ## Design explicit condensation for smaller handoffs
 
@@ -36,4 +46,4 @@ UCL already validates disclosed history, and its inner draft helper provides a s
 
 A future revision of the same format could store repeated structures once and refer to them by a readable local ID. Measure this on long, varied conversations first. The embedded guide already appears once per packet, and local references will save little on unique prose. A local model can reuse the same complete file without sending the whole history to its prompt at every turn.
 
-Keeping every original act means the file must still grow as participants add unique information. A readable, smaller handoff comes from avoiding repetition or from explicitly deciding what verbatim material to leave out. Raising the 100-act limit, focused local reading, and disclosed condensation solve different parts of the problem.
+Keeping every original act means the file must still grow as participants add unique information. A readable, smaller handoff comes from avoiding repetition or from explicitly deciding what verbatim material to leave out. The larger draft limit, focused local reading, and disclosed condensation solve different parts of the problem.

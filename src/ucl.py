@@ -9,6 +9,7 @@ from core import *  # Preserve existing public typed-grammar API exactly.
 import core as _core
 import argparse
 import json
+import re
 import sys
 from tempfile import NamedTemporaryFile
 from pathlib import Path
@@ -16,6 +17,7 @@ from pathlib import Path
 VERSION='UCL/2.1'
 PORTABLE_FORMAT='UCL/2.1-SAP1-PORTABLE'
 LEGACY_PORTABLE_FORMAT='UCL/2.0-SAP1-PORTABLE'
+LONG_DRAFT_FORMAT='UCL/2.2-SAP1-PORTABLE-DRAFT'
 INNER_GRAMMAR_VERSION=_core.DEPENDENCY_VERSION
 MAX_PORTABLE_JSON=8_000_000
 
@@ -107,24 +109,42 @@ def main(args):
     command=args[1]
     if command=='check' and len(args)==3:
         data=_core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
-        if isinstance(data,dict) and data.get('format') in (PORTABLE_FORMAT, LEGACY_PORTABLE_FORMAT):
+        if isinstance(data,dict) and isinstance(data.get('format'), str):
             print(json.dumps(check_portable(data),indent=2))
         else:
             print(json.dumps(_core.check(data),indent=2))
     elif command=='inspect':
-        from inspection import derive_ledger, describe_packet
+        from inspection import derive_ledger, describe_packet, focused_context
 
         parser = argparse.ArgumentParser(prog='python src/ucl.py inspect')
         parser.add_argument('packet', help='Portable packet to inspect')
         parser.add_argument('--json', action='store_true', help='emit the derived ledger as JSON')
         parser.add_argument('--since', metavar='EARLIER_PACKET', help='compare against an earlier retained packet')
+        scope = parser.add_mutually_exclusive_group()
+        scope.add_argument('--act', metavar='ACT_ID', help='read one retained act as a JSON excerpt')
+        scope.add_argument('--claim', metavar='CLAIM_ID', help='read one claim and its sources as a JSON excerpt')
+        parser.add_argument('--path', help='exact claim branch, such as 1 or 0.1, or root for the whole expression')
         options = parser.parse_args(args[2:])
+        if options.path is not None and options.claim is None:
+            parser.error('--path requires --claim')
+        if options.since and (options.act is not None or options.claim is not None):
+            parser.error('--since applies to the full ledger')
+        path = None
+        if options.path is not None:
+            if options.path == 'root':
+                path = []
+            elif re.fullmatch(r'(?:[0-9]|1[0-5])(?:\.(?:[0-9]|1[0-5])){0,31}', options.path):
+                path = [int(index) for index in options.path.split('.')]
+            else:
+                parser.error('--path needs up to 32 dot-separated indices from 0 to 15, or root')
         envelope = _core.read_json_file(options.packet, limit=MAX_PORTABLE_JSON)
         packet = decode_portable(envelope)
         previous = None
         if options.since:
             previous = decode_portable(_core.read_json_file(options.since, limit=MAX_PORTABLE_JSON))
-        if options.json:
+        if options.act is not None or options.claim is not None:
+            print(json.dumps(focused_context(packet, act_id=options.act, claim_id=options.claim, path=path), indent=2))
+        elif options.json:
             print(json.dumps(derive_ledger(packet, previous), indent=2))
         else:
             print(describe_packet(packet, portable.label(envelope['format']), previous))
@@ -138,10 +158,10 @@ def main(args):
         result=decode_portable(source)
         Path(args[3]).write_bytes(_core.canon(result))
         print('VALID ' + portable.label(source['format']), args[3])
-    elif command=='upgrade' and len(args)==4:
-        source, output = map(Path, args[2:])
+    elif command=='upgrade' and (len(args)==4 or (len(args)==5 and args[4]=='--long-draft')):
+        source, output = map(Path, args[2:4])
         envelope = _core.read_json_file(source, limit=MAX_PORTABLE_JSON)
-        packet = _core.upgrade_packet(decode_portable(envelope))
+        packet = _core.upgrade_packet(decode_portable(envelope), long_draft=len(args)==5)
         result = encode_portable(packet, formula_roles=envelope.get('formula_roles'))
         _write_handoff(source, output, result)
     elif command=='build' and len(args)==4:

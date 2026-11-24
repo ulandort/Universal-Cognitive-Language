@@ -33,7 +33,9 @@ const NAMED_ALIAS=/^\$[A-Za-z][A-Za-z0-9_]{0,63}/;
 function layers(body){let out=[],depth=0,start=0;for(let i=0;i<body.length;i++){if(body[i]==='[')depth++;if(body[i]===']')depth--;assert(depth>=0,'brackets');if(body[i]===';'&&depth===0){out.push(body.slice(start,i));start=i+1}}out.push(body.slice(start));assert(depth===0&&out.length===4,'layers');return out.map(x=>{assert(x[0]=='['&&x.at(-1)==']','outer layers');return x.slice(1,-1)})}
 function semantic(packet){
  const defs=packet.definitions, domains=packet.domains;
- const dependent=packet.guide.version==='UCL/1.1';
+ const long=packet.guide.version==='UCL/1.2-DRAFT';
+ const dependent=long||packet.guide.version==='UCL/1.1';
+ const recordsLimit=long?8192:150;
  assert(dependent||packet.guide.version==='UCL/1.0','inner version');
  assert(Object.keys(defs).length>=1&&Object.keys(defs).length<=(dependent?512:55),'definition count');
  const ids=new Set();
@@ -98,7 +100,8 @@ function semantic(packet){
   fail('operator '+g);
  }let r=one();assert(i===s.length,'trailing');return r;}
  assert(parse(src[0])==='orientation','orientation');assert(parse(src[1])==='prop','explanation');assert(['prop','epistemic'].includes(parse(src[2])),'conclusion');
- const acts=packet.discourse.acts;assert(acts.length>=1&&acts.length<=100,'act count');let seen=new Map();
+ const acts=packet.discourse.acts;assert(acts.length>=1&&acts.length<=(long?4096:100),'act count');let seen=new Map();
+ const actIndex=new Map(acts.map((act,index)=>[act.id,index]));
  for(const a of acts){assert(!seen.has(a.id),'duplicate act');assert(typeof a.text==='string'&&a.text.length>0,'act text');assert(typeof a.speaker==='string'&&a.speaker.length>0&&a.speaker.length<=120,'speaker');assert(a.references.every(r=>seen.has(r)),'references');for(const e of a.expressions)assert(['prop','epistemic'].includes(parse(e)),'act expression');const d=a.details;
   if(a.kind==='challenge')assert(d.disputes.length>0&&d.disputes.every(x=>seen.has(x)),'challenge refs');
   if(a.kind==='revision')assert(seen.has(d.revises),'revision ref');
@@ -136,6 +139,7 @@ function semantic(packet){
   seen.set(a.id,a);
  }
  assert(packet.discourse.current===acts.at(-1).id,'current act');
+ assert(Array.isArray(packet.acknowledgements)&&packet.acknowledgements.length<=recordsLimit,'acknowledgement count');
  for(const a of packet.acknowledgements){
   const author=seen.get(a.by);assert(author,'ack author');
   const t=a.target;assert(t&&typeof t==='object'&&!Array.isArray(t),'ack target');
@@ -165,7 +169,7 @@ function semantic(packet){
    }
    assert((fragment.includes('#') && /^[~@=<!&|?{]/.test(fragment)) || ['prop','epistemic'].includes(parse(fragment)),'ack path must resolve to proposition');
   }else fail('ack target shape');
-  assert(acts.indexOf(seen.get(dest))<acts.indexOf(author),'ack temporal');
+  assert(actIndex.get(dest)<actIndex.get(author.id),'ack temporal');
   if(a.action==='withdraw')assert(author.speaker===seen.get(dest).speaker,'withdraw ownership');
   const builtins=new Set(['received','understood','accept','reject','qualify','clarify','propose-revision','adopt-for-discussion','withhold-judgment','withdraw']);
   assert(builtins.has(a.action)||(typeof a.action==='string'&&a.action.startsWith('ext:')),'unknown acknowledgement action');
@@ -174,8 +178,7 @@ function semantic(packet){
   if(a.qualification&&typeof a.qualification==='object')assert(parse(a.qualification.expression)==='prop','typed qualifier');
  }
  const claims=packet.claims, viewpointList=packet.viewpoints;
- assert(claims&&typeof claims==='object'&&!Array.isArray(claims)&&Object.keys(claims).length<=150,'claims shape');
- const actIndex=new Map(acts.map((a,i)=>[a.id,i]));
+ assert(claims&&typeof claims==='object'&&!Array.isArray(claims)&&Object.keys(claims).length<=recordsLimit,'claims shape');
  for(const [id,c] of Object.entries(claims)){
   assert(/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(id),'claim ID');
   assert(c && Object.keys(c).sort().join(',')==='act,expression,expression_index','claim fields');
@@ -184,7 +187,7 @@ function semantic(packet){
   assert(c.expression===origin.expressions[c.expression_index],'quote exact binding');
   assert(['prop','epistemic'].includes(parse(c.expression)),'quoted type');
  }
- assert(Array.isArray(viewpointList)&&viewpointList.length<=150,'viewpoints shape');
+ assert(Array.isArray(viewpointList)&&viewpointList.length<=recordsLimit,'viewpoints shape');
  const viewpoints=new Map();
  for(const v of viewpointList){
   assert(Object.keys(v).sort().join(',')==='holder,id,relation,reported_by,source_act,target','viewpoint fields');
