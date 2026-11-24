@@ -33,7 +33,7 @@ const NAMED_ALIAS=/^\$[A-Za-z][A-Za-z0-9_]{0,63}/;
 function layers(body){let out=[],depth=0,start=0;for(let i=0;i<body.length;i++){if(body[i]==='[')depth++;if(body[i]===']')depth--;assert(depth>=0,'brackets');if(body[i]===';'&&depth===0){out.push(body.slice(start,i));start=i+1}}out.push(body.slice(start));assert(depth===0&&out.length===4,'layers');return out.map(x=>{assert(x[0]=='['&&x.at(-1)==']','outer layers');return x.slice(1,-1)})}
 function semantic(packet,{archived=false}={}){
  const defs=packet.definitions, domains=packet.domains;
- const long=packet.guide.version==='UCL/1.2-DRAFT';
+ const long=['UCL/1.2','UCL/1.2-DRAFT'].includes(packet.guide.version);
  const dependent=long||packet.guide.version==='UCL/1.1';
  const recordsLimit=long?8192:150;
  assert(dependent||packet.guide.version==='UCL/1.0','inner version');

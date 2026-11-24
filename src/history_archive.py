@@ -1,4 +1,4 @@
-"""Optional lossless history blocks in the single long-history Portable draft."""
+"""Optional lossless history blocks in the single long-history Portable format."""
 from collections import defaultdict
 import gzip
 import hashlib
@@ -73,7 +73,7 @@ def pack(envelope, packet, pinned=()):
     """Pack an already validated expanded long-draft packet."""
     import ucl
 
-    core.need(envelope['format'] == ucl.LONG_DRAFT_FORMAT, 'upgrade to the long Portable draft before packing')
+    core.need(envelope['format'] in ucl.ARCHIVE_FORMATS, 'upgrade to Portable 2.2 before packing')
     acts = packet['discourse']['acts']
     acks = packet['acknowledgements']
     pinned = sorted(set(pinned))

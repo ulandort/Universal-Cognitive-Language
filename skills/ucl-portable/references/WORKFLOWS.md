@@ -70,11 +70,11 @@ python src/ucl.py continue incoming-ucl2.txt next-ucl2.txt < contribution.json
 python src/ucl.py check next-ucl2.txt
 ```
 
-Send only `next-ucl2.txt`. The continuation preserves the incoming version. For archived inner packets, the repository also retains `tools/author.py`. An explicit `python src/ucl.py upgrade archived.txt current.txt` recalculates definition IDs in a separate 2.1 file.
+Send only `next-ucl2.txt`. The continuation preserves the incoming version. For archived inner packets, the repository also retains `tools/author.py`. An explicit `python src/ucl.py upgrade archived.txt current.txt` creates a separate 2.2 file. Existing 2.1 definition IDs carry forward.
 
 ## Retrieve an earlier source
 
-Use `python src/ucl.py inspect incoming-ucl2.txt --act t37` for a verbatim retained act. Use `--claim theory --path 1` in place of `--act t37` to read one claim branch and its matching acknowledgement records. Treat these views as excerpts and continue the complete incoming Portable file.
+Use `python src/ucl.py inspect incoming-ucl2.txt --act t37` for a verbatim retained act. Use `--claim theory --path 1` in place of `--act t37` to read one claim branch and its matching acknowledgement records. Treat these views as excerpts and continue the complete incoming Portable file. If the file contains an archive, read its embedded `archive_guide`. The CLI opens the indexed gzip block containing the requested act. Run `check` for a full audit.
 
 ## Failure handling and security
 

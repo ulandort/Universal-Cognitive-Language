@@ -1,6 +1,6 @@
 {
-  "checksum": "cjdA169HEUWvICuEivLEB0mnIDK9CkN-KLk-Aj7AJVg",
-  "format": "UCL/2.1-SAP1-PORTABLE",
+  "checksum": "Vtez_-l3c9gGj1cg75V9LdB7Bn-Y1ipKqUjhAgI_xOA",
+  "format": "UCL/2.2-SAP1-PORTABLE",
   "packet": {
     "acknowledgements": [
       {
@@ -199,11 +199,11 @@
       "hashing": "Definition ID: full unpadded Base64url SHA256 of UCL-SEM-10 plus LF and UCL-CJSON-1 of {\"definition\": normalized_definition}. Replace sort, args entries, and returns aliases by their domain IDs wherever present. A domain adds \"domain\": {\"mode\": mode, \"members\": members} to that payload; sort finite members by Unicode scalar value and use null members for open domains. Packet hashing remains SHA256 of UCL-PACKET-7 plus LF and canonical packet excluding integrity. Checksums do not authenticate speakers.",
       "history": "All packets are standalone. history.status is fully-expanded or condensed. Condensed mode MUST disclose non-expanded earlier history, the omitted scope and nature, a meaningful summary, and any unresolved uncertainties. Complete active semantic definitions and all locally referenced acts remain present; no external registry, URL, prior packet or hidden alias may be necessary. A condensed summary is not a verbatim record. Optional reference hashes do not restore missing evidence.",
       "intents": "Orientation declares conversational act: proposal, hypothesis, question, challenge, response, revision, assertion, deductive-argument, model-check, epistemic-report. No proof required for ordinary acts.",
-      "limits": "<=250KB compressed, <=1MB expanded, <=120 parse depth, <=512 definitions, <=256 proof steps, <=8 function arguments, <=100 discourse acts, <=24KB per act, <=150 acknowledgements, <=100 omission notes, finite models <=10000 tuple products per function.",
+      "limits": "<=250KB compressed, <=8MB Portable JSON in the CLI, <=120 parse depth, <=512 definitions, <=256 proof steps, <=8 function arguments, <= 4096 discourse acts, <=24KB per act, <= 8192 each of acknowledgements, claims, and viewpoints, <=100 omission notes, finite models <=10000 tuple products per function.",
       "ordering": "Explicit named strict partial order. Each order definition has a sort; multiple orders may coexist on that sort. Irreflexivity and transitivity checked in finite interpretations.",
       "proof": "Optional attached certificate (not required for conversation): premises from top-level explanation conjuncts; and-elim-left/right, and-intro, modus-ponens for |[![P]][Q], direct copy, equality reflexivity. Certificate may be invalid/unsupported without invalidating the message. Steps reference earlier indices; final formula must equal claim conclusion. No unrestricted proof or empirical truth.",
       "quotation": "Optional claims bind proposition expressions exactly to IDs and retained origin acts. Viewpoints are acyclic nested attributions (asserts/believes/reports/questions), not proofs of belief or truth. Quoted propositions participate in exact-symbol declarations.",
-      "stability": "UCL/1.1 retains the 11 core operators and UCL-CJSON-1; definition IDs bind their domain dependencies.",
+      "stability": "UCL/1.2 supports larger histories and optional Portable gzip archives. Definition IDs preserve the UCL/1.1 scheme.",
       "structural": {
         "-": -5,
         ":": -1,
@@ -211,7 +211,7 @@
         "[": -3,
         "]": -4
       },
-      "version": "UCL/1.1",
+      "version": "UCL/1.2",
       "vocabulary": "An act may include vocabulary, a list of 1 to 16 records. A retirement is {\"action\":\"retire\",\"definition\":\"alias\",\"successor\":null} or names a different existing alias as successor. It records that speaker's retirement stance only. Every earlier binding remains usable and resolves to the same ID. An example or counterexample is {\"action\":\"example\",\"definition\":\"alias\",\"expression_index\":0} with action example or counterexample. The indexed expression in this act must use the alias. Records are attributed to the act speaker and do not change definition IDs or certify truth. Declare referenced vocabulary aliases and successors in the exact symbol layer."
     },
     "history": {
@@ -224,7 +224,7 @@
       ]
     },
     "integrity": {
-      "sha256": "yJnRAPzum4FkIq_pWc1BIb2ahwPTcvY5fYsMYzEFYf4"
+      "sha256": "ldiRV4pbw4O5Wjv0rHngmnLE9VIYGfvY53xiNJwRHrc"
     },
     "links": [],
     "model": null,
@@ -263,6 +263,7 @@
         "{"
       ],
       "definition_identity": "Use packet.guide.hashing for dependency-aware definition IDs. A new typed definition uses a fresh alias. Preserve prior definitions and domain declarations; local aliases are resolved to domain IDs before hashing.",
+      "history_reading": "A long discussion remains one complete Portable file. Inspect the current state, then look up the exact claim branches and prior acts needed for your reply. Treat a selected view as an excerpt.",
       "id": "UCL/2.0-SAP-1",
       "incremental_authoring_procedure": [
         "Read the complete embedded packet.guide, definitions, history, discourse and claim bindings.",
@@ -420,7 +421,7 @@
           "not-assessed"
         ]
       },
-      "status": "stable-2.1",
+      "status": "stable-2.2",
       "structural_glyphs": [
         ":",
         ";",
@@ -447,6 +448,6 @@
       },
       "vocabulary_authoring": "Use a fresh single-character alias or a name such as $background_sync in new_definitions. An act may record a retirement or attach a typed example or counterexample to a definition using the vocabulary shapes in packet.guide.vocabulary. Preserve every previous definition, including one a speaker retires."
     },
-    "sha256": "IwfCnyR6owRSz6XBEGi1er4u_4Zksy1DrlgyiB7XvmI"
+    "sha256": "LQQIye-mjF8wKYpLdvEwzRLHBfVxnzyBPzBnkqi5LZc"
   }
 }

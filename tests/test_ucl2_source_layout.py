@@ -9,9 +9,9 @@ class SourceLayoutTests(unittest.TestCase):
     def setUpClass(cls):
         cls.packet=core.load_json((ROOT/'examples/cross_model_conversation_8_turns.json').read_text(encoding='utf8'))
     def test_public_version_and_original_grammar(self):
-        self.assertEqual(ucl.VERSION,'UCL/2.1')
+        self.assertEqual(ucl.VERSION,'UCL/2.2')
         self.assertEqual(ucl.PORTABLE_FORMAT,portable.CURRENT_FORMAT)
-        self.assertEqual(ucl.INNER_GRAMMAR_VERSION,'UCL/1.1')
+        self.assertEqual(ucl.INNER_GRAMMAR_VERSION,'UCL/1.2')
         self.assertEqual(ucl.CORE,core.CORE)
         self.assertEqual(ucl.check(self.packet),core.check(self.packet))
         self.assertEqual(ucl.packet_id(self.packet),core.packet_id(self.packet))

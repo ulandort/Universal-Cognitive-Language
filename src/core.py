@@ -8,8 +8,10 @@ from pathlib import Path
 
 VERSION='UCL/1.0'
 DEPENDENCY_VERSION='UCL/1.1'
-LONG_VERSION='UCL/1.2-DRAFT'
-DEPENDENCY_VERSIONS=(DEPENDENCY_VERSION, LONG_VERSION)
+LONG_VERSION='UCL/1.2'
+LONG_DRAFT_VERSION='UCL/1.2-DRAFT'
+LONG_VERSIONS=(LONG_VERSION, LONG_DRAFT_VERSION)
+DEPENDENCY_VERSIONS=(DEPENDENCY_VERSION, *LONG_VERSIONS)
 MAX_LONG_ACTS=4096
 MAX_LONG_RECORDS=8192
 DEPENDENCY_DOMAIN=b'UCL-SEM-10\n'
@@ -120,11 +122,15 @@ def guide(version=VERSION):
                 'Declare referenced vocabulary aliases and successors in the exact symbol layer.'
             ),
         )
-    if version == LONG_VERSION:
+    if version in LONG_VERSIONS:
         result['limits'] = result['limits'].replace('<=1MB expanded', '<=8MB Portable JSON in the CLI').replace(
             '<=100 discourse acts', f'<= {MAX_LONG_ACTS} discourse acts').replace(
             '<=150 acknowledgements', f'<= {MAX_LONG_RECORDS} each of acknowledgements, claims, and viewpoints')
-        result['stability'] = 'UCL/1.2-DRAFT tests larger retained histories and preserves UCL/1.1 definition IDs.'
+        result['stability'] = (
+            'UCL/1.2-DRAFT tests larger retained histories and preserves UCL/1.1 definition IDs.'
+            if version == LONG_DRAFT_VERSION else
+            'UCL/1.2 supports larger histories and optional Portable gzip archives. Definition IDs preserve the UCL/1.1 scheme.'
+        )
     return result
 
 def packet_version(packet):
@@ -425,8 +431,8 @@ def _validate_vocabulary(entries, expressions, defs, parser):
 def validate_discourse(discourse,defs,parser, *, version=VERSION, archived=False):
     need(isinstance(discourse,dict) and set(discourse)=={'current','acts'},'discourse schema')
     acts=discourse['acts']
-    limit = MAX_LONG_ACTS if version == LONG_VERSION else 100
-    need(isinstance(acts,list) and len(acts)>=1 and (archived and version==LONG_VERSION or len(acts)<=limit),'discourse act cap')
+    limit = MAX_LONG_ACTS if version in LONG_VERSIONS else 100
+    need(isinstance(acts,list) and len(acts)>=1 and (archived and version in LONG_VERSIONS or len(acts)<=limit),'discourse act cap')
     seen={}; allowed_ans={'open','yes-no','multiple-choice'}
     def expression(s):
         need(isinstance(s,str) and 0<len(s)<=16000,'discourse expression length')
@@ -508,8 +514,8 @@ def resolve_claim_path(parser, expression, path):
     return tree
 
 def validate_acknowledgements(acks,discourse,defs,parser,claims, *, version=VERSION, archived=False):
-    limit = MAX_LONG_RECORDS if version == LONG_VERSION else 150
-    need(isinstance(acks,list) and (archived and version==LONG_VERSION or len(acks)<=limit),'acknowledgement list size')
+    limit = MAX_LONG_RECORDS if version in LONG_VERSIONS else 150
+    need(isinstance(acks,list) and (archived and version in LONG_VERSIONS or len(acks)<=limit),'acknowledgement list size')
     acts=discourse['acts']; byid={a['id']:a for a in acts}
     positions={a['id']:i for i,a in enumerate(acts)}
     seen=set()
@@ -681,7 +687,7 @@ def proof_verdict(explanation, conclusion, proof, defs):
         return {'status':'invalid-proof','reason':err}
 
 def validate_quotes(claims,viewpoints,discourse,parser, *, version=VERSION):
-    limit = MAX_LONG_RECORDS if version == LONG_VERSION else 150
+    limit = MAX_LONG_RECORDS if version in LONG_VERSIONS else 150
     need(isinstance(claims,dict) and len(claims)<=limit,'claim binding map')
     acts={a['id']:a for a in discourse['acts']}
     for cid,c in claims.items():
@@ -757,7 +763,7 @@ def draft_version(draft):
     supplied = [record for record in draft['definitions'].values() if 'id' in record]
     if supplied and all(record['id'] == definition_id(record['definition']) for record in supplied):
         return VERSION
-    return DEPENDENCY_VERSION
+    return LONG_VERSION
 
 
 def build(draft, *, version=VERSION, archived=False):
@@ -779,22 +785,21 @@ def build(draft, *, version=VERSION, archived=False):
        'proof':draft['proof'],'context':draft['context'],'body':body,'links':draft['links'], 'revisions':draft['revisions'], 'discourse':draft['discourse'], 'acknowledgements':draft['acknowledgements'], 'history':draft['history'], 'claims':draft['claims'], 'viewpoints':draft['viewpoints']}
     p['integrity']={'sha256':packet_id(p)};check(p,archived=archived);return p
 
-def upgrade_packet(packet, *, long_draft=False):
-    draft = draft_from_packet(packet)
+def upgrade_packet(packet, *, archived=False):
     version = packet_version(packet)
-    if version == LONG_VERSION or (version == DEPENDENCY_VERSION and not long_draft):
+    if version == LONG_VERSION:
+        check(packet, archived=archived)
         return packet
-    if version == DEPENDENCY_VERSION:
-        return build(draft, version=LONG_VERSION)
-    target = LONG_VERSION if long_draft else DEPENDENCY_VERSION
 
-    for record in draft['definitions'].values():
-        record.pop('id')
-    identities = _definition_ids(draft['definitions'], draft['domains'], DEPENDENCY_VERSION)
-    for revision in draft['revisions']:
-        revision['old_id'] = identities[revision['old_glyph']]
-        revision['new_id'] = identities[revision['new_glyph']]
-    return build(draft, version=target)
+    draft = draft_from_packet(packet, archived=archived)
+    if version == VERSION:
+        for record in draft['definitions'].values():
+            record.pop('id')
+        identities = _definition_ids(draft['definitions'], draft['domains'], LONG_VERSION)
+        for revision in draft['revisions']:
+            revision['old_id'] = identities[revision['old_glyph']]
+            revision['new_id'] = identities[revision['new_glyph']]
+    return build(draft, version=LONG_VERSION, archived=archived)
 
 
 # Transport: plain, human-readable JSON by default. Optional Brotli lives in tools/.

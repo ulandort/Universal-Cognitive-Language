@@ -14,11 +14,13 @@ import sys
 from tempfile import NamedTemporaryFile
 from pathlib import Path
 
-VERSION='UCL/2.1'
-PORTABLE_FORMAT='UCL/2.1-SAP1-PORTABLE'
+VERSION='UCL/2.2'
+PORTABLE_FORMAT='UCL/2.2-SAP1-PORTABLE'
+V21_PORTABLE_FORMAT='UCL/2.1-SAP1-PORTABLE'
 LEGACY_PORTABLE_FORMAT='UCL/2.0-SAP1-PORTABLE'
 LONG_DRAFT_FORMAT='UCL/2.2-SAP1-PORTABLE-DRAFT'
-INNER_GRAMMAR_VERSION=_core.DEPENDENCY_VERSION
+ARCHIVE_FORMATS=(PORTABLE_FORMAT, LONG_DRAFT_FORMAT)
+INNER_GRAMMAR_VERSION=_core.LONG_VERSION
 MAX_PORTABLE_JSON=8_000_000
 
 def __getattr__(name):
@@ -193,10 +195,12 @@ def main(args):
     elif command=='upgrade' and (len(args)==4 or (len(args)==5 and args[4]=='--long-draft')):
         source, output = map(Path, args[2:4])
         envelope = _core.read_json_file(source, limit=MAX_PORTABLE_JSON)
-        if 'archive' in envelope:
-            raise ValueError('archive already uses the long Portable draft')
-        packet = _core.upgrade_packet(decode_portable(envelope), long_draft=len(args)==5)
-        result = encode_portable(packet, formula_roles=envelope.get('formula_roles'))
+        archived = 'archive' in envelope
+        packet = _core.upgrade_packet(decode_portable(envelope), archived=archived)
+        result = portable.encode(packet, formula_roles=envelope.get('formula_roles'), archived=archived)
+        if archived:
+            from history_archive import pack
+            result = pack(result, packet, envelope['archive']['pinned'])
         _write_handoff(source, output, result)
     elif command=='build' and len(args)==4:
         draft = _core.read_json_file(args[2])

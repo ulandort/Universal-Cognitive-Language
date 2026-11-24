@@ -31,7 +31,7 @@ class UCLAgentSkillTests(unittest.TestCase):
         self.assertEqual(keys['license'],'Apache-2.0')
         self.assertTrue(set(keys).issubset({
             'name','description','license','compatibility','allowed-tools','metadata'}))
-        self.assertIn('UCL/2.0-SAP1-PORTABLE',prose)
+        self.assertIn('UCL/2.2-SAP1-PORTABLE',prose)
         self.assertIn('references/WORKFLOWS.md',prose)
         self.assertLess(len(body.splitlines()),500)
     def test_self_contained_skill_paths_and_installation(self):

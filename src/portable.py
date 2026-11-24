@@ -20,7 +20,8 @@ import structural_authoring as sap
 FORMAT=ucl.LEGACY_PORTABLE_FORMAT  # Retained for archived release tooling.
 CURRENT_FORMAT=ucl.PORTABLE_FORMAT
 FORMAT_BY_VERSION={
-    'UCL/1.0': FORMAT, ucl.INNER_GRAMMAR_VERSION: CURRENT_FORMAT, ucl.LONG_VERSION: ucl.LONG_DRAFT_FORMAT,
+    'UCL/1.0': FORMAT, ucl.DEPENDENCY_VERSION: ucl.V21_PORTABLE_FORMAT,
+    ucl.INNER_GRAMMAR_VERSION: CURRENT_FORMAT, ucl.LONG_DRAFT_VERSION: ucl.LONG_DRAFT_FORMAT,
 }
 RULE_DOMAIN=b'UCL-SAP1-RULES-2.0\n'
 ENVELOPE_DOMAIN=b'UCL-SAP1-ENVELOPE-2.0\n'
@@ -185,7 +186,12 @@ LONG_RULES = {
         'exact claim branches and prior acts needed for your reply. Treat a selected view as an excerpt.'
     ),
 }
-RULES_BY_FORMAT = {FORMAT: RULES, CURRENT_FORMAT: CURRENT_RULES, ucl.LONG_DRAFT_FORMAT: LONG_RULES}
+RULES_BY_FORMAT = {
+    FORMAT: RULES,
+    ucl.V21_PORTABLE_FORMAT: CURRENT_RULES,
+    ucl.LONG_DRAFT_FORMAT: LONG_RULES,
+    CURRENT_FORMAT: {**LONG_RULES, 'status': 'stable-2.2'},
+}
 
 
 def label(format_id):
@@ -252,8 +258,8 @@ def validate_envelope(env):
     format_id = env['format']
     if not isinstance(format_id, str) or format_id not in RULES_BY_FORMAT or env['profile']!='portable':
         raise ValueError('SAP portable: unsupported profile')
-    if archived and format_id != ucl.LONG_DRAFT_FORMAT:
-        raise ValueError('SAP portable: optional archive requires the long Portable draft')
+    if archived and format_id not in ucl.ARCHIVE_FORMATS:
+        raise ValueError('SAP portable: optional archive requires Portable 2.2')
     block=env['structural_rules']
     if type(block) is not dict or set(block)!={'rules','sha256'}:
         raise ValueError('SAP portable: rules block invalid')

@@ -15,7 +15,7 @@ The published [L50 run](../benchmarks/AUTONOMOUS_50_RESULTS.md) finished at 148,
 
 At 100 synthetic acts, the acts account for about 81% of the bytes. Rearranging or shortening the one embedded guide would buy little room for that conversation. Compression saves bytes in transit. Whether gzip or Base64 saves bytes says little about how many tokens an AI needs to read the decoded text. A file made of opaque compressed history would require a decoder before a cold reader could inspect those acts.
 
-## Focused reading and the long-history draft
+## Focused reading and long histories
 
 The local CLI can now retrieve an original act or a scoped claim from a validated file. A focused view prints its source packet digest, the exact source act, relevant typed definitions and domain declarations, and a bounded set of matching acknowledgements. Each acknowledgement names the act to look up for its verbatim wording. If more than 12 acknowledgements match, the view reports the total and prioritizes substantive stances over receipts and procedural records. If the selected group still exceeds 12, the view shows its earliest two and latest ten in act order. Direct references are preserved as IDs for further lookups. Continue and validate against the complete file.
 
@@ -27,7 +27,7 @@ python src/ucl.py inspect long.txt --act t37
 node tools/check_ucl_portable.js long.txt
 ```
 
-The unreleased 2.2 draft uses the same single-file Portable envelope and retains the existing definition IDs. Python and Node accept up to 4,096 retained acts and up to 8,192 each of acknowledgements, claim bindings, and viewpoints, subject to the 8 MB CLI input ceiling and the existing per-record limits. Released 2.0 and 2.1 keep their original limits and hashes. To try the draft with a released packet, run `python src/ucl.py upgrade incoming.txt experimental.txt --long-draft` and continue the resulting file with this checkout.
+The 2.2 release uses the same single-file Portable envelope and retains the existing definition IDs. Python and Node accept up to 4,096 retained acts and up to 8,192 each of acknowledgements, claim bindings, and viewpoints, subject to the 8 MB CLI input ceiling and the existing per-record limits. Released 2.0 and 2.1 keep their original limits and hashes. To migrate a released packet, run `python src/ucl.py upgrade incoming.txt current.txt` and continue the resulting file with this checkout.
 
 The 1,000-act fixture is 420,889 bytes in canonical JSON. Looking up `theory` at path `[1]` returns a 2,771-byte canonical excerpt, including the typed condition from act `t37`. The test appends a reply as act 1,001 and preserves all previous acts and IDs. A 4,096-act run of the same fixture was 1,671,673 bytes and returned a 2,772-byte excerpt. Python and Node accepted both sizes. These are byte measurements for a synthetic fixture. Agents reading selected excerpts can avoid sending the whole record to the model. A chat user who pastes the whole file still pays the full input cost.
 
@@ -42,7 +42,7 @@ node tools/check_ucl_portable.js packed.txt
 python src/ucl.py continue packed.txt next.txt < contribution.json
 ```
 
-Packing is opt-in for the long-history draft. At 2,000 turns the first 1,000 become eligible, then each older batch of 1,000 becomes eligible as the conversation grows. The newest 1,000 stay readable. A packet whose stored representation approaches 7 MB can also archive a smaller eligible batch. Batches split further when their expanded data would exceed 4 MB.
+Packing is opt-in for Portable 2.2. At 2,000 turns the first 1,000 become eligible, then each older batch of 1,000 becomes eligible as the conversation grows. The newest 1,000 stay readable. A packet whose stored representation approaches 7 MB can also archive a smaller eligible batch. Batches split further when their expanded data would exceed 4 MB.
 
 The tool leaves important turns verbatim in the readable portion. It protects the sources of bound claims and viewpoints, formula annotations, vocabulary records, substantive acknowledgements and their exact act targets, and direct references from the readable tail. Use repeatable `--keep-act` options to preserve additional turns that carry important prose or evidence. The CLI carries those pins into subsequent handoffs. A packed conversation continues to apply the archive policy as it grows.
 
@@ -56,7 +56,7 @@ The `act_slots` array maps the archived acts to zero-based positions in the comp
 
 In an offline stress run, 100,000 synthetic acts and 99,995 acknowledgements fit in 99 archive blocks and a 4,018,682-byte Portable file, including indexes, readable turns, and guides. Python and Node accepted the file. These turns are short and repetitive. Use `python benchmarks/long_join.py --turns 100000 --pack --out long.txt` to reproduce the fixture without model calls.
 
-The CLI still limits the stored file to 8 MB. The draft reader separately caps each expanded block at 4 MB and total expanded archive bytes at 96 MB per audit. Archived packets are not limited to 4,096 acts. Full `check` and `continue` currently reconstruct the complete transcript in memory. Use the packed file as the handoff. The expanded inner JSON from `decode` remains available for reading and auditing.
+The CLI still limits the stored file to 8 MB. The reader separately caps each expanded block at 4 MB and total expanded archive bytes at 96 MB per audit. Archived packets are not limited to 4,096 acts. Full `check` and `continue` currently reconstruct the complete transcript in memory. Use the packed file as the handoff. The expanded inner JSON from `decode` remains available for reading and auditing.
 
 ## Design explicit condensation for smaller handoffs
 
