@@ -1,0 +1,39 @@
+name: One-time UCL 2.5 candidate source map and missing observation
+
+on:
+  push:
+    branches: [ucl25-cold-source-map-once]
+    paths:
+      - .github/workflows/ucl25-cold-source-map-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  comparison:
+    if: github.event.created && github.run_attempt == 1 && github.repository == 'ulandort/Universal-Cognitive-Language'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify fixtures, scoring and budget
+        run: python benchmarks/cold_source_map_once.py --dry-run
+      - name: Install model client
+        run: python -m pip install 'openai>=1.0,<3.0'
+      - name: Run bounded source-map and continuation calls
+        env:
+          RADIUM_API_KEY: ${{ secrets.RADIUM_API_KEY }}
+        run: python benchmarks/cold_source_map_once.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ucl25-cold-source-map
+          path: cold-source-map-live/

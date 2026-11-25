@@ -77,3 +77,12 @@ Clarke and Hal joined the same synthetic, 2,000-act packed conversation. Each re
 Hal's first reply contained the correct branch and requested IDs inside a Markdown code fence. The follow-up replayed those choices after unwrapping the fence and then made its first continuation call. Both fences were counted as output-format failures. The continuation payload passed the packet-digest guard and cited `t18`. The follow-up used the model's original JSON fields.
 
 The four calls cost an estimated **$0.0994**. This was one scenario with two models and a bounded set of suggested links. [Initial run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45551154654) · [Hal follow-up](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45551392974) · [Fixture and scoring code](https://github.com/ulandort/Universal-Cognitive-Language/blob/5aba20e1c13f35c7d4e596f0dfc89234c86f3674/benchmarks/cold_discovery_once.py)
+
+### Retest with explicit stance field guidance
+
+The retest used the same fixture and distinguished `act.details.stance` from the scoped `acknowledgements[0].action` in the continuation prompt. It also asked for a single unwrapped JSON object. Both models selected the intended branch and produced validating continuations with `withhold-judgment` on that branch. Neither model requested the primary observation `t18` in this rerun.
+
+- Clarke requested `t37` and `t7`. Its draft used the correct stance fields and passed both validators, but treated a claim-analysis act as an observation.
+- Hal's initial discovery call reached its output limit. A retry with a larger allowance returned raw JSON and requested `t37` and `t760`. The test harness initially omitted current-act references from its list of permitted requests, even though the briefing showed `t760`. The continuation used Hal's recorded selection after correcting the harness. Hal returned raw JSON, explicitly reported the observation missing, and passed both validators.
+
+Five calls cost an estimated **$0.1973**, including the incomplete Hal discovery call. The results cover stance authoring on this case and leave source selection as a separate outcome. [Retest](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45551863222) · [Hal discovery retry](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45552116935) · [Hal continuation](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45552307815)

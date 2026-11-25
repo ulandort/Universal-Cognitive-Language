@@ -77,9 +77,13 @@ class HistoryArchiveTests(unittest.TestCase):
                          self.packet['discourse']['acts'][1849:1851])
 
     def test_unfocused_handoff_finds_named_branch_without_opening_archive_blocks(self):
+        draft = core.draft_from_packet(self.packet)
+        draft['discourse']['acts'][36]['references'].append('t18')
+        packet = core.build(draft, version=core.packet_version(self.packet))
+        packed = history_archive.pack(portable.encode(packet), packet)
         with patch.object(history_archive, '_open_block',
                           side_effect=AssertionError('discovery should use readable records')):
-            brief = history_archive.inspect_archive_handoff(self.packed)
+            brief = history_archive.inspect_archive_handoff(packed)
         self.assertEqual(brief['archive_blocks_opened'], 0)
         self.assertFalse(brief['whole_packet_audited'])
         branch = next(candidate for candidate in brief['candidate_branches']
@@ -88,6 +92,13 @@ class HistoryArchiveTests(unittest.TestCase):
         self.assertIn('t37', branch['linked_act_ids'])
         self.assertTrue(any(stance['ack_id'] == 'condition37' and stance['action'] == 'qualify'
                             for stance in branch['recorded_stances']))
+        source = next(link for link in branch['source_links'] if link['act'] == 't18')
+        self.assertEqual(source, {'act': 't18', 'availability': 'archived', 'relations': [{
+            'kind': 'referenced_by_stance_author', 'by': 't37', 'ack_id': 'condition37', 'action': 'qualify',
+        }]})
+        self.assertEqual(brief['current_act_source_links'][0]['relations'],
+                         [{'kind': 'referenced_by_current_act', 'by': 't4096'}])
+        self.assertIn('source_missing', brief['source_review_guidance'])
 
     def test_current_state_preserves_stances_without_opening_archive_blocks(self):
         from inspection import compare_packets, current_state

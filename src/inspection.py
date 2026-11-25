@@ -6,6 +6,14 @@ import core
 STANCE_ACTIONS = core.RETRACTABLE_ACK_ACTIONS | {'withdraw'}
 STATE_LIMIT = 12
 COMPACT_DIFF_LIMIT = 8
+SOURCE_REVIEW_GUIDANCE = (
+    'Follow references from the relevant stance to look for the original observation. '
+    'Require an exact quote from an act that records what was done or observed. '
+    'A claim, rule, study plan, or discussion of a result does not itself establish the observation. '
+    'If the observation is missing from the acts you read, request another linked act when possible. '
+    'Use source_missing when no retrieved act records the observation, not_established when a quoted '
+    'observation falls short of the criterion, and established when the quoted observation supports it.'
+)
 
 
 def _stance_key(entry):
@@ -359,7 +367,15 @@ def _briefing_ack(record):
     return {labels.get(field, field): value for field, value in record.items()}
 
 
-def _handoff_candidates(packet, state):
+def _source_links(relations_by_act, archived_act_ids):
+    return [
+        {'act': act, 'availability': 'archived' if act in archived_act_ids else 'readable',
+         'relations': relations[:4]}
+        for act, relations in list(relations_by_act.items())[:6]
+    ]
+
+
+def _handoff_candidates(packet, state, archived_act_ids):
     """Suggest recent named stance scopes, then roots for other named claims."""
     limit = 6
     claims = packet['claims']
@@ -389,15 +405,23 @@ def _handoff_candidates(packet, state):
         binding = claims[claim]
         source = acts[binding['act']]
         stances = scoped.get((claim, path), [])
-        related = [source['id']]
+        links = {source['id']: [{'kind': 'claim_origin'}]}
         for stance in stances:
             author = acts[stance['author_act']]
-            related.extend([author['id'], *author['references']])
-        related.extend(source['references'])
+            links.setdefault(author['id'], []).append({
+                'kind': 'stance_author', 'ack_id': stance['ack_id'], 'action': stance['action'],
+            })
+            for reference in author['references']:
+                relation = {'kind': 'referenced_by_stance_author', 'by': author['id'],
+                            'ack_id': stance['ack_id'], 'action': stance['action']}
+                links.setdefault(reference, []).append(relation)
+        for reference in source['references']:
+            links.setdefault(reference, []).append({'kind': 'referenced_by_claim_origin', 'by': source['id']})
         result.append({
             'claim': claim, 'path': list(path), 'source_act': source['id'],
             'expression_preview': (stances[0]['expression_preview'] if stances else binding['expression'][:200]),
-            'linked_act_ids': list(dict.fromkeys(related))[:limit],
+            'linked_act_ids': list(links)[:limit],
+            'source_links': _source_links(links, archived_act_ids),
             'recorded_stances': [
                 {field: stance[field] for field in ('speaker', 'action', 'status', 'ack_id', 'author_act')}
                 for stance in stances[:3]
@@ -407,7 +431,7 @@ def _handoff_candidates(packet, state):
 
 
 def handoff_briefing(packet, *, wire_format, claim_id=None, path=None, act_ids=(),
-                     state=None):
+                     state=None, archived_act_ids=()):
     """Present a read-only briefing with the exact requested records and their definitions."""
     if state is None:
         state = current_state(packet)
@@ -425,6 +449,16 @@ def handoff_briefing(packet, *, wire_format, claim_id=None, path=None, act_ids=(
         domains.update(excerpt['domains'])
 
     issues = packet['history']['unresolved']
+    discovery = {}
+    if claim_id is None:
+        head_act = head['act']
+        head_links = {reference: [{'kind': 'referenced_by_current_act', 'by': head_act['id']}]
+                      for reference in head_act['references']}
+        discovery = {
+            'candidate_branches': _handoff_candidates(packet, state, archived_act_ids),
+            'current_act_source_links': _source_links(head_links, archived_act_ids),
+            'source_review_guidance': SOURCE_REVIEW_GUIDANCE,
+        }
     return {
         'view': 'UCL newcomer briefing', 'briefing_version': 2, 'source_format': wire_format,
         'source_packet_sha256': state['packet_sha256'],
@@ -436,7 +470,7 @@ def handoff_briefing(packet, *, wire_format, claim_id=None, path=None, act_ids=(
         } if issues else None,
         'current_state': state,
         'current_act': head['act'],
-        **({'candidate_branches': _handoff_candidates(packet, state)} if claim_id is None else {}),
+        **discovery,
         'claim': {
             'scope': claim['claim_scope'], 'source_act': claim['act'],
             'acknowledgements': [_briefing_ack(record) for record in claim['acknowledgements']],

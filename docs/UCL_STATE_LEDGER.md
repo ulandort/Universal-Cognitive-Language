@@ -20,6 +20,8 @@ Add `--compact` for a paste-ready JSON line with both packet digests, full chang
 
 Start with `python src/ucl.py inspect packet.txt --handoff` when you don’t know the claim or turn IDs. The `candidate_branches` list shows up to six named scopes. Each entry gives the claim ID, exact path, origin act, an expression preview, and up to three recorded stances from Current State. Linked act IDs come from the claim origin, stance authors, and their direct references. When room remains, other named claims appear at their root. This discovery view uses readable records and opens zero gzip blocks.
 
+Each candidate's `source_links` says whether an act is readable or archived and why it was suggested. An archived act may appear because the author of a scoped qualification referenced it. The map shows that recorded relationship without examining the archived text. The `current_act_source_links` list separately shows the latest act's direct references.
+
 Choose a claim, path, and source from the briefing to read them in full.
 
 ```sh
@@ -27,6 +29,8 @@ python src/ucl.py inspect packet.txt --handoff --claim theory --path 1 --include
 ```
 
 The briefing includes Current State, the exact latest act, the selected claim branch and its source, and the definitions and domain declarations used by the included excerpts. Repeat `--include-act` to retrieve more acts in the requested order. Use `--path root` for the full claim with ACKs targeting that root. Omit `--path` for the full claim and ACKs from all its branches. The briefing includes the source packet digest, match counts for the selected acknowledgement excerpts, and the archive blocks opened. Packed packets open each requested block once. Run `check` to audit the full packed history.
+
+For a reply about evidence, ask the author to identify and quote an act that records what was observed. If the retrieved acts contain only plans, rules, or discussion, ask for another linked act before concluding. Use `source_missing` when the observation is still absent from the retrieved records, `not_established` when a retrieved observation falls short of the criterion, and `established` when it supports the criterion. These labels describe an evidence review in the authoring exchange. Record the resulting stance on the exact claim path in the reply's ACK.
 
 Briefing version 2 uses three distinct reference labels. The labels apply both to focused ACK excerpts and to stance and retraction entries in its Current State.
 
