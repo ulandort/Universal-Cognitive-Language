@@ -86,3 +86,16 @@ The retest used the same fixture and distinguished `act.details.stance` from the
 - Hal's initial discovery call reached its output limit. A retry with a larger allowance returned raw JSON and requested `t37` and `t760`. The test harness initially omitted current-act references from its list of permitted requests, even though the briefing showed `t760`. The continuation used Hal's recorded selection after correcting the harness. Hal returned raw JSON, explicitly reported the observation missing, and passed both validators.
 
 Five calls cost an estimated **$0.1973**, including the incomplete Hal discovery call. The results cover stance authoring on this case and leave source selection as a separate outcome. [Retest](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45551863222) · [Hal discovery retry](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45552116935) · [Hal continuation](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45552307815)
+
+### Source map and missing-observation trial
+
+The unfocused briefing identified the claim origin, the author of the scoped qualification, and the archived act referenced by that author. It opened zero archive blocks. Two versions of the same 2,000-act fixture used identical source links. In the present case, `t18` recorded completed runs. In the absent case, it described an outline without a completed run or result. The aim was to distinguish a retrieved observation that falls short from a missing observation.
+
+| Case | Clarke | Hal |
+| --- | --- | --- |
+| Observation present | Requested `t18` on the first lookup, quoted it exactly, reported `not_established`, and produced a valid scoped reply. | Requested `t18` on the first lookup. Its answer reached the output limit. The replay quoted `t18` exactly and reported `not_established`, but the contribution failed because it put the stance in the wrong field. |
+| Observation absent | Requested another lookup after the allowed follow-up. The final-response replay reported `source_missing` and produced a valid scoped reply. | Reported `source_missing` after one additional lookup. The initial contribution left `act.text` empty. The final-response replay reported the same status with a valid scoped reply. |
+
+The replays used the original retrieved records and explicitly ended the lookup window. They required nonempty reasoning even when the observation was missing. Hal's observation-present replay also had a larger output allowance. Both models retrieved the primary observation on their first lookup when it existed. Both recognized the absent observation in the final-response replay. The trial uses one graph with two matching source layouts. It changes the briefing and author instructions together.
+
+Thirteen calls cost an estimated **$0.4740**. [Initial run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45552985805) · [Final-response replay](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45553342362)

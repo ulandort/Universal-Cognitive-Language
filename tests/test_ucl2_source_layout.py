@@ -337,6 +337,30 @@ class SourceLayoutTests(unittest.TestCase):
         self.assertEqual(reply['acknowledgements'][-1]['action'], 'withhold-judgment')
         self.assertEqual(reply['acknowledgements'][-1]['target'], {'claim': 'notes-design', 'path': [1]})
 
+    def test_template_prefills_only_the_explicit_scoped_ack_action(self):
+        from authoring import preflight, reply_template
+
+        source = ROOT / 'examples/quickstart.txt'
+        parent = ucl.decode_portable(ucl.read_json_file(source))
+        cli = [sys.executable, str(ROOT / 'src/ucl.py'), 'template', str(source), '--speaker', 'Reader']
+        options = ['--claim', 'notes-design', '--path', '1', '--seed-formula']
+        parsed = subprocess.run([*cli, *options, '--ack-action', 'withhold-judgment'],
+                                check=True, text=True, capture_output=True, timeout=20)
+        draft = json.loads(parsed.stdout)
+        original = reply_template(parent, 'Reader', 'notes-design', [1], seed_formula=True)
+        self.assertEqual(original['acknowledgements'][0]['action'], 'received')
+        original['acknowledgements'][0]['action'] = 'withhold-judgment'
+        self.assertEqual(draft, original)
+        self.assertEqual(draft['act']['details']['stance'], 'undetermined')
+        draft['act']['text'] = 'I need more evidence about background sync.'
+        preflight(parent, draft)
+        with self.assertRaisesRegex(ValueError, 'unsupported starter acknowledgement action'):
+            reply_template(parent, 'Reader', 'notes-design', [1], ack_action='qualify')
+        invalid = subprocess.run([*cli, '--retract', 'x1', '--ack-action', 'withhold-judgment'],
+                                 text=True, capture_output=True, timeout=20)
+        self.assertNotEqual(invalid.returncode, 0)
+        self.assertIn('--ack-action requires --claim', invalid.stderr)
+
     def test_template_seeds_only_standalone_propositions(self):
         from authoring import reply_template
 

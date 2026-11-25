@@ -14,15 +14,11 @@ from authoring import SCOPED_STANCE_GUIDANCE, reply_template
 from history_archive import inspect_archive_handoff, pack
 from inspection import compare_packets
 
-CAP = 0.43
+CAP = 0.25
 live.CAP = CAP
 MODELS = ('clarke-1.0', 'hal-1.0')
-CASES = ('observation_present', 'observation_absent')
-REPLAY = {
-    ('observation_present', 'hal-1.0'): ['t37', 't18'],
-    ('observation_absent', 'clarke-1.0'): ['t37', 't18', 't7'],
-    ('observation_absent', 'hal-1.0'): ['t18', 't760'],
-}
+CASES = ('observation_present',)
+REPLAY = {('observation_present', 'hal-1.0'): ['t37', 't18']}
 CLAIM, PATH, SOURCE, RULE = 'theory', [1], 't18', 't37'
 EVIDENCE = ('The earlier observation log records that B persisted in repeated runs using the same inputs. '
             'No independent-input run was performed.')
@@ -78,7 +74,7 @@ def session(client, budget, case, model, prepared):
     folder.mkdir(parents=True, exist_ok=True)
     row = {'case': case, 'model': model, 'calls': []}
     selected = {'claim': CLAIM, 'path': PATH, 'request': REPLAY[(case, model)]}
-    row['replayed_from'] = 'https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45552985805'
+    row['replayed_from'] = 'https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45553342362'
     row['selection'] = selected
     claim, path, ids = (selected.get(key) for key in ('claim', 'path', 'request'))
     allowed = {link['act'] for branch in briefing['candidate_branches'] for link in branch['source_links']}
@@ -92,7 +88,8 @@ def session(client, budget, case, model, prepared):
     row['exact_branch'] = claim == CLAIM and path == PATH
     row['first_request_found_observation'] = case == 'observation_present' and SOURCE in ids
     try:
-        starter = reply_template(packet, 'New participant', claim, path, seed_formula=True)
+        starter = reply_template(packet, 'New participant', claim, path, seed_formula=True,
+                                 ack_action='withhold-judgment')
         inspect_archive_handoff(wire, claim_id=claim, path=path)
     except ValueError as exc:
         row['selection_error'] = str(exc)

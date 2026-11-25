@@ -161,7 +161,7 @@ def main(args):
         preflight(parent, _read_contribution(), archived='archive' in envelope)
         print('PREFLIGHT PASSED. Run continue for full validation and handoff.')
     elif command=='template':
-        from authoring import SCOPED_STANCE_GUIDANCE, reply_template
+        from authoring import SCOPED_STANCE_GUIDANCE, TEMPLATE_ACK_ACTIONS, reply_template
         parser = argparse.ArgumentParser(prog='python src/ucl.py template', epilog=SCOPED_STANCE_GUIDANCE)
         parser.add_argument('packet')
         parser.add_argument('--speaker', required=True)
@@ -171,6 +171,8 @@ def main(args):
         parser.add_argument('--path', type=_claim_path)
         parser.add_argument('--seed-formula', action='store_true',
                             help='copy the selected proposition into explanation and conclusion for editing')
+        parser.add_argument('--ack-action', choices=TEMPLATE_ACK_ACTIONS,
+                            help='prefill the scoped ACK with a chosen action, such as withhold-judgment (requires --claim)')
         parser.add_argument('--concept', help='unused alias for a new predicate definition')
         parser.add_argument('--domain', help='existing domain for a unary predicate')
         options = parser.parse_args(args[2:])
@@ -178,11 +180,13 @@ def main(args):
             parser.error('--path and --concept require --claim')
         if options.seed_formula and options.claim is None:
             parser.error('--seed-formula requires --claim')
+        if options.ack_action is not None and options.claim is None:
+            parser.error('--ack-action requires --claim')
         if options.domain is not None and options.concept is None:
             parser.error('--domain requires --concept')
         draft = reply_template(decode_portable(_portable_file(options.packet)), options.speaker,
                                options.claim, options.path or [], alias=options.concept, domain=options.domain,
-                               retract=options.retract, seed_formula=options.seed_formula)
+                               retract=options.retract, seed_formula=options.seed_formula, ack_action=options.ack_action)
         print(json.dumps(draft, indent=2, ensure_ascii=False))
     elif command=='diff':
         from inspection import compare_packets

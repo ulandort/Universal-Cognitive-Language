@@ -9,6 +9,9 @@ SCOPED_STANCE_GUIDANCE = (
     'To withhold judgment, keep act.details.stance as "undetermined" and set '
     'acknowledgements[0].action to "withhold-judgment". The default action "received" records receipt only.'
 )
+TEMPLATE_ACK_ACTIONS = (
+    'received', 'understood', 'accept', 'reject', 'clarify', 'adopt-for-discussion', 'withhold-judgment',
+)
 
 
 def _checked(field, validator, *args, **kwargs):
@@ -72,9 +75,13 @@ def preflight(parent, contribution, *, archived=False):
                  version=version, archived=archived, prior_acks=parent['acknowledgements'])
 
 
-def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, retract=None, seed_formula=False):
+def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, retract=None, seed_formula=False,
+                   ack_action=None):
     """Seed a reply with exact references and leave its authorship to the participant."""
     core.need(0 < len(speaker) <= 120, 'speaker must contain 1 to 120 characters')
+    if ack_action is not None:
+        core.need(claim is not None and retract is None, '--ack-action requires --claim')
+        core.need(ack_action in TEMPLATE_ACK_ACTIONS, 'unsupported starter acknowledgement action')
     definitions = parent['definitions']
     acts = parent['discourse']['acts']
     acknowledgements = parent['acknowledgements']
@@ -92,7 +99,7 @@ def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, ret
             except ValueError as exc:
                 raise ValueError(f'Selected branch cannot stand alone: {exc}. '
                                  'Choose an enclosing claim path or omit --seed-formula.') from exc
-        source, target, action = binding['act'], {'claim': claim, 'path': path}, 'received'
+        source, target, action = binding['act'], {'claim': claim, 'path': path}, ack_action or 'received'
     else:
         core.need(not seed_formula, '--seed-formula requires --claim')
         core.need(core.packet_version(parent) in core.RETRACTION_VERSIONS,

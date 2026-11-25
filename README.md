@@ -108,7 +108,7 @@ Commands below use `python src/ucl.py` from the repository root.
 | Reissue an older packet | `upgrade older.txt current.txt` |
 | Extract or wrap the inner packet | `decode packet.txt inner.json` or `encode inner.json packet.txt` |
 
-For a scoped reply, use **template → edit → preflight → continue**. Add `--seed-formula` to copy the selected proposition into the two typed fields for editing. Add `--concept '$control_sensitive' --domain D` to start a typed predicate definition. If the task requires a specific stance, set `acknowledgements[0].action` in the scoped starter before handing it over and check the returned action. The default `received` records receipt. When qualifying a claim, put the typed condition in `qualification.expression` and its prose explanation in `qualification.explanation`.
+For a scoped reply, use **template → edit → preflight → continue**. Add `--seed-formula` to copy the selected proposition into the two typed fields for editing. Add `--concept '$control_sensitive' --domain D` to start a typed predicate definition. If the author has already chosen a stance, prefill the scoped ACK with `--ack-action withhold-judgment` (or another action listed by `template --help`) and check the returned action. The default `received` records receipt. When qualifying a claim, put the typed condition in `qualification.expression` and its prose explanation in `qualification.explanation`.
 
 For example, hand off a scoped starter with this instruction when the assignment calls for withholding judgment.
 
