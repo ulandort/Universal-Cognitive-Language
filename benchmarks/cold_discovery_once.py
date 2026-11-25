@@ -13,9 +13,9 @@ from authoring import SCOPED_STANCE_GUIDANCE, reply_template
 from history_archive import inspect_archive_handoff, pack
 from inspection import compare_packets
 
-CAP = 0.70
+CAP = 0.40
 live.CAP = CAP
-MODELS = ('clarke-1.0', 'hal-1.0')
+MODELS = ('hal-1.0',)
 CLAIM, PATH, SOURCE, RULE = 'theory', [1], 't18', 't37'
 EVIDENCE = ('The earlier observation log records that B persisted in repeated runs using the same inputs. '
             'No independent-input run was performed.')
@@ -54,7 +54,7 @@ def session(client, budget, model, packet, wire, briefing, prompts):
     folder = OUT / model
     folder.mkdir(parents=True, exist_ok=True)
     row = {'model': model}
-    find, selected, _ = live.call(client, budget, model, prompts, 8192, folder, 'find',
+    find, selected, _ = live.call(client, budget, model, prompts, 16384, folder, 'find',
                                   mock={'claim': CLAIM, 'path': PATH, 'request': [RULE, SOURCE]})
     row['find'] = find
     if not isinstance(selected, dict):
