@@ -18,11 +18,19 @@ Add `--compact` for a paste-ready JSON line with both packet digests, full chang
 
 ## Newcomer briefing
 
+Start with `python src/ucl.py inspect packet.txt --handoff` when you don’t know the claim or turn IDs. The `candidate_branches` list shows up to six named scopes. Each entry gives the claim ID, exact path, origin act, an expression preview, and up to three recorded stances from Current State. Linked act IDs come from the claim origin, stance authors, and their direct references. When room remains, other named claims appear at their root. This discovery view uses readable records and opens zero gzip blocks.
+
+Each candidate's `source_links` says whether an act is readable or archived and why it was suggested. An archived act may appear because the author of a scoped qualification referenced it. The map shows that recorded relationship without examining the archived text. The `current_act_source_links` list separately shows the latest act's direct references.
+
+Choose a claim, path, and source from the briefing to read them in full.
+
 ```sh
 python src/ucl.py inspect packet.txt --handoff --claim theory --path 1 --include-act t185
 ```
 
 The briefing includes Current State, the exact latest act, the selected claim branch and its source, and the definitions and domain declarations used by the included excerpts. Repeat `--include-act` to retrieve more acts in the requested order. Use `--path root` for the full claim with ACKs targeting that root. Omit `--path` for the full claim and ACKs from all its branches. The briefing includes the source packet digest, match counts for the selected acknowledgement excerpts, and the archive blocks opened. Packed packets open each requested block once. Run `check` to audit the full packed history.
+
+For a reply about evidence, ask the author to identify and quote an act that records what was observed. If the retrieved acts contain only plans, rules, or discussion, ask for another linked act before concluding. When the lookup window closes, tell the author that no further lookups are available and require a nonempty `act.text` explaining the evidence gap. Use `source_missing` when the observation is still absent from the retrieved records, `not_established` when a retrieved observation falls short of the criterion, and `established` when it supports the criterion. These labels describe an evidence review in the authoring exchange. Record the resulting stance on the exact claim path in the reply's ACK.
 
 Briefing version 2 uses three distinct reference labels. The labels apply both to focused ACK excerpts and to stance and retraction entries in its Current State.
 
@@ -33,6 +41,17 @@ Briefing version 2 uses three distinct reference labels. The labels apply both t
 | `source_act` | The origin of the target claim or expression | `t1` |
 
 The raw `inspect --act`, `inspect --claim`, and `inspect --state` commands retain their existing field names. Packet ACKs still use `id` and `by` on the wire.
+
+### Bind a reply to its briefing
+
+Save `source_packet_sha256` when sending the briefing. Pass that value to both authoring commands so they check the validated inner packet against the copy the author saw.
+
+```sh
+python src/ucl.py preflight packet.txt --expect-packet-sha256 "$briefing_digest" < draft.json
+python src/ucl.py continue packet.txt next.txt --expect-packet-sha256 "$briefing_digest" < draft.json
+```
+
+A mismatch stops the command before writing a continuation. Refresh the briefing and have the author review the draft against the new state. Because the check uses the inner digest, lossless repacking of the same packet keeps the digest. The flag is optional for workflows that intentionally answer an older turn.
 
 When an author has recorded issues, `open_issue` quotes the last entry in `packet.history.unresolved` verbatim and gives its JSON Pointer in the original packet. It is conversation-wide speaker data. It can refer to a different branch than the selected claim. When the list is empty, the field is null. Questions remain in Current State.
 

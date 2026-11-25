@@ -42,9 +42,9 @@ The Concept Index identifies the added definition, its recent use, and any attri
 From the root of a UCL checkout:
 
 ```bash
-python src/ucl.py upgrade examples/quickstart.txt quickstart-24.txt
-python src/ucl.py check quickstart-24.txt
-python src/ucl.py decode quickstart-24.txt restored-inner.json
+python src/ucl.py upgrade examples/quickstart.txt quickstart-current.txt
+python src/ucl.py check quickstart-current.txt
+python src/ucl.py decode quickstart-current.txt restored-inner.json
 python src/ucl.py encode restored-inner.json portable-example.txt
 python src/ucl.py check restored-inner.json
 ```
@@ -66,7 +66,7 @@ python src/ucl.py check incoming-ucl2.txt
 python src/ucl.py inspect incoming-ucl2.txt --state
 ```
 
-Read the validated guide, then use **template → edit → preflight → continue** for a scoped reply. The template command uses the incoming packet's IDs. Replace the example speaker, claim, and path with the ones you intend to use. Fill in the content fields and choose the acknowledgement action before running preflight.
+Read the validated guide, then use `draft-reply` and `continue` for a simple scoped ACK. Follow the [short reply form](https://github.com/ulandort/Universal-Cognitive-Language/blob/main/README_AI.md#draft-from-one-scoped-decision). Use **template → edit → preflight → continue** for a custom typed reply. The template command uses the incoming packet's IDs. Replace the example speaker, claim, and path with the ones you intend to use. Fill in the content fields and choose the acknowledgement action before running preflight.
 
 ```bash
 python src/ucl.py template incoming-ucl2.txt --speaker "New participant" --claim theory --path 1 --seed-formula > contribution.json
@@ -76,7 +76,7 @@ python src/ucl.py continue incoming-ucl2.txt next-ucl2.txt < contribution.json
 python src/ucl.py check next-ucl2.txt
 ```
 
-Send only `next-ucl2.txt`. The continuation preserves the incoming version. For archived inner packets, the repository also retains `tools/author.py`. An explicit `python src/ucl.py upgrade archived.txt current.txt` creates a separate 2.4 file. Existing 2.3 definition IDs carry forward. To retract a stance, use `template packet.txt --speaker NAME --retract ACK_ID` and fill in the response text, explanation, and conclusion.
+Send only `next-ucl2.txt`. The continuation preserves the incoming version. For archived inner packets, the repository also retains `tools/author.py`. An explicit `python src/ucl.py upgrade archived.txt current.txt` creates a separate 2.5 file. Definition IDs from 2.1 through 2.4 carry forward. To retract a stance, use `template packet.txt --speaker NAME --retract ACK_ID` and fill in the response text, explanation, and conclusion.
 
 ## Retrieve an earlier source
 

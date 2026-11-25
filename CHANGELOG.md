@@ -2,6 +2,14 @@
 
 This project uses versioned protocol profiles. Experimental benchmark artifacts are research evidence rather than evidence of a different live released wire specification.
 
+## UCL 2.5.0 — Source discovery and scoped replies (November 2026)
+
+- Add candidate claim branches and source links to the newcomer briefing. Packed discovery opens no archive blocks.
+- Add `draft-reply`, optional ACK prefilling, and an expected-packet digest check for delayed drafts.
+- Bound work in finite-model validation and align the Node and Python JSON input boundaries.
+- Publish the 2.5 Portable format and embedded short reply guidance. Preserve definition IDs when upgrading from 2.1 or later.
+- Replay the original six-turn dialogue with six validated packets and five matching receipts.
+
 ## UCL 2.4.1 — Packed handoff walkthrough (November 2026)
 
 - Label ACK and author act IDs explicitly in newcomer briefing v2.

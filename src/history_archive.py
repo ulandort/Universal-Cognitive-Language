@@ -284,7 +284,7 @@ def inspect_archive_handoff(envelope, *, claim_id=None, path=None, act_ids=()):
     packet, opened = _excerpt_packet(envelope, act_ids, slots, by_act)
     return {
         **handoff_briefing(packet, wire_format=envelope['format'], claim_id=claim_id, path=path,
-                           act_ids=act_ids, state=_archive_state(envelope)),
+                           act_ids=act_ids, state=_archive_state(envelope), archived_act_ids=by_act),
         'archive_blocks_opened': opened,
     }
 

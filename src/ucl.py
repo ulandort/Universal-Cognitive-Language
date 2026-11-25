@@ -14,15 +14,16 @@ import sys
 from tempfile import NamedTemporaryFile
 from pathlib import Path
 
-VERSION='UCL/2.4'
-RELEASE_VERSION='2.4.1'
-PORTABLE_FORMAT='UCL/2.4-SAP1-PORTABLE'
+VERSION='UCL/2.5'
+RELEASE_VERSION='2.5.0'
+PORTABLE_FORMAT='UCL/2.5-SAP1-PORTABLE'
+V24_PORTABLE_FORMAT='UCL/2.4-SAP1-PORTABLE'
 V23_PORTABLE_FORMAT='UCL/2.3-SAP1-PORTABLE'
 V22_PORTABLE_FORMAT='UCL/2.2-SAP1-PORTABLE'
 V21_PORTABLE_FORMAT='UCL/2.1-SAP1-PORTABLE'
 LEGACY_PORTABLE_FORMAT='UCL/2.0-SAP1-PORTABLE'
 LONG_DRAFT_FORMAT='UCL/2.2-SAP1-PORTABLE-DRAFT'
-ARCHIVE_FORMATS=(PORTABLE_FORMAT, V23_PORTABLE_FORMAT, V22_PORTABLE_FORMAT, LONG_DRAFT_FORMAT)
+ARCHIVE_FORMATS=(PORTABLE_FORMAT, V24_PORTABLE_FORMAT, V23_PORTABLE_FORMAT, V22_PORTABLE_FORMAT, LONG_DRAFT_FORMAT)
 INNER_GRAMMAR_VERSION=_core.CURRENT_VERSION
 MAX_PORTABLE_JSON=8_000_000
 
@@ -45,12 +46,25 @@ def check_portable(envelope):
             'format':envelope['format'],
             'packet':_core.check(packet, archived='archive' in envelope)}
 
-def continue_portable(envelope, contribution):
-    """Append an authored draft to a verified Portable envelope."""
+def _continuation_parent(envelope, expected_packet_sha256):
+    if expected_packet_sha256 is not None:
+        _core.need(isinstance(expected_packet_sha256, str)
+                   and re.fullmatch(r'[A-Za-z0-9_-]{43}', expected_packet_sha256),
+                   'expected packet digest must be a 43-character Base64url SHA-256')
+    parent = decode_portable(envelope)
+    actual = parent['integrity']['sha256']
+    if expected_packet_sha256 is not None and expected_packet_sha256 != actual:
+        raise ValueError(f'packet digest mismatch: expected {expected_packet_sha256}, got {actual}. '
+                         'Refresh the handoff before continuing.')
+    return parent
+
+
+def continue_portable(envelope, contribution, *, expected_packet_sha256=None):
+    """Append a draft, optionally requiring the exact inner packet it was written against."""
     from authoring import author, preflight
     import portable
 
-    parent = decode_portable(envelope)
+    parent = _continuation_parent(envelope, expected_packet_sha256)
     archived = 'archive' in envelope
     preflight(parent, contribution, archived=archived)
     packet = author(parent, contribution, archived=archived)
@@ -111,11 +125,18 @@ def _claim_path(value):
     raise argparse.ArgumentTypeError('use up to 32 dot-separated indices from 0 to 15, or root')
 
 
-def _continue_cli(args):
-    if len(args) != 4:
-        raise ValueError('Usage: python src/ucl.py continue incoming.txt next.txt < contribution.json')
-    source, output = map(Path, args[2:])
-    _write_handoff(source, output, continue_portable(_portable_file(source), _read_contribution()))
+def _authoring_options(command, args):
+    parser = argparse.ArgumentParser(prog=f'python src/ucl.py {command}')
+    parser.add_argument('source', type=Path, metavar='PACKET')
+    if command == 'continue':
+        parser.add_argument('output', type=Path, metavar='OUTPUT')
+    if command == 'draft-reply':
+        from authoring import TEMPLATE_ACK_ACTIONS
+        parser.add_argument('--speaker', required=True)
+        parser.add_argument('--expect-ack-action', choices=TEMPLATE_ACK_ACTIONS,
+                            help='require the author to choose this ACK action')
+    parser.add_argument('--expect-packet-sha256', help='require the source_packet_sha256 from the briefing')
+    return parser.parse_args(args)
 
 def main(args):
     """Dispatch current and archived Portable packets by their version markers."""
@@ -124,10 +145,13 @@ def main(args):
         print(f'UCL CLI {RELEASE_VERSION} ({PORTABLE_FORMAT}, guide {INNER_GRAMMAR_VERSION})')
         return
     if len(args) > 1 and args[1] == 'continue':
-        _continue_cli(args)
+        options = _authoring_options('continue', args[2:])
+        result = continue_portable(_portable_file(options.source), _read_contribution(),
+                                   expected_packet_sha256=options.expect_packet_sha256)
+        _write_handoff(options.source, options.output, result)
         return
     if len(args)<3:
-        raise ValueError('Usage: python src/ucl.py check | encode | decode | pack | continue | preflight | template | inspect | diff | upgrade | build/canonicalize/draft ...')
+        raise ValueError('Usage: python src/ucl.py check | encode | decode | pack | continue | preflight | template | draft-reply | inspect | diff | upgrade | build/canonicalize/draft ...')
     command=args[1]
     if command=='check' and len(args)==3:
         data=_core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
@@ -135,14 +159,24 @@ def main(args):
             print(json.dumps(check_portable(data),indent=2))
         else:
             print(json.dumps(_core.check(data),indent=2))
-    elif command=='preflight' and len(args)==3:
+    elif command=='preflight':
         from authoring import preflight
-        envelope = _portable_file(args[2])
-        preflight(decode_portable(envelope), _read_contribution(), archived='archive' in envelope)
+        options = _authoring_options('preflight', args[2:])
+        envelope = _portable_file(options.source)
+        parent = _continuation_parent(envelope, options.expect_packet_sha256)
+        preflight(parent, _read_contribution(), archived='archive' in envelope)
         print('PREFLIGHT PASSED. Run continue for full validation and handoff.')
+    elif command=='draft-reply':
+        from authoring import draft_scoped_reply
+        options = _authoring_options(command, args[2:])
+        envelope = _portable_file(options.source)
+        parent = _continuation_parent(envelope, options.expect_packet_sha256)
+        draft = draft_scoped_reply(parent, options.speaker, _read_contribution(),
+                                  expected_ack_action=options.expect_ack_action, archived='archive' in envelope)
+        print(json.dumps(draft, indent=2, ensure_ascii=False))
     elif command=='template':
-        from authoring import reply_template
-        parser = argparse.ArgumentParser(prog='python src/ucl.py template')
+        from authoring import SCOPED_STANCE_GUIDANCE, TEMPLATE_ACK_ACTIONS, reply_template
+        parser = argparse.ArgumentParser(prog='python src/ucl.py template', epilog=SCOPED_STANCE_GUIDANCE)
         parser.add_argument('packet')
         parser.add_argument('--speaker', required=True)
         scope = parser.add_mutually_exclusive_group(required=True)
@@ -151,6 +185,8 @@ def main(args):
         parser.add_argument('--path', type=_claim_path)
         parser.add_argument('--seed-formula', action='store_true',
                             help='copy the selected proposition into explanation and conclusion for editing')
+        parser.add_argument('--ack-action', choices=TEMPLATE_ACK_ACTIONS,
+                            help='prefill the scoped ACK with a chosen action, such as withhold-judgment (requires --claim)')
         parser.add_argument('--concept', help='unused alias for a new predicate definition')
         parser.add_argument('--domain', help='existing domain for a unary predicate')
         options = parser.parse_args(args[2:])
@@ -158,11 +194,13 @@ def main(args):
             parser.error('--path and --concept require --claim')
         if options.seed_formula and options.claim is None:
             parser.error('--seed-formula requires --claim')
+        if options.ack_action is not None and options.claim is None:
+            parser.error('--ack-action requires --claim')
         if options.domain is not None and options.concept is None:
             parser.error('--domain requires --concept')
         draft = reply_template(decode_portable(_portable_file(options.packet)), options.speaker,
                                options.claim, options.path or [], alias=options.concept, domain=options.domain,
-                               retract=options.retract, seed_formula=options.seed_formula)
+                               retract=options.retract, seed_formula=options.seed_formula, ack_action=options.ack_action)
         print(json.dumps(draft, indent=2, ensure_ascii=False))
     elif command=='diff':
         from inspection import compare_packets

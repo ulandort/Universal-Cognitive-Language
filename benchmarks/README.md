@@ -1,6 +1,6 @@
 # UCLBench — reproducible benchmarks and conformance tests
 
-UCLBench includes deterministic offline validation and experimental live-model research. The current release is [UCL 2.4.1](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.4.1). Archived comparison scripts reproduce earlier profiles. Interpret each result in the context of its tested profile.
+UCLBench includes deterministic offline validation and experimental live-model research. The current release is [UCL 2.5.0](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.5.0). Archived comparison scripts reproduce earlier profiles. Interpret each result in the context of its tested profile.
 
 ```bash
 python -m unittest discover -s tests -p 'test_release.py' -v
@@ -34,6 +34,8 @@ In a fresh, two-model test using the six **actually model-invented** CG-2 concep
 
 ## Additional live results
 
+The 2.5 candidate replayed the original six-turn dialogue scenario using the Portable arm and the current short-reply assembler. Clarke and Hal alternated six turns. All six packets passed Python and Node validation on the first attempt. All five scored receipts matched the prior speaker's self-reported intent on the ACK action, branch path, meaning of “signal,” and evidence type. The estimated cost was **$0.2055**. This was a single smoke test with tool-assisted encoding. [Run and transcripts](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45555603236)
+
 | Experiment | Observed result | What was checked |
 |---|---|---|
 | **Post-release Concept Genesis CG-2** | **7/8 delivered; 6 novel definitions; 6/6 identity receipts** | Independently authored concepts, precise critique, counterexamples, and evolving disagreement ([full CG-2 results](CG2_POSTRELEASE_RESULTS.md)) |
@@ -52,4 +54,4 @@ The structured-English comparison measured schema compliance and factual correct
 
 ## Reproduce, inspect and challenge
 
-Repeat the test with published code and exact seed; inspect every raw model attempt and model-authored repair. Score packet syntax, exact definition identity, correct references, attribution, independent disagreement, input tokens and costs separately. No central verification server is needed. See the [current 2.4 specification](../docs/UCL_2_4_SPECIFICATION.md) and the [archived 2.0 specification](../docs/UCL_2_0_SPECIFICATION.md).
+Repeat the test with published code and exact seed; inspect every raw model attempt and model-authored repair. Score packet syntax, exact definition identity, correct references, attribution, independent disagreement, input tokens and costs separately. No central verification server is needed. See the [current 2.5 specification](../docs/UCL_2_5_SPECIFICATION.md) and the [archived 2.0 specification](../docs/UCL_2_0_SPECIFICATION.md).

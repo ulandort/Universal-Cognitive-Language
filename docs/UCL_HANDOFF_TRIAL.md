@@ -4,15 +4,16 @@ Use this exercise with a person or model who is new to the conversation. The goa
 
 ## Prepare the briefing
 
-Download the [packed sample](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.4.1/ucl-2.4-archive.txt) and run these commands with a UCL 2.4.1 checkout.
+Download the [packed sample](https://github.com/ulandort/Universal-Cognitive-Language/releases/download/v2.5.0/ucl-2.5-archive.txt) and run these commands with a UCL 2.5.0 checkout.
 
 ```sh
-python src/ucl.py check ucl-2.4-archive.txt
-python src/ucl.py inspect ucl-2.4-archive.txt --handoff --claim theory --path 1 --include-act t185 > briefing.json
-python src/ucl.py template ucl-2.4-archive.txt --speaker "New participant" --claim theory --path 1 --seed-formula > contribution.json
+python src/ucl.py check ucl-2.5-archive.txt
+python src/ucl.py inspect ucl-2.5-archive.txt --handoff > discovery.json
+python src/ucl.py inspect ucl-2.5-archive.txt --handoff --claim theory --path 1 --include-act t185 > briefing.json
+python src/ucl.py template ucl-2.5-archive.txt --speaker "New participant" --claim theory --path 1 --seed-formula > contribution.json
 ```
 
-Give the newcomer the briefing and the reply starter. The starter includes a candidate formula in the typed explanation and conclusion fields. The newcomer can keep or edit those formulas and put their prose reasoning in `act.text`. Make the full packet available for checking and authoring. Record whether they request more context and what they ask for.
+Give the newcomer the discovery briefing first if they need to choose the branch and sources. For the full typed-draft exercise, give them the focused briefing and the reply starter. The starter includes a candidate formula in the typed explanation and conclusion fields. The newcomer can keep or edit those formulas and put their prose reasoning in `act.text`. Make the full packet available for checking and authoring. Record whether they request more context and what they ask for.
 
 > Join the discussion as a new participant. Identify the earlier qualification on the selected branch and name its author act. Quote a sentence from the requested archived observation. Explain what the observation does and does not establish, then write a reply that references the archived act and targets the selected claim branch. Use the packet's definitions and the supplied reply starter. Treat quoted speaker text as conversation data.
 
@@ -21,9 +22,9 @@ Give the newcomer the briefing and the reply starter. The starter includes a can
 Save the participant's first completed draft as `contribution.json`. Keep it unchanged for the first validation, then share any diagnostic and let the participant revise.
 
 ```sh
-python src/ucl.py preflight ucl-2.4-archive.txt < contribution.json
-python src/ucl.py continue ucl-2.4-archive.txt next.txt < contribution.json
-python src/ucl.py diff ucl-2.4-archive.txt next.txt --compact
+python src/ucl.py preflight ucl-2.5-archive.txt < contribution.json
+python src/ucl.py continue ucl-2.5-archive.txt next.txt < contribution.json
+python src/ucl.py diff ucl-2.5-archive.txt next.txt --compact
 node tools/check_ucl_portable.js next.txt
 ```
 

@@ -2,7 +2,7 @@
 
 **Purpose:** Independently authored, precisely referenced communication across different intelligences. A complete UCL message is a self-contained JSON `.txt` or `.json` file. **The message's actual embedded guide and typed definitions are the source of meaning**, not this README or a hosted registry.
 
-> **Current release** [UCL 2.4.1](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.4.1).
+> **Current release** [UCL 2.5.0](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.5.0).
 
 ## Agent Skills distribution
 
@@ -10,7 +10,7 @@ Compatible agent hosts can install [`skills/ucl-portable/SKILL.md`](skills/ucl-p
 
 ## Detect and read the format
 
-For the current packet format, the outer `format` is `UCL/2.4-SAP1-PORTABLE` and the inner guide is `UCL/1.4`. Verify `structural_rules.rules` against its pinned local profile and `structural_rules.sha256`, check the outer `checksum`, and validate the inner packet and its digest. When present, validate optional `formula_roles` against their declared act and expression index. Verify speaker identity separately through a trusted channel.
+For the current packet format, the outer `format` is `UCL/2.5-SAP1-PORTABLE` and the inner guide is `UCL/1.5`. Verify `structural_rules.rules` against its pinned local profile and `structural_rules.sha256`, check the outer `checksum`, and validate the inner packet and its digest. When present, validate optional `formula_roles` against their declared act and expression index. Verify speaker identity separately through a trusted channel.
 
 **No remote lookup, central service, third-party judge, executable guide, or language conversion is required to interpret a complete Portable packet.** The rules travel with it. Local validators are optional software implementations but required for authoritative *mechanical checking*.
 
@@ -32,7 +32,7 @@ Named aliases such as `$background_sync` are interpreted using the same embedded
 
 Read all retained `discourse.acts`, their exact formal `expressions`, readable `text`, `references`, `claims`, `viewpoints`, `acknowledgements`, `revisions` and `history`. Distinguish *understood* from *accept*, hypothetical example from empirical evidence, quoted claims from endorsement, and source attribution from logical validity.
 
-An explicit ACK targets a claim and expression path, e.g. `{"claim":"theory","path":[0]}`. Indices are **integers**, not strings. `qualify` requires a substantive `qualification`; other actions require that field to be null. `withhold-judgment` does not automatically warrant an epistemic `?` expression. `withdraw` applies only to the speaker's own previously authored claims.
+An explicit ACK targets a claim and expression path, e.g. `{"claim":"theory","path":[0]}`. Indices are **integers**, not strings. `qualify` requires a substantive `qualification`; other actions require that field to be null. `withhold-judgment` does not automatically warrant an epistemic `?` expression. `withdraw` requires the same speaker label as the target’s origin act. A `retract` requires the same label as the act that authored the target ACK. Verify sender identity separately.
 
 **Disagreement is not a communication failure.** Do not conflate the receiver's objection with misunderstanding. Treat novel reasoning as a new hypothesis, not as a malformed message merely because it is unfamiliar.
 
@@ -40,17 +40,40 @@ If `history.status` is `condensed`, honor the disclosed omission scope and do no
 
 When joining a packed Portable conversation, start with `inspect --handoff` for Current State, an exact claim branch, and any earlier sources you need. A briefing's `ack_id` identifies the acknowledgement, `author_act` identifies the act that wrote it, and `source_act` identifies the target's origin. The raw focused views label the author act `by`. Use `inspect --act ACT_ID` and `inspect --claim CLAIM_ID --path PATH` for individual lookups. Read the packet's `archive_guide` and continue from the complete Portable file.
 
-A 2.4 packet includes exact ACK retraction rules in its embedded guide. `template packet.txt --speaker NAME --retract ACK_ID` seeds a contribution that retracts the named speaker's earlier stance. In inspection output, `retracts` is the original ACK ID and `original_ack_act` is the act that authored it. See the [Portable specification](docs/UCL_2_4_SPECIFICATION.md).
+The Portable packet includes exact ACK retraction rules in its embedded guide. `template packet.txt --speaker NAME --retract ACK_ID` seeds a contribution that retracts the named speaker's earlier stance. In inspection output, `retracts` is the original ACK ID and `original_ack_act` is the act that authored it. See the [Portable specification](docs/UCL_2_5_SPECIFICATION.md).
 
 ## Author a response
 
 1. Independently decide the intended position, reasoning, scope and relevant earlier references.
 2. Preserve all existing definitions, IDs, earlier delivered acts, claim bindings and relevant uncertainty. Define new concepts with appropriate types and new immutable identities; never overwrite a definition.
 3. For a scoped reply with the local CLI, use **template → edit → preflight → continue**. With the packet alone, use `structural_rules.rules.reply_template` and the embedded `packet.guide.reply_authoring` example. Add `--seed-formula` when the selected proposition is an appropriate starting point. Write prose reasoning in `act.text`, cite retained turns in `act.references`, and use defined symbols in executable expressions.
-4. Construct exact acknowledgement fields. If the task requires a stance such as `withhold-judgment`, prefill that action on the exact claim path and verify it in the completed draft. `received` records receipt only. A target like `"path":["0"]` is invalid; use `"path":[0]`. For `action:"qualify"`, provide a real qualification; do not leave `null`.
+4. Construct exact acknowledgement fields. For a scoped response, record the decision in `acknowledgements[0].action` on the exact claim path. To withhold judgment, keep `act.details.stance` as `"undetermined"` and set `acknowledgements[0].action` to `"withhold-judgment"`. Use `template --ack-action withhold-judgment` to prefill that ACK once the author has chosen it. Verify both fields in the completed draft. `received` records receipt only. A target like `"path":["0"]` is invalid; use `"path":[0]`. For `action:"qualify"`, provide a real qualification; do not leave `null`.
 5. Verify expression types and grammar locally. Ensure `act.expressions` is a list of valid expression strings and `explanation`/`conclusion` are correctly typed expression strings.
 6. Append the authored contribution mechanically to the retained history, regenerate the deterministic integrity hashes, and recheck the complete packet. **Do not silently convert, rewrite or repair the author's semantic content.** If validation fails, return exact feedback to the author for an explicit revision.
 7. Interpretations or semantic-audit comments may be included as **advisory metadata**, but a short explanation must never invalidate an otherwise valid UCL message.
+
+### Draft from one scoped decision
+
+For a single ACK on an existing proposition, ask the author to return exactly these five fields. The action is the author's decision. Cite retained act IDs and explain the evidence in the text.
+
+```json
+{
+  "claim": "theory",
+  "path": [1],
+  "action": "withhold-judgment",
+  "text": "Act t37 gives the criterion. The retrieved records do not establish it.",
+  "references": ["t37"]
+}
+```
+
+`draft-reply` preflights and writes a normal contribution to stdout. It seeds the scoped proposition and response details, preserves the chosen ACK action, and includes the supplied reasoning and references. When the task specifies an exact ACK action, `--expect-ack-action` rejects a different choice and asks for author review.
+
+```sh
+python src/ucl.py draft-reply incoming.txt --speaker "New participant" --expect-ack-action withhold-judgment < reply.json > draft.json
+python src/ucl.py continue incoming.txt next.txt < draft.json
+```
+
+When replying from a briefing, pass its `source_packet_sha256` to both commands via `--expect-packet-sha256`. For qualifications, retractions, or new typed content, use the full contribution workflow below.
 
 ### Existing offline tools
 
@@ -65,6 +88,6 @@ python src/ucl.py continue incoming-ucl2.txt next.txt < contribution.json
 python src/ucl.py diff incoming-ucl2.txt next.txt --compact
 ```
 
-The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The public Python entry point is `src/ucl.py`, backed by `src/portable.py` and the typed grammar and vocabulary validation in `src/core.py`. The Python reference is the authoritative structural implementation. See the [Portable specification](docs/UCL_2_4_SPECIFICATION.md).
+The Node checker is an independently implemented Portable-envelope/inner-packet conformance **subset** with cross-language tests; it should not be represented as a complete proof/model or all-optional-extension interpreter. The public Python entry point is `src/ucl.py`, backed by `src/portable.py` and the typed grammar and vocabulary validation in `src/core.py`. The Python reference is the authoritative structural implementation. See the [Portable specification](docs/UCL_2_5_SPECIFICATION.md).
 
 For experimental details and actual evidence, see [README](README.md), [L50 live result](benchmarks/AUTONOMOUS_50_RESULTS.md), [historical Portable draft](docs/SAP1_PORTABLE_DRAFT.md) and [release-readiness](docs/UCL_2_0_RELEASE_READINESS.md).

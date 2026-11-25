@@ -24,6 +24,7 @@ FORMAT_BY_VERSION={
     ucl.INNER_GRAMMAR_VERSION: CURRENT_FORMAT, ucl.LONG_DRAFT_VERSION: ucl.LONG_DRAFT_FORMAT,
     ucl.LONG_VERSION: ucl.V22_PORTABLE_FORMAT,
     ucl.RETRACTION_VERSION: ucl.V23_PORTABLE_FORMAT,
+    ucl.TYPED_REPLY_VERSION: ucl.V24_PORTABLE_FORMAT,
 }
 RULE_DOMAIN=b'UCL-SAP1-RULES-2.0\n'
 ENVELOPE_DOMAIN=b'UCL-SAP1-ENVELOPE-2.0\n'
@@ -222,7 +223,7 @@ RULES_BY_FORMAT = {
         },
     },
 }
-RULES_BY_FORMAT[CURRENT_FORMAT] = {
+RULES_BY_FORMAT[ucl.V24_PORTABLE_FORMAT] = {
     **RULES_BY_FORMAT[ucl.V23_PORTABLE_FORMAT],
     'status': 'stable-2.4',
     'history_reading': (
@@ -238,6 +239,10 @@ RULES_BY_FORMAT[CURRENT_FORMAT] = {
             'draft, and run preflight before continue.'
         ),
     },
+}
+RULES_BY_FORMAT[CURRENT_FORMAT] = {
+    **RULES_BY_FORMAT[ucl.V24_PORTABLE_FORMAT],
+    'status': 'stable-2.5',
 }
 
 

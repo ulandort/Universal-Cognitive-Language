@@ -7,7 +7,7 @@
 */
 'use strict';
 const fs=require('fs');
-const {canonical,hash,semantic}=require('./check_ucl.js');
+const {canonical,hash,parseUclJson,semantic}=require('./check_ucl.js');
 const {createHash}=require('node:crypto');
 const {gunzipSync,inflateRawSync}=require('node:zlib');
 const RULE_DOMAIN='UCL-SAP1-RULES-2.0\n';
@@ -36,6 +36,10 @@ const VERSIONS=new Map([
  ['UCL/2.4-SAP1-PORTABLE',{
   rules:'D6r9Rkm_kYFdqO4lofNhjLhP1p4GoVayXxsvA3XZrHk',
   guide:'OgSiDiN3a2TSuQglgVOyXQaXLh246BltSnAhO4meHTI',
+ }],
+ ['UCL/2.5-SAP1-PORTABLE',{
+  rules:'qxViiEonrg5zB4K3w_w03_tdBEbN3hegJuIBmBBWwZU',
+  guide:'gzHdeowljmb9MM2cyz4vEcG0QaqjydvNQDCcyhrH-vc',
  }],
 ]);
 const ROLE_GUIDE=('FR-1 draft: act/index identifies an exact expression in packet.discourse.acts; '+
@@ -87,7 +91,7 @@ function expandArchive(envelope){
   const member=inflateRawSync(deflate,{maxOutputLength:size,info:true});
   requireThat(member.engine.bytesWritten===deflate.length&&raw.length===size&&rawHash(raw)===block.sha256,
    'archive member length or SHA-256');
-  const records=JSON.parse(raw.toString('utf8'));
+  const records=parseUclJson(raw);
   requireThat(keys(records,['acts','acknowledgements'])&&records.acts.length===slots.length&&
    Array.isArray(records.acknowledgements)&&Buffer.from(canonical(records)).equals(raw),'archive block records');
   const owners=new Set(ids);
@@ -129,7 +133,7 @@ function validate(envelope){
  requireThat(keys(envelope,base)||keys(envelope,extended),'envelope fields invalid');
  const pinned=VERSIONS.get(envelope.format);
  requireThat(pinned&&envelope.profile==='portable','unsupported profile');
- requireThat(!archived||['UCL/2.2-SAP1-PORTABLE','UCL/2.2-SAP1-PORTABLE-DRAFT','UCL/2.3-SAP1-PORTABLE','UCL/2.4-SAP1-PORTABLE'].includes(envelope.format),'archive requires Portable 2.2 or later');
+ requireThat(!archived||!['UCL/2.0-SAP1-PORTABLE','UCL/2.1-SAP1-PORTABLE'].includes(envelope.format),'archive requires Portable 2.2 or later');
  const block=envelope.structural_rules;
  requireThat(keys(block,['rules','sha256']),'rules block invalid');
  requireThat(typeof block.sha256==='string'&&block.sha256===hash(RULE_DOMAIN,block.rules),'rules hash mismatch');
@@ -175,9 +179,9 @@ if(require.main===module){
    const source=process.argv[2];
    const maxBytes=8_000_000;
    requireThat(fs.statSync(source).size<=maxBytes,'envelope too large');
-   const raw=fs.readFileSync(source,'utf8');
-   requireThat(Buffer.byteLength(raw,'utf8')<=maxBytes,'envelope too large');
-   process.stdout.write(JSON.stringify(validate(JSON.parse(raw)))+'\n');
+   const raw=fs.readFileSync(source);
+   requireThat(raw.length<=maxBytes,'envelope too large');
+   process.stdout.write(JSON.stringify(validate(parseUclJson(raw)))+'\n');
  }catch(e){console.error('INVALID:',e.message);process.exitCode=1}
 }
 module.exports={validate};

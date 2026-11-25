@@ -4,6 +4,15 @@ from collections.abc import Mapping
 
 import core
 
+SCOPED_STANCE_GUIDANCE = (
+    'For a scoped response, put the decision in acknowledgements[0].action and keep its exact claim and path. '
+    'To withhold judgment, keep act.details.stance as "undetermined" and set '
+    'acknowledgements[0].action to "withhold-judgment". The default action "received" records receipt only.'
+)
+TEMPLATE_ACK_ACTIONS = (
+    'received', 'understood', 'accept', 'reject', 'clarify', 'adopt-for-discussion', 'withhold-judgment',
+)
+
 
 def _checked(field, validator, *args, **kwargs):
     try:
@@ -66,9 +75,13 @@ def preflight(parent, contribution, *, archived=False):
                  version=version, archived=archived, prior_acks=parent['acknowledgements'])
 
 
-def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, retract=None, seed_formula=False):
+def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, retract=None, seed_formula=False,
+                   ack_action=None):
     """Seed a reply with exact references and leave its authorship to the participant."""
     core.need(0 < len(speaker) <= 120, 'speaker must contain 1 to 120 characters')
+    if ack_action is not None:
+        core.need(claim is not None and retract is None, '--ack-action requires --claim')
+        core.need(ack_action in TEMPLATE_ACK_ACTIONS, 'unsupported starter acknowledgement action')
     definitions = parent['definitions']
     acts = parent['discourse']['acts']
     acknowledgements = parent['acknowledgements']
@@ -86,7 +99,7 @@ def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, ret
             except ValueError as exc:
                 raise ValueError(f'Selected branch cannot stand alone: {exc}. '
                                  'Choose an enclosing claim path or omit --seed-formula.') from exc
-        source, target, action = binding['act'], {'claim': claim, 'path': path}, 'received'
+        source, target, action = binding['act'], {'claim': claim, 'path': path}, ack_action or 'received'
     else:
         core.need(not seed_formula, '--seed-formula requires --claim')
         core.need(core.packet_version(parent) in core.RETRACTION_VERSIONS,
@@ -135,6 +148,34 @@ def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, ret
         _checked('concept alias', core._validate_definition_shapes,
                  {**definitions, alias: {'definition': example}}, core.packet_version(parent))
         draft['new_definitions'] = {alias: {**example, 'gloss': ''}}
+    return draft
+
+
+def draft_scoped_reply(parent, speaker, decision, *, expected_ack_action=None, archived=False):
+    """Build a contribution from an author's explicit decision about one proposition."""
+    fields = {'claim', 'path', 'action', 'text', 'references'}
+    core.need(isinstance(decision, dict) and set(decision) == fields,
+              'reply must contain exactly claim, path, action, text, and references')
+    claim, path, action = decision['claim'], decision['path'], decision['action']
+    core.need(isinstance(claim, str), 'reply.claim must be a named claim ID')
+    core.need(isinstance(path, list) and len(path) <= 32
+              and all(type(index) is int and 0 <= index <= 15 for index in path),
+              'reply.path must be an array of up to 32 integer indices from 0 to 15')
+    core.need(isinstance(action, str) and action in TEMPLATE_ACK_ACTIONS,
+              'reply.action must be one of: ' + ', '.join(TEMPLATE_ACK_ACTIONS))
+    core.need(expected_ack_action is None or expected_ack_action in TEMPLATE_ACK_ACTIONS,
+              'unsupported expected acknowledgement action')
+    if expected_ack_action is not None and action != expected_ack_action:
+        raise ValueError(f'reply.action is {action!r}, but this task requires {expected_ack_action!r}. '
+                         'Have the author review its stance and return a revised reply.')
+    text, references = decision['text'], decision['references']
+    core.need(isinstance(text, str) and bool(text.strip()), 'reply.text must explain the decision')
+    core.need(isinstance(references, list) and all(isinstance(act, str) for act in references),
+              'reply.references must be an array of act IDs')
+    draft = reply_template(parent, speaker, claim, path, seed_formula=True, ack_action=action)
+    draft['act']['text'] = text
+    draft['act']['references'] = list(dict.fromkeys([*draft['act']['references'], *references]))
+    preflight(parent, draft, archived=archived)
     return draft
 
 

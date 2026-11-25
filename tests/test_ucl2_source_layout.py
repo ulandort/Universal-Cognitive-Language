@@ -1,6 +1,7 @@
 """UCL/2.0 public-source-layout regression; no wire/semantic migration."""
 import copy,json,shutil,subprocess,sys,tempfile,unittest
 from pathlib import Path
+from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 import ucl,core,portable
@@ -9,17 +10,94 @@ class SourceLayoutTests(unittest.TestCase):
     def setUpClass(cls):
         cls.packet=core.load_json((ROOT/'examples/cross_model_conversation_8_turns.json').read_text(encoding='utf8'))
     def test_public_version_and_original_grammar(self):
-        self.assertEqual(ucl.VERSION,'UCL/2.4')
+        self.assertEqual(ucl.VERSION,'UCL/2.5')
         self.assertEqual(ucl.PORTABLE_FORMAT,portable.CURRENT_FORMAT)
-        self.assertEqual(ucl.INNER_GRAMMAR_VERSION,'UCL/1.4')
+        self.assertEqual(ucl.INNER_GRAMMAR_VERSION,'UCL/1.5')
         self.assertEqual(ucl.CORE,core.CORE)
         self.assertEqual(ucl.check(self.packet),core.check(self.packet))
         self.assertEqual(ucl.packet_id(self.packet),core.packet_id(self.packet))
+
+    def test_parser_commits_used_symbols_only_after_success(self):
+        wire = ucl.read_json_file(ROOT / 'examples/quickstart.txt')
+        parser = core.Parser(ucl.decode_portable(wire)['definitions'])
+        parser.parse('~[B][A]')
+        with self.assertRaisesRegex(ValueError, 'trailing expression'):
+            parser.parse('![~[B][A]] trailing')
+        self.assertEqual(parser.used, {'~', 'B', 'A'})
+        corrected = '{[#0][D][@[A][D]]'
+        self.assertEqual(core.render(parser.parse(corrected)), corrected)
+        self.assertEqual(parser.used, {'~', 'B', 'A', '{', '#', 'D', '@'})
+
+    def test_model_check_shares_budget_across_validation_and_both_formulas(self):
+        draft = core.draft_from_packet(self.packet)
+        draft['definitions'] = {
+            'O': {'definition': {'kind': 'orientation', 'role': 'model-check', 'gloss': 'Model check'}},
+            'D': {'definition': {'kind': 'domain', 'role': 'item', 'gloss': 'Items'}},
+            'A': {'definition': {'kind': 'value', 'sort': 'D', 'denotes': 'a', 'gloss': 'Item a'}},
+        }
+        draft['domains'] = {'D': {'mode': 'finite', 'members': ['a']}}
+        draft.update(orientation='O', explanation='@[A][D]', conclusion='{[#0][D][@[#0][D]]',
+                     proof=None, revisions=[], claims={}, viewpoints=[], acknowledgements=[])
+        draft['discourse'] = {'current': 't1', 'acts': [{
+            'id': 't1', 'speaker': 'Reader', 'kind': 'model-check', 'text': 'Check membership.',
+            'references': [], 'expressions': [], 'details': {},
+        }]}
+        draft['model'] = {
+            'predicates': {}, 'functions': {}, 'orders': {},
+            'epistemic': {'@[A][D]': {
+                'kind': 'uncertainty', 'assessor': 'Reader', 'evidence': ['t1'],
+                'basis': 'Stipulated example', 'confidence': '0.75',
+            }},
+        }
+        packet = core.build(draft, version=core.CURRENT_VERSION)
+        wire = portable.encode(packet)
+        self.assertEqual(ucl.check_portable(wire)['packet']['result']['model']['status'],
+                         'verified-in-one-model')
+        with patch.object(core, 'MAX_MODEL_WORK', 8):
+            with self.assertRaisesRegex(ValueError, 'finite model work budget exceeded'):
+                ucl.check_portable(wire)
+
+    def test_malformed_definition_sort_gets_field_specific_error(self):
+        packet = copy.deepcopy(self.packet)
+        value = next(record['definition'] for record in packet['definitions'].values()
+                     if record['definition']['kind'] == 'value')
+        value['sort'] = []
+        packet['integrity']['sha256'] = core.packet_id(packet)
+        with self.assertRaisesRegex(ValueError, 'value sort/denotation'):
+            core.check(packet)
+
+    def test_condense_current_draft_keeps_definition_ids(self):
+        draft = core.draft_from_packet(core.upgrade_packet(self.packet))
+        spare = dict(draft['discourse']['acts'][0], id='spare', text='Optional context.')
+        draft['discourse']['acts'].insert(0, spare)
+        condensed = core.condense_draft(draft, ['spare'], 'Removed optional context.')
+        self.assertEqual(condensed['definitions'], draft['definitions'])
+        self.assertEqual(condensed['history']['status'], 'condensed')
     def test_cli_release_version_is_distinct_from_wire_and_guide(self):
         result = subprocess.run([sys.executable, str(ROOT / 'src/ucl.py'), '--version'],
                                 check=True, capture_output=True, text=True, timeout=20)
         self.assertEqual(result.stdout.strip(),
-                         'UCL CLI 2.4.1 (UCL/2.4-SAP1-PORTABLE, guide UCL/1.4)')
+                         'UCL CLI 2.5.0 (UCL/2.5-SAP1-PORTABLE, guide UCL/1.5)')
+
+    @unittest.skipUnless(shutil.which('sh'), 'POSIX shell required for the README walkthrough')
+    def test_readme_source_checkout_quickstart(self):
+        readme = (ROOT / 'README.md').read_text(encoding='utf-8')
+        quickstart = readme.split('\n## Try UCL in five minutes\n', 1)[1].split('\n### ', 1)[0]
+        commands = quickstart.split('\n```sh\n', 1)[1].split('\n```', 1)[0]
+        with tempfile.TemporaryDirectory() as directory:
+            checkout = Path(directory)
+            for name in ('src', 'examples'):
+                shutil.copytree(ROOT / name, checkout / name)
+            ran = subprocess.run(['sh', '-eu', '-c', commands], cwd=checkout,
+                                 capture_output=True, text=True, timeout=20)
+            self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+            wire = core.read_json_file(checkout / 'next.txt', limit=ucl.MAX_PORTABLE_JSON)
+            self.assertEqual(wire['format'], ucl.PORTABLE_FORMAT)
+            packet = portable.decode(wire)
+            self.assertEqual(len(packet['discourse']['acts']), 3)
+            reply = packet['acknowledgements'][-1]
+            self.assertEqual(reply['action'], 'qualify')
+            self.assertEqual(reply['target'], {'claim': 'notes-design', 'path': [1]})
     def test_exact_portable_bytes_and_checksum_not_modified_by_reorganization(self):
         sys.path.insert(0,str(ROOT/'tools'))
         import sap_portable as legacy_entry
@@ -186,6 +264,141 @@ class SourceLayoutTests(unittest.TestCase):
         brief = handoff_briefing(updated, wire_format=ucl.encode_portable(updated)['format'])
         self.assertTrue(brief['current_state']['recent_readable_questions'])
         self.assertIsNone(brief['open_issue'])
+
+    def test_unfocused_handoff_suggests_named_branches_and_linked_sources(self):
+        from inspection import handoff_briefing
+
+        wire = ucl.read_json_file(ROOT / 'examples/quickstart.txt')
+        packet = ucl.decode_portable(wire)
+        brief = handoff_briefing(packet, wire_format=wire['format'])
+        self.assertIsNone(brief['claim'])
+        candidates = {tuple(entry['path']): entry for entry in brief['candidate_branches']}
+        self.assertEqual(set(candidates), {(0,), (1,)})
+        for path, action in (((0,), 'accept'), ((1,), 'reject')):
+            branch = candidates[path]
+            self.assertEqual(branch['claim'], 'notes-design')
+            self.assertEqual(branch['source_act'], 't1')
+            self.assertEqual(branch['linked_act_ids'], ['t1', 't2'])
+            self.assertEqual(branch['recorded_stances'][0]['action'], action)
+        focused = handoff_briefing(packet, wire_format=wire['format'],
+                                   claim_id='notes-design', path=[1])
+        self.assertNotIn('candidate_branches', focused)
+        draft = core.draft_from_packet(packet)
+        draft['acknowledgements'] = []
+        without_stances = core.build(draft, version=core.packet_version(packet))
+        roots = handoff_briefing(without_stances, wire_format=wire['format'])['candidate_branches']
+        self.assertEqual([(entry['claim'], entry['path'], entry['recorded_stances']) for entry in roots],
+                         [('notes-design', [], [])])
+
+    def test_expected_packet_digest_rejects_a_stale_draft_in_both_commands(self):
+        source = ROOT / 'examples/quickstart.txt'
+        draft = json.loads((ROOT / 'examples/quickstart_reply.json').read_text())
+        wire = ucl.read_json_file(source)
+        digest = wire['packet']['integrity']['sha256']
+        reply = ucl.continue_portable(wire, draft, expected_packet_sha256=digest)
+        draft['act']['id'] = 'another-reply'
+        draft['acknowledgements'][0].update(id='another-ack', by='another-reply')
+        ucl.continue_portable(reply, draft)
+        with self.assertRaisesRegex(ValueError, 'packet digest mismatch'):
+            ucl.continue_portable(reply, draft, expected_packet_sha256=digest)
+        cli = [sys.executable, str(ROOT / 'src/ucl.py')]
+        with tempfile.TemporaryDirectory() as directory:
+            later = Path(directory) / 'later.txt'
+            output = Path(directory) / 'output.txt'
+            later.write_bytes(ucl.portable_json_bytes(reply))
+            for command, tail in (('preflight', []), ('continue', [str(output)])):
+                with self.subTest(command=command):
+                    base = [*cli, command, str(later), *tail, '--expect-packet-sha256']
+                    result = subprocess.run([*base, digest], input=json.dumps(draft),
+                                            text=True, capture_output=True, timeout=20)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('packet digest mismatch', result.stderr)
+                    self.assertFalse(output.exists())
+                    result = subprocess.run([*base, reply['packet']['integrity']['sha256']],
+                                            input=json.dumps(draft), text=True, capture_output=True, timeout=20)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(ucl.decode_portable(ucl.read_json_file(output))['discourse']['current'],
+                             'another-reply')
+
+    def test_preflight_explains_where_to_record_withheld_judgment(self):
+        from authoring import preflight, reply_template
+
+        wire = ucl.read_json_file(ROOT / 'examples/quickstart.txt')
+        parent = ucl.decode_portable(wire)
+        draft = reply_template(parent, 'Reader', 'notes-design', [1], seed_formula=True)
+        draft['act']['text'] = 'The cited evidence leaves background sync undecided.'
+        draft['act']['details']['stance'] = 'withhold'
+        with self.assertRaisesRegex(ValueError, 'act.details.stance.*acknowledgement action to withhold-judgment'):
+            preflight(parent, draft)
+        draft['act']['details']['stance'] = 'undetermined'
+        draft['acknowledgements'][0]['action'] = 'withhold-judgment'
+        preflight(parent, draft)
+        reply = ucl.decode_portable(ucl.continue_portable(wire, draft))
+        self.assertEqual(reply['acknowledgements'][-1]['action'], 'withhold-judgment')
+        self.assertEqual(reply['acknowledgements'][-1]['target'], {'claim': 'notes-design', 'path': [1]})
+
+    def test_template_prefills_only_the_explicit_scoped_ack_action(self):
+        from authoring import preflight, reply_template
+
+        source = ROOT / 'examples/quickstart.txt'
+        parent = ucl.decode_portable(ucl.read_json_file(source))
+        cli = [sys.executable, str(ROOT / 'src/ucl.py'), 'template', str(source), '--speaker', 'Reader']
+        options = ['--claim', 'notes-design', '--path', '1', '--seed-formula']
+        parsed = subprocess.run([*cli, *options, '--ack-action', 'withhold-judgment'],
+                                check=True, text=True, capture_output=True, timeout=20)
+        draft = json.loads(parsed.stdout)
+        original = reply_template(parent, 'Reader', 'notes-design', [1], seed_formula=True)
+        self.assertEqual(original['acknowledgements'][0]['action'], 'received')
+        original['acknowledgements'][0]['action'] = 'withhold-judgment'
+        self.assertEqual(draft, original)
+        self.assertEqual(draft['act']['details']['stance'], 'undetermined')
+        draft['act']['text'] = 'I need more evidence about background sync.'
+        preflight(parent, draft)
+        with self.assertRaisesRegex(ValueError, 'unsupported starter acknowledgement action'):
+            reply_template(parent, 'Reader', 'notes-design', [1], ack_action='qualify')
+        invalid = subprocess.run([*cli, '--retract', 'x1', '--ack-action', 'withhold-judgment'],
+                                 text=True, capture_output=True, timeout=20)
+        self.assertNotEqual(invalid.returncode, 0)
+        self.assertIn('--ack-action requires --claim', invalid.stderr)
+
+    def test_draft_reply_builds_a_scoped_response_and_refuses_a_stance_mismatch(self):
+        source = ROOT / 'examples/quickstart.txt'
+        wire = ucl.read_json_file(source)
+        digest = wire['packet']['integrity']['sha256']
+        cli = [sys.executable, str(ROOT / 'src/ucl.py'), 'draft-reply', str(source),
+               '--speaker', 'Reader', '--expect-packet-sha256', digest]
+        decision = {'claim': 'notes-design', 'path': [1], 'action': 'withhold-judgment',
+                    'text': 'The evidence is insufficient.', 'references': ['t1']}
+
+        def run(value, *flags):
+            return subprocess.run([*cli, *flags], input=json.dumps(value), text=True,
+                                  capture_output=True, timeout=20)
+
+        required = ('--expect-ack-action', 'withhold-judgment')
+        result = run(decision, *required)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        draft = json.loads(result.stdout)
+        self.assertEqual(draft['act']['details']['stance'], 'undetermined')
+        self.assertEqual(draft['act']['text'], decision['text'])
+        self.assertEqual(draft['act']['references'], ['t2', 't1'])
+        final = ucl.decode_portable(ucl.continue_portable(wire, draft, expected_packet_sha256=digest))
+        self.assertEqual(final['acknowledgements'][-1]['action'], 'withhold-judgment')
+        self.assertEqual(final['acknowledgements'][-1]['target'], {'claim': 'notes-design', 'path': [1]})
+
+        other_choice = {**decision, 'action': 'reject'}
+        rejected = run(other_choice, *required)
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertEqual(rejected.stdout, '')
+        self.assertIn("reply.action is 'reject', but this task requires 'withhold-judgment'", rejected.stderr)
+        unguarded = run(other_choice)
+        self.assertEqual(unguarded.returncode, 0, unguarded.stderr)
+        self.assertEqual(json.loads(unguarded.stdout)['acknowledgements'][0]['action'], 'reject')
+        invalid = run({**decision, 'path': [True]})
+        self.assertNotEqual(invalid.returncode, 0)
+        self.assertIn('reply.path', invalid.stderr)
+        unknown_source = run({**decision, 'references': ['missing']})
+        self.assertNotEqual(unknown_source.returncode, 0)
+        self.assertIn('missing or forward act reference', unknown_source.stderr)
 
     def test_template_seeds_only_standalone_propositions(self):
         from authoring import reply_template
