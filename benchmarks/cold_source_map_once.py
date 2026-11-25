@@ -14,10 +14,15 @@ from authoring import SCOPED_STANCE_GUIDANCE, reply_template
 from history_archive import inspect_archive_handoff, pack
 from inspection import compare_packets
 
-CAP = 0.95
+CAP = 0.43
 live.CAP = CAP
 MODELS = ('clarke-1.0', 'hal-1.0')
 CASES = ('observation_present', 'observation_absent')
+REPLAY = {
+    ('observation_present', 'hal-1.0'): ['t37', 't18'],
+    ('observation_absent', 'clarke-1.0'): ['t37', 't18', 't7'],
+    ('observation_absent', 'hal-1.0'): ['t18', 't760'],
+}
 CLAIM, PATH, SOURCE, RULE = 'theory', [1], 't18', 't37'
 EVIDENCE = ('The earlier observation log records that B persisted in repeated runs using the same inputs. '
             'No independent-input run was performed.')
@@ -72,18 +77,15 @@ def session(client, budget, case, model, prepared):
     folder = OUT / case / model
     folder.mkdir(parents=True, exist_ok=True)
     row = {'case': case, 'model': model, 'calls': []}
-    first, selected = model_call(client, budget, model, prompts, 12288, folder, 'find',
-                                 {'claim': CLAIM, 'path': PATH, 'request': [RULE, SOURCE]})
-    row['calls'].append(first)
-    if not isinstance(selected, dict):
-        return row
+    selected = {'claim': CLAIM, 'path': PATH, 'request': REPLAY[(case, model)]}
+    row['replayed_from'] = 'https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45552985805'
     row['selection'] = selected
     claim, path, ids = (selected.get(key) for key in ('claim', 'path', 'request'))
     allowed = {link['act'] for branch in briefing['candidate_branches'] for link in branch['source_links']}
     allowed.update(link['act'] for link in briefing['current_act_source_links'])
     if not (type(claim) is str and type(path) is list and len(path) <= 32
             and all(type(index) is int and 0 <= index <= 15 for index in path)
-            and type(ids) is list and 1 <= len(ids) <= 2
+            and type(ids) is list and 1 <= len(ids) <= 3
             and all(type(act) is str and act in allowed for act in ids) and len(set(ids)) == len(ids)):
         row['invalid_selection'] = True
         return row
@@ -95,21 +97,22 @@ def session(client, budget, case, model, prepared):
     except ValueError as exc:
         row['selection_error'] = str(exc)
         return row
-    messages = [*prompts, {'role': 'assistant', 'content': live.dump(selected)}]
-    for attempt in range(2):
+    first_request = {**selected, 'request': ids[:2]}
+    messages = [*prompts, {'role': 'assistant', 'content': live.dump(first_request)}]
+    for attempt in range(1):
         focused = inspect_archive_handoff(wire, claim_id=claim, path=path, act_ids=ids)
         records = [entry['act'] for entry in focused['requested_acts']]
         remaining = sorted((allowed | {ref for act in records for ref in act['references']}) - set(ids))
         retry = ''
-        if not attempt and remaining:
+        if attempt and remaining:
             retry = ('If the observation is still missing and one other linked act may contain it, '
                      'you may instead respond with {"request_more":["one act ID"]}. '
                      'Choose only from these remaining IDs: ' + live.dump(remaining) + '. ')
         task = (
-            'Review the retrieved acts. ' + retry +
+            'This is the final response. No further lookups are available. ' +
             'Otherwise return {"observation_act":"act ID or null","quote":"exact full observation text or null",'
             '"criterion_status":"established, not_established, or source_missing","contribution":<completed starter>}. '
-            'Use null for both source fields when the observation is missing. Explain the evidence in act.text. '
+            'Use null for both source fields when the observation is missing. Fill act.text with a nonempty explanation even if the source is missing. '
             'If it is missing or insufficient, withhold judgment. '
             + briefing['source_review_guidance'] + ' ' + SCOPED_STANCE_GUIDANCE +
             '\nRETRIEVED RECORDS\n' + live.dump(records) + '\nSTARTER\n' + live.dump(starter)
@@ -123,10 +126,8 @@ def session(client, budget, case, model, prepared):
         mock = {'observation_act': SOURCE if visible else None, 'quote': EVIDENCE if visible else None,
                 'criterion_status': 'not_established' if visible else 'source_missing',
                 'contribution': mock_draft}
-        if DRY and case == 'observation_absent' and model == MODELS[0] and not attempt:
-            mock = {'request_more': [remaining[0]]}
-        answered, answer = model_call(client, budget, model, messages, 9216 if not attempt else 7168, folder,
-                                      'continue' if not attempt else 'after-lookup', mock)
+        limit = 16384 if case == 'observation_present' else 12288 if model == 'hal-1.0' else 8192
+        answered, answer = model_call(client, budget, model, messages, limit, folder, 'continue', mock)
         row['calls'].append(answered)
         if not isinstance(answer, dict):
             return row
@@ -186,7 +187,7 @@ def main():
                         max_retries=0, timeout=145)
     budget = live.Budget()
     with ThreadPoolExecutor(max_workers=4) as pool:
-        jobs = [pool.submit(session, client, budget, case, model, fixtures[case]) for case in CASES for model in MODELS]
+        jobs = [pool.submit(session, client, budget, case, model, fixtures[case]) for case, model in REPLAY]
         rows = [job.result() for job in jobs]
     calls = [call for row in rows for call in row['calls']]
     if DRY:
