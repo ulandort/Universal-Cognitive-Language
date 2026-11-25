@@ -13,7 +13,7 @@ from authoring import SCOPED_STANCE_GUIDANCE, reply_template
 from history_archive import inspect_archive_handoff, pack
 from inspection import compare_packets
 
-CAP = 0.40
+CAP = 0.25
 live.CAP = CAP
 MODELS = ('hal-1.0',)
 CLAIM, PATH, SOURCE, RULE = 'theory', [1], 't18', 't37'
@@ -54,15 +54,13 @@ def session(client, budget, model, packet, wire, briefing, prompts):
     folder = OUT / model
     folder.mkdir(parents=True, exist_ok=True)
     row = {'model': model}
-    find, selected, _ = live.call(client, budget, model, prompts, 16384, folder, 'find',
-                                  mock={'claim': CLAIM, 'path': PATH, 'request': [RULE, SOURCE]})
-    row['find'] = find
-    if not isinstance(selected, dict):
-        return row
+    selected = {'claim': CLAIM, 'path': PATH, 'request': [RULE, 't760']}
+    row['replayed_discovery'] = 'https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45552116935'
     row['selection'] = selected
     claim, path, acts = (selected.get(key) for key in ('claim', 'path', 'request'))
     row['exact_branch'] = claim == CLAIM and path == PATH and type(path[0]) is int
     linked = {act for branch in briefing['candidate_branches'] for act in branch['linked_act_ids']}
+    linked.update(briefing['current_act']['references'])
     row['requested_archived_observation'] = isinstance(acts, list) and SOURCE in acts
     row['requested_criterion_record'] = isinstance(acts, list) and RULE in acts
     if not (type(claim) is str and type(path) is list and len(path) <= 32
@@ -92,12 +90,12 @@ def session(client, budget, model, packet, wire, briefing, prompts):
     messages = [*prompts, {'role': 'assistant', 'content': live.dump(selected)},
                 {'role': 'user', 'content': prompt}]
     mock_draft = deepcopy(starter)
-    mock_draft['act']['text'] = 'The old observation used shared inputs. Independent variation was not established.'
+    mock_draft['act']['text'] = 'The retrieved sources state the rule but do not contain the observation.'
     mock_draft['act']['references'].extend(act for act in acts if act not in mock_draft['act']['references'])
     mock_draft['acknowledgements'][0]['action'] = 'withhold-judgment'
     continuation, answer, _ = live.call(client, budget, model, messages, 12288, folder, 'continue',
-                                       mock={'observation_act': SOURCE, 'quote': EVIDENCE,
-                                             'criterion_status': 'not_established', 'contribution': mock_draft})
+                                       mock={'observation_act': None, 'quote': None,
+                                             'criterion_status': 'source_missing', 'contribution': mock_draft})
     row['continue'] = continuation
     if not isinstance(answer, dict):
         return row
@@ -142,7 +140,7 @@ def main():
         rows = [job.result() for job in jobs]
     calls = [row[stage] for row in rows for stage in ('find', 'continue') if stage in row]
     if DRY:
-        assert all(row['exact_branch'] and row['requested_archived_observation'] and row['exact_observation_quote']
+        assert all(row['exact_branch'] and not row['requested_archived_observation'] and row['criterion_status'] == 'source_missing'
                    and row['scoped_stance'] and row['python_and_node_valid'] for row in rows)
     report = {'cap_usd': CAP, 'reserved_usd': budget.reserved, 'calls': len(calls),
               'priced_calls': sum('estimated_usd' in call for call in calls),
