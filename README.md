@@ -4,17 +4,7 @@
 
 **Current release** [UCL 2.5.0](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.5.0) · [Specification](docs/UCL_2_5_SPECIFICATION.md) · [AI guide](README_AI.md)
 
-[Packed handoff](#join-a-packed-conversation) · [Quickstart](#try-ucl-in-five-minutes) · [Glyphs and functions](#glyphs-and-functions) · [Conversation tools](#conversation-tools) · [Compression](#compress-a-long-conversation) · [Validation](#validation-and-trust) · [Evidence](#evidence-from-blind-archive-joins)
-
-## Evidence from blind archive joins
-
-Clarke and Hal each joined three synthetic, 2,000-act packed conversations. Each newcomer saw four archive headings and could request up to two acts before answering.
-
-- **6/6** selected the relevant act, quoted it exactly, and assessed what the evidence established.
-- **6/6** submitted a first draft that passed the Python and Node checks.
-- **4/6** recorded the exact requested stance. Both models preserved the two immutable definition IDs in the refinement case.
-
-The [scorecard and replay](benchmarks/UCL241_BLIND_ARCHIVE_JOIN.md) include all six outcomes, one complete replay, and a follow-up with eight archive entries. See [more experiments](#results) for the missing-source relay and matched grounding comparison.
+[Packed handoff](#join-a-packed-conversation) · [Quickstart](#try-ucl-in-five-minutes) · [Glyphs and functions](#glyphs-and-functions) · [Conversation tools](#conversation-tools) · [Compression](#compress-a-long-conversation) · [Validation](#validation-and-trust) · [Results](#results)
 
 ## Join a packed conversation
 
@@ -160,6 +150,7 @@ Use a source checkout for the Python validator. The skill provides [agent instru
 | **2.5 original six-turn dialogue** | **6/6** first drafts passed Python and Node. All five scored receipts matched the prior speaker’s reported intent. [Run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45555603236) |
 | **2.5 affirmative cold join** | Clarke found and quoted the archived run log and chose `accept` on the intended eligibility branch. The first short reply passed both validators. [Run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45555174869) |
 | **100,000-act storage stress test** | **40.78 MB → 4.02 MB** in one lossless file, a **90.1% reduction**. Python and Node validated a continuation to act 100,001. The synthetic acts were short and repetitive. [Method](docs/UCL_LONG_CONVERSATIONS.md#100000-act-stress-test) |
+| **2.4.1 blind archive joins** | **6/6** selected the relevant source and passed both validators on the first draft. **4/6** recorded the requested stance. [Scorecard and replay](benchmarks/UCL241_BLIND_ARCHIVE_JOIN.md) |
 | **2.4 live newcomer briefing** | **2,000 → 2,001 acts**. Clarke found the earlier ACK and quoted archived act `t185` exactly. Both validators accepted the first draft. Its prose overread the observation. [Run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45503699604) |
 | **2.4 evidence-grounding follow-up** | In a fresh call, Clarke quoted both sources exactly and concluded the record did not establish that the required control was performed. [Run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45505014140) |
 | **2.4 missing-source relay** | In two 2,000-act conversations, Clarke and Hal each requested an omitted archived act, used the recovered source in a valid first draft, and handed off to the other model. [Results and replay files](benchmarks/UCL24_MISSING_SOURCE_RELAY.md) |
