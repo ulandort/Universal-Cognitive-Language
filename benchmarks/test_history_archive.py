@@ -76,6 +76,19 @@ class HistoryArchiveTests(unittest.TestCase):
         self.assertEqual([entry['act'] for entry in brief['requested_acts']],
                          self.packet['discourse']['acts'][1849:1851])
 
+    def test_unfocused_handoff_finds_named_branch_without_opening_archive_blocks(self):
+        with patch.object(history_archive, '_open_block',
+                          side_effect=AssertionError('discovery should use readable records')):
+            brief = history_archive.inspect_archive_handoff(self.packed)
+        self.assertEqual(brief['archive_blocks_opened'], 0)
+        self.assertFalse(brief['whole_packet_audited'])
+        branch = next(candidate for candidate in brief['candidate_branches']
+                      if candidate['claim'] == 'theory' and candidate['path'] == [1])
+        self.assertEqual(branch['source_act'], 't1')
+        self.assertIn('t37', branch['linked_act_ids'])
+        self.assertTrue(any(stance['ack_id'] == 'condition37' and stance['action'] == 'qualify'
+                            for stance in branch['recorded_stances']))
+
     def test_current_state_preserves_stances_without_opening_archive_blocks(self):
         from inspection import compare_packets, current_state
 

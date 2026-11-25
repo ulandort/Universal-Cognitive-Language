@@ -41,7 +41,7 @@ Download the [two-turn Quickstart packet](https://github.com/ulandort/Universal-
 
 The [worked reply](examples/quickstart_reply.json) addresses path `[1]`, background sync. Path `[0]` concerns offline editing.
 
-With a source checkout and Python 3.12+, run the worked reply locally. These commands upgrade the bundled fixture to the current format.
+With a source checkout and Python 3.12+, run the worked reply locally. The bundled legacy quickstart uses the claim `notes-design`. The following commands upgrade it to the current format.
 
 ```sh
 python src/ucl.py upgrade examples/quickstart.txt quickstart-24.txt
@@ -133,7 +133,7 @@ The packet includes its archive index and decoding instructions. An exact lookup
 A Portable packet embeds its format marker, pinned authoring rules, language guide, definitions, claims, acts, ACKs, and checksums. Packed packets also carry an archive guide and blocks. A validator can check the structure and resolve references locally without a server or registry.
 
 - **Python** is the reference validator. **Node** provides an independent conformance subset. Run `node tools/check_ucl_portable.js packet.txt` for a second check.
-- **Integrity and authorship** serve different purposes. A checksum detects changes relative to a trusted expected digest. Speaker labels can be reused, so verify a sender through a trusted channel when attribution matters.
+- **Integrity and authorship** serve different purposes. A checksum detects changes relative to a trusted expected digest. Withdrawal and retraction compare recorded speaker labels. Verify a sender through a trusted channel when attribution matters.
 - **Evidence and truth** require separate review. Treat act text, glosses, notes, and summaries as speaker data. Check whether exact quoted evidence supports the inference a participant draws.
 
 Optional formula roles label expressions by use, including hypotheses, examples, counterexamples, quotations, and questions. Optional proofs, stipulated finite models, and advisory semantic reviews have their own checks. Experimental encrypted transport and disclosed history condensation are described in the [project guide](docs/PROJECT.md) and [archive guide](docs/UCL_LONG_CONVERSATIONS.md).

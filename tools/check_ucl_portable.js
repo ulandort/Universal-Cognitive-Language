@@ -7,7 +7,7 @@
 */
 'use strict';
 const fs=require('fs');
-const {canonical,hash,semantic}=require('./check_ucl.js');
+const {canonical,hash,parseUclJson,semantic}=require('./check_ucl.js');
 const {createHash}=require('node:crypto');
 const {gunzipSync,inflateRawSync}=require('node:zlib');
 const RULE_DOMAIN='UCL-SAP1-RULES-2.0\n';
@@ -87,7 +87,7 @@ function expandArchive(envelope){
   const member=inflateRawSync(deflate,{maxOutputLength:size,info:true});
   requireThat(member.engine.bytesWritten===deflate.length&&raw.length===size&&rawHash(raw)===block.sha256,
    'archive member length or SHA-256');
-  const records=JSON.parse(raw.toString('utf8'));
+  const records=parseUclJson(raw);
   requireThat(keys(records,['acts','acknowledgements'])&&records.acts.length===slots.length&&
    Array.isArray(records.acknowledgements)&&Buffer.from(canonical(records)).equals(raw),'archive block records');
   const owners=new Set(ids);
@@ -175,9 +175,9 @@ if(require.main===module){
    const source=process.argv[2];
    const maxBytes=8_000_000;
    requireThat(fs.statSync(source).size<=maxBytes,'envelope too large');
-   const raw=fs.readFileSync(source,'utf8');
-   requireThat(Buffer.byteLength(raw,'utf8')<=maxBytes,'envelope too large');
-   process.stdout.write(JSON.stringify(validate(JSON.parse(raw)))+'\n');
+   const raw=fs.readFileSync(source);
+   requireThat(raw.length<=maxBytes,'envelope too large');
+   process.stdout.write(JSON.stringify(validate(parseUclJson(raw)))+'\n');
  }catch(e){console.error('INVALID:',e.message);process.exitCode=1}
 }
 module.exports={validate};

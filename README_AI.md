@@ -32,7 +32,7 @@ Named aliases such as `$background_sync` are interpreted using the same embedded
 
 Read all retained `discourse.acts`, their exact formal `expressions`, readable `text`, `references`, `claims`, `viewpoints`, `acknowledgements`, `revisions` and `history`. Distinguish *understood* from *accept*, hypothetical example from empirical evidence, quoted claims from endorsement, and source attribution from logical validity.
 
-An explicit ACK targets a claim and expression path, e.g. `{"claim":"theory","path":[0]}`. Indices are **integers**, not strings. `qualify` requires a substantive `qualification`; other actions require that field to be null. `withhold-judgment` does not automatically warrant an epistemic `?` expression. `withdraw` applies only to the speaker's own previously authored claims.
+An explicit ACK targets a claim and expression path, e.g. `{"claim":"theory","path":[0]}`. Indices are **integers**, not strings. `qualify` requires a substantive `qualification`; other actions require that field to be null. `withhold-judgment` does not automatically warrant an epistemic `?` expression. `withdraw` requires the same speaker label as the target’s origin act. A `retract` requires the same label as the act that authored the target ACK. Verify sender identity separately.
 
 **Disagreement is not a communication failure.** Do not conflate the receiver's objection with misunderstanding. Treat novel reasoning as a new hypothesis, not as a malformed message merely because it is unfamiliar.
 

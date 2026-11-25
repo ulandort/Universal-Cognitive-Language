@@ -3,7 +3,7 @@
 Optional proof certificates and open speculative conversation remain separate.
 Not a complete first-order theorem prover or security audit.
 """
-import base64, hashlib, itertools, json, re, sys
+import base64, hashlib, json, re, sys
 from pathlib import Path
 
 VERSION='UCL/1.0'
@@ -29,6 +29,7 @@ STRUCT={':':-1,';':-2,'[':-3,']':-4,'-':-5}
 RESERVED=set(CORE)|set(STRUCT)
 START='BEGIN_UCL_PAYLOAD\n'; END='\nEND_UCL_PAYLOAD'
 MAX_COMPRESSED=250000; MAX_EXPANDED=1000000; MAX_DEPTH=120
+MAX_MODEL_WORK=1_000_000
 
 def need(ok,msg):
     if not ok: raise ValueError(msg)
@@ -206,6 +207,9 @@ def layers(body):
 class Parser:
     def __init__(self,defs): self.defs=defs;self.used=set()
     def parse(self,source):
+        used = set()
+        domains = {g for g, record in self.defs.items() if record['definition']['kind'] == 'domain'}
+
         def expr(i,scope,depth):
             need(depth<MAX_DEPTH,'expression too deep');need(i<len(source),'missing expression')
             g = source[i]
@@ -213,7 +217,7 @@ class Parser:
             if name:
                 g = name.group()
             i += len(g)
-            self.used.add(g)
+            used.add(g)
             if g=='#':
                 m=re.match(r'(0|[1-9][0-9]*)',source[i:]);need(m,'bad variable')
                 idx=int(m.group());need(idx in scope,'unbound variable')
@@ -231,7 +235,7 @@ class Parser:
                 need(i<len(source) and source[i]=='[','binder [')
                 m=re.match(r'#(0|[1-9][0-9]*)\]',source[i+1:]);need(m,'binder #N]')
                 idx=int(m.group(1));need(idx not in scope,'variable shadowing')
-                self.used.add('#');i=i+1+len(m.group())
+                used.add('#');i=i+1+len(m.group())
                 dom,i=arg(i,scope);need(dom[1]=='domain','binder domain')
                 bound=dict(scope);bound[idx]=dom[0]
                 body,i=arg(i,bound);need(body[1]=='prop','quantified proposition type')
@@ -249,7 +253,7 @@ class Parser:
                 return (g,'prop',(a,d)),i
             if g=='=':
                 a,i=arg(i,scope);b,i=arg(i,scope)
-                need(a[1]==b[1] and a[1] in self.domains,'equality sort')
+                need(a[1]==b[1] and a[1] in domains,'equality sort')
                 return (g,'prop',(a,b)),i
             if g=='<':
                 o,i=arg(i,scope);a,i=arg(i,scope);b,i=arg(i,scope)
@@ -264,8 +268,11 @@ class Parser:
                 a,i=arg(i,scope);need(a[1]=='prop','unary operand must be proposition')
                 return (g,'epistemic' if g=='?' else 'prop',(a,)),i
             raise ValueError('unimplemented operation')
-        self.domains={g for g,x in self.defs.items() if x['definition']['kind']=='domain'}
-        t,i=expr(0,{},0);need(i==len(source),'trailing expression');return t
+        tree, end = expr(0, {}, 0)
+        need(end == len(source), 'trailing expression')
+        self.domains = domains
+        self.used.update(used)
+        return tree
 
 def render(t):
     g,typ,args=t
@@ -289,16 +296,16 @@ def _validate_definition_shapes(defs, version):
         signatures={'orientation':{'kind','role','gloss'},'domain':{'kind','role','gloss'},
           'value':{'kind','sort','denotes','gloss'},'predicate':{'kind','args','gloss'},
           'function':{'kind','args','returns','gloss'},'order':{'kind','sort','role','gloss'}, 'acknowledgement':{'kind','role','gloss'}}
-        need(kind in signatures and set(d)==signatures[kind],'definition signature')
+        need(isinstance(kind, str) and kind in signatures and set(d)==signatures[kind],'definition signature')
     doms={g for g,v in defs.items() if v['definition']['kind']=='domain'}
     need(bool(doms),'at least one domain required')
     for g,r in defs.items():
         d=r['definition'];kind=d['kind']
-        if kind=='value':need(d['sort'] in doms and isinstance(d['denotes'],str),'value sort/denotation')
+        if kind=='value':need(isinstance(d['sort'], str) and d['sort'] in doms and isinstance(d['denotes'],str),'value sort/denotation')
         elif kind in ('predicate','function'):
-            need(isinstance(d['args'],list) and len(d['args'])<=8 and all(s in doms for s in d['args']),'argument sorts')
-            if kind=='function':need(d['returns'] in doms,'function return sort')
-        elif kind=='order':need(d['sort'] in doms and isinstance(d['role'],str) and d['role'],'order signature')
+            need(isinstance(d['args'],list) and len(d['args'])<=8 and all(isinstance(s, str) and s in doms for s in d['args']),'argument sorts')
+            if kind=='function':need(isinstance(d['returns'], str) and d['returns'] in doms,'function return sort')
+        elif kind=='order':need(isinstance(d['sort'], str) and d['sort'] in doms and isinstance(d['role'],str) and d['role'],'order signature')
         elif kind=='acknowledgement':need(isinstance(d['role'],str) and bool(d['role'].strip()),'acknowledgement extension role')
         elif kind=='orientation':need(d['role'] in ('proposal','hypothesis','question','challenge','response','revision','assertion','deductive-argument','model-check','epistemic-report'),'orientation role')
     return doms
@@ -320,79 +327,154 @@ def validate_domains(defs,domains):
         need(isinstance(d,dict) and set(d)=={'mode','members'},'domain declaration shape')
         need(d['mode'] in ('finite','open'),'domain mode')
         if d['mode']=='open':need(d['members'] is None,'open domains cannot be enumerated')
-        else:need(isinstance(d['members'],list) and len(d['members'])==len(set(d['members'])) and all(isinstance(x,str) for x in d['members']),'finite domain members')
+        else:need(isinstance(d['members'],list) and all(isinstance(x,str) for x in d['members']) and len(d['members'])==len(set(d['members'])),'finite domain members')
     for g,r in defs.items():
         d=r['definition']
         if d['kind']=='value' and domains[d['sort']]['mode']=='finite':
             need(d['denotes'] in domains[d['sort']]['members'],'constant not a member of finite domain')
 
-def validate_model(defs,domains,model):
+class _ModelBudget:
+    def __init__(self):
+        self.remaining = MAX_MODEL_WORK
+
+    def spend(self, units=1):
+        self.remaining -= units
+        need(self.remaining >= 0, 'finite model work budget exceeded')
+
+
+def _decimal_confidence(value):
+    return isinstance(value, str) and re.fullmatch(r'(?:0(?:\.[0-9]+)?|1(?:\.0+)?)', value) is not None
+
+
+def validate_model(defs, domains, model, *, budget=None):
+    budget = _ModelBudget() if budget is None else budget
     need(isinstance(model,dict) and set(model)=={'predicates','functions','orders','epistemic'},'model fields')
     need(all(d['mode']=='finite' for d in domains.values()),'open domain is not enumerable: use proof mode')
-    kinds={g:d['definition']['kind'] for g,d in defs.items()}
-    need(set(model['predicates'])=={g for g in kinds if kinds[g]=='predicate'},'predicate interpretation incomplete')
-    need(set(model['functions'])=={g for g in kinds if kinds[g]=='function'},'function interpretation incomplete')
-    need(set(model['orders'])=={g for g in kinds if kinds[g]=='order'},'order interpretation incomplete')
-    for g,rows in model['predicates'].items():
-        sig=defs[g]['definition']['args'];need(isinstance(rows,list),'predicate rows')
-        need(all(isinstance(row,list) and len(row)==len(sig) and all(v in domains[s]['members'] for v,s in zip(row,sig)) for row in rows),'predicate tuple invalid')
-        need(len({tuple(row) for row in rows})==len(rows),'duplicate predicate tuple')
-    for g,rows in model['functions'].items():
-        d=defs[g]['definition'];need(isinstance(rows,list),'function rows')
-        pools=[domains[s]['members'] for s in d['args']]
-        count=1
-        for pool in pools:count*=len(pool)
-        need(count<=10000,'function table too large')
-        expected=set(itertools.product(*pools));found=set()
+    kinds = {g: d['definition']['kind'] for g, d in defs.items()}
+    for name, kind in (('predicates', 'predicate'), ('functions', 'function'), ('orders', 'order')):
+        table = model[name]
+        need(isinstance(table, dict) and set(table) == {g for g in kinds if kinds[g] == kind},
+             kind + ' interpretation incomplete')
+
+    budget.spend(sum(len(domain['members']) for domain in domains.values()))
+    members = {g: set(domain['members']) for g, domain in domains.items()}
+
+    def valid_tuple(row, signature):
+        return (isinstance(row, list) and len(row) == len(signature)
+                and all(isinstance(value, str) and value in members[sort]
+                        for value, sort in zip(row, signature)))
+
+    for g, rows in model['predicates'].items():
+        signature = defs[g]['definition']['args']
+        need(isinstance(rows, list), 'predicate rows')
+        budget.spend(len(rows))
+        need(all(valid_tuple(row, signature) for row in rows), 'predicate tuple invalid')
+        need(len({tuple(row) for row in rows}) == len(rows), 'duplicate predicate tuple')
+
+    for g, rows in model['functions'].items():
+        definition = defs[g]['definition']
+        need(isinstance(rows, list), 'function rows')
+        count = 1
+        for sort in definition['args']:
+            count *= len(members[sort])
+        need(count <= 10000, 'function table too large')
+        budget.spend(len(rows))
+        found = set()
         for row in rows:
-            need(isinstance(row,dict) and set(row)=={'in','out'},'function row')
-            args=row['in'];need(isinstance(args,list) and tuple(args) in expected and row['out'] in domains[d['returns']]['members'],'bad function tuple')
-            need(tuple(args) not in found,'nondeterministic function');found.add(tuple(args))
-        need(expected==found,'function is not total')
-    for g,edges in model['orders'].items():
-        sort=defs[g]['definition']['sort'];pool=domains[sort]['members'];need(isinstance(edges,list),'order rows')
-        rel=set()
+            need(isinstance(row, dict) and set(row) == {'in', 'out'}, 'function row')
+            args, result = row['in'], row['out']
+            need(valid_tuple(args, definition['args']) and isinstance(result, str)
+                 and result in members[definition['returns']], 'bad function tuple')
+            key = tuple(args)
+            need(key not in found, 'nondeterministic function')
+            found.add(key)
+        need(len(found) == count, 'function is not total')
+
+    for g, edges in model['orders'].items():
+        sort = defs[g]['definition']['sort']
+        need(isinstance(edges, list), 'order rows')
+        budget.spend(len(edges))
+        successors = {}
         for edge in edges:
-            need(isinstance(edge,list) and len(edge)==2 and all(x in pool for x in edge),'order edge')
-            need(edge[0]!=edge[1],'strict order irreflexive');need(tuple(edge) not in rel,'duplicate order edge');rel.add(tuple(edge))
-        for a,b in rel:
-            for c,d in rel:
-                if b==c:need((a,d) in rel,'strict order transitivity')
+            need(valid_tuple(edge, (sort, sort)), 'order edge')
+            source, dest = edge
+            need(source != dest, 'strict order irreflexive')
+            reachable = successors.setdefault(source, set())
+            need(dest not in reachable, 'duplicate order edge')
+            reachable.add(dest)
+        for reachable in successors.values():
+            for dest in reachable:
+                onward = successors.get(dest)
+                if onward:
+                    budget.spend(len(onward))
+                    need(onward <= reachable, 'strict order transitivity')
+
     need(isinstance(model['epistemic'],dict),'epistemic catalog')
+    budget.spend(len(model['epistemic']))
     for statement,record in model['epistemic'].items():
         need(isinstance(statement,str) and isinstance(record,dict) and set(record)=={'kind','assessor','evidence','basis','confidence'},'epistemic record fields')
         need(record['kind'] in ('uncertainty','conflict'),'missing information cannot be marked ?')
         need(isinstance(record['assessor'],str) and bool(record['assessor']),'assessor required')
         need(isinstance(record['evidence'],list) and all(isinstance(e,str) and e for e in record['evidence']),'evidence reference list')
         need(isinstance(record['basis'],str) and bool(record['basis']),'uncertainty basis')
-        c=record['confidence'];need(c is None or (type(c) in (float,int) and 0<=c<=1),'confidence bounds')
+        confidence = record['confidence']
+        need(confidence is None or (type(confidence) is int and confidence in (0, 1))
+             or _decimal_confidence(confidence), 'confidence must be a decimal string in [0,1], null, or legacy integer 0 or 1')
         if record['kind']=='conflict':need(len(record['evidence'])>=2,'conflict requires at least two evidence references')
 
-def evaluate(t,defs,domains,model,env=None):
-    env={} if env is None else env
-    op,typ,args=t
-    if op=='#':return env[args]
-    if op in defs:
-        d=defs[op]['definition'];return d['denotes'] if d['kind']=='value' else op
-    if op=='{':
-        idx,domain,body=args;return any(evaluate(body,defs,domains,model,{**env,idx:x}) for x in domains[domain[0]]['members'])
-    if op=='~':
-        pred,*xs=args;values=[evaluate(x,defs,domains,model,env) for x in xs]
-        return values in model['predicates'][pred[0]]
-    if op=='*':
-        fun,*xs=args;values=[evaluate(x,defs,domains,model,env) for x in xs]
-        for row in model['functions'][fun[0]]:
-            if row['in']==values:return row['out']
-        raise ValueError('missing deterministic function value')
-    if op=='@':return evaluate(args[0],defs,domains,model,env) in domains[args[1][0]]['members']
-    if op=='=':return evaluate(args[0],defs,domains,model,env)==evaluate(args[1],defs,domains,model,env)
-    if op=='<':
-        order,a,b=args;return [evaluate(a,defs,domains,model,env),evaluate(b,defs,domains,model,env)] in model['orders'][order[0]]
-    if op=='&':return evaluate(args[0],defs,domains,model,env) and evaluate(args[1],defs,domains,model,env)
-    if op=='|':return evaluate(args[0],defs,domains,model,env) or evaluate(args[1],defs,domains,model,env)
-    if op=='!':return not evaluate(args[0],defs,domains,model,env)
-    if op=='?':return model['epistemic'].get(render(args[0]))
-    raise ValueError('unknown expression')
+
+def evaluate(t, defs, domains, model, env=None, *, budget=None):
+    budget = _ModelBudget() if budget is None else budget
+
+    def walk(tree, bindings):
+        budget.spend()
+        op, _, args = tree
+        if op == '#':
+            return bindings[args]
+        if op in defs:
+            definition = defs[op]['definition']
+            return definition['denotes'] if definition['kind'] == 'value' else op
+        if op == '{':
+            index, domain, body = args
+            return any(walk(body, {**bindings, index: value}) for value in domains[domain[0]]['members'])
+        if op in ('~', '*'):
+            alias, *terms = args
+            values = [walk(term, bindings) for term in terms]
+            if op == '~':
+                rows = model['predicates'][alias[0]]
+                budget.spend(len(rows))
+                return values in rows
+            rows = model['functions'][alias[0]]
+            budget.spend(len(rows))
+            for row in rows:
+                if row['in'] == values:
+                    return row['out']
+            raise ValueError('missing deterministic function value')
+        if op == '@':
+            member = walk(args[0], bindings)
+            pool = domains[args[1][0]]['members']
+            budget.spend(len(pool))
+            return member in pool
+        if op == '=':
+            return walk(args[0], bindings) == walk(args[1], bindings)
+        if op == '<':
+            order, a, b = args
+            pair = [walk(a, bindings), walk(b, bindings)]
+            rows = model['orders'][order[0]]
+            budget.spend(len(rows))
+            return pair in rows
+        if op == '&':
+            return walk(args[0], bindings) and walk(args[1], bindings)
+        if op == '|':
+            return walk(args[0], bindings) or walk(args[1], bindings)
+        if op == '!':
+            return not walk(args[0], bindings)
+        if op == '?':
+            return model['epistemic'].get(render(args[0]))
+        raise ValueError('unknown expression')
+
+    return walk(t, {} if env is None else env)
+
 
 def check_proof(explanation,conclusion,steps,defs):
     need(isinstance(steps,list) and 1<=len(steps)<=256,'proof certificate absent/too long')
@@ -477,7 +559,7 @@ def validate_discourse(discourse,defs,parser, *, version=VERSION, archived=False
         need(isinstance(act,dict) and set(act) in allowed_fields,'act fields')
         a=act['id'];k=act['kind'];dt=act['details']
         need(isinstance(a,str) and re.fullmatch('[a-zA-Z][a-zA-Z0-9_-]{0,63}',a) and a not in seen,'act id collision')
-        need(k in ACT_KINDS,'unsupported act kind')
+        need(isinstance(k, str) and k in ACT_KINDS,'unsupported act kind')
         need(isinstance(act['speaker'],str) and 0<len(act['speaker'])<=120,'speaker required')
         need(isinstance(act['text'],str) and 0<len(act['text'])<=16000,'act text required')
         need(len(canon(act))<=24000,'act size cap')
@@ -490,7 +572,8 @@ def validate_discourse(discourse,defs,parser, *, version=VERSION, archived=False
         if k=='question':
             need(set(dt)=={'targets','answer_kind','alternatives'},'question details')
             strs(dt['targets']);need(bool(dt['targets']),'question targets needed')
-            need(dt['answer_kind'] in allowed_ans,'question answer kind')
+            need(isinstance(dt['answer_kind'], str) and dt['answer_kind'] in allowed_ans,
+                 'question answer kind')
             strs(dt['alternatives'])
             need((dt['answer_kind']=='multiple-choice')==(len(dt['alternatives'])>=2),'question alternatives')
         elif k=='challenge':
@@ -509,16 +592,16 @@ def validate_discourse(discourse,defs,parser, *, version=VERSION, archived=False
             need(isinstance(dt['limits'],str) and bool(dt['limits'].strip()),'analogy limits must be explicit')
         elif k=='revision':
             need(set(dt)=={'revises','change'},'revision details')
-            need(dt['revises'] in seen and isinstance(dt['change'],str) and bool(dt['change'].strip()),'revision target')
+            need(isinstance(dt['revises'], str) and dt['revises'] in seen and isinstance(dt['change'],str) and bool(dt['change'].strip()),'revision target')
         elif k=='response':
             need(set(dt)=={'responds_to','stance'},'response details')
-            need(dt['responds_to'] in seen and dt['stance'] in ('accept','reject','mixed','undetermined'),'response target')
+            need(isinstance(dt['responds_to'], str) and dt['responds_to'] in seen and dt['stance'] in ('accept','reject','mixed','undetermined'),'response target')
         elif k=='synthesis':
             need(set(dt)=={'integrates','open_questions'},'synthesis details');references(dt['integrates'])
             need(bool(dt['integrates']),'synthesis needs prior acts');strs(dt['open_questions'])
         elif k=='clarification':
             need(set(dt)=={'about','request'},'clarification details')
-            need(dt['about'] in seen and isinstance(dt['request'],str) and bool(dt['request'].strip()),'clarification target')
+            need(isinstance(dt['about'], str) and dt['about'] in seen and isinstance(dt['request'],str) and bool(dt['request'].strip()),'clarification target')
         else:need(dt=={},'unexpected act details')
         seen[a]=k
     need(discourse['current']==acts[-1]['id'],'current must identify final act')
@@ -558,17 +641,18 @@ def validate_acknowledgements(acks,discourse,defs,parser,claims, *, version=VERS
         ident=ack['id'];need(isinstance(ident,str) and re.fullmatch(r'[a-zA-Z][a-zA-Z0-9_-]{0,63}',ident) and ident not in seen,'duplicate/invalid acknowledgement ID')
         seen.add(ident)
         author=ack['by'];target=ack['target'];action=ack['action']
-        need(author in byid,'acknowledgement author act absent')
+        need(isinstance(author, str) and author in byid,'acknowledgement author act absent')
         need(isinstance(target,dict),'acknowledgement target must be object')
         if action == 'retract':
             need(version in RETRACTION_VERSIONS, 'ACK retraction requires Portable 2.3 or later. Run upgrade first')
             need(set(target) == {'ack'} and isinstance(target['ack'], str),
                  'retraction target must be {"ack":"EARLIER_ACK_ID"}')
             original = indexed.get(target['ack'])
-            need(original is not None and original.get('action') in RETRACTABLE_ACK_ACTIONS,
+            need(original is not None and isinstance(original.get('action'), str)
+                 and original['action'] in RETRACTABLE_ACK_ACTIONS,
                  'retraction must target an existing stance ACK')
             dest = original.get('by')
-            need(dest in positions and positions[dest] < positions[author],
+            need(isinstance(dest, str) and dest in positions and positions[dest] < positions[author],
                  'retraction must target an ACK from an earlier act')
             need(byid[author]['speaker'] == byid[dest]['speaker'], 'cannot retract another speaker’s ACK')
             need(target['ack'] not in retracted, 'ACK already retracted')
@@ -579,14 +663,19 @@ def validate_acknowledgements(acks,discourse,defs,parser,claims, *, version=VERS
             continue
         if set(target)=={'act','expression_index'}:
             # Legacy act/whole-expression target remains available.
-            dest=target['act'];need(dest in byid,'acknowledgement target act missing')
+            dest=target['act'];need(isinstance(dest, str) and dest in byid,'acknowledgement target act missing')
             idx=target['expression_index']
             need(idx is None or (type(idx)==int and 0<=idx<len(byid[dest]['expressions'])),'acknowledgement expression target missing')
         elif set(target)=={'claim','path'}:
             # A stable claim binding and a zero-based path through its parsed proposition tree.
-            cid=target['claim'];need(type(cid) is str and cid in claims,'acknowledgement quoted claim absent')
-            binding=claims[cid];dest=binding['act']
-            need(dest in byid and type(binding['expression_index']) is int and
+            cid=target['claim']
+            need(isinstance(claims, dict) and isinstance(cid, str) and cid in claims,
+                 'acknowledgement quoted claim absent')
+            binding=claims[cid]
+            need(isinstance(binding, dict) and set(binding)=={'act','expression_index','expression'},
+                 'acknowledgement claim binding fields')
+            dest=binding['act']
+            need(isinstance(dest, str) and dest in byid and type(binding['expression_index']) is int and
                  0<=binding['expression_index']<len(byid[dest]['expressions']) and
                  binding['expression']==byid[dest]['expressions'][binding['expression_index']],
                  'acknowledgement claim binding not exact')
@@ -599,7 +688,7 @@ def validate_acknowledgements(acks,discourse,defs,parser,claims, *, version=VERS
             glyph=action[4:]
             need(glyph in defs and defs[glyph]['definition']['kind']=='acknowledgement','unknown acknowledgement extension')
             parser.used.add(glyph)
-        else:need(action in ACK_ACTIONS,'unknown acknowledgement action')
+        else:need(isinstance(action, str) and action in ACK_ACTIONS,'unknown acknowledgement action')
         qual=ack['qualification'];replacement=ack['replacement']
         need(qual is None or (isinstance(qual,str) and 0<len(qual)<=2048) or
              (isinstance(qual,dict) and set(qual)=={'expression','explanation'}),'invalid acknowledgement qualification')
@@ -636,7 +725,7 @@ def validate_history(history,discourse,definitions):
     need(bool(discourse['acts']) and bool(definitions),'critical content must remain available')
     return {'status':status,'omissions':len(omissions),'standalone':True}
 
-def condense_draft(draft,omit_ids,summary,reason='Reduce historical packet size'):
+def condense_draft(draft,omit_ids,summary,reason='Reduce historical packet size', *, version=None):
     """Conservative draft condensation; rejects all retained graph and ACK dependencies.
 
     Never condenses when indirect reference safety is uncertain.
@@ -673,7 +762,7 @@ def condense_draft(draft,omit_ids,summary,reason='Reduce historical packet size'
          'omissions':earlier['omissions']+[{'scope':'Omitted act IDs: '+', '.join(sorted(remove)),
              'reason':reason,'not_preserved':'Original text, annotations and rhetorical examples in removed acts',
              'implications':'Receivers cannot reconstruct or quote omitted turns verbatim.'}]}
-    build(result)
+    build(result, version=draft_version(result) if version is None else version)
     return result
 
 def _contains_reference(value,removed):
@@ -707,7 +796,7 @@ def check_revisions(revisions,defs, *, version=VERSION):
     for rev in revisions:
         need(isinstance(rev,dict) and set(rev)=={'old_glyph','new_glyph','old_id','new_id','reason'},'revision fields')
         old,new=rev['old_glyph'],rev['new_glyph']
-        need(old in defs and new in defs and old!=new,'revision must retain both full definitions')
+        need(isinstance(old, str) and isinstance(new, str) and old in defs and new in defs and old!=new,'revision must retain both full definitions')
         need(rev['old_id']==defs[old]['id'] and rev['new_id']==defs[new]['id'] and rev['old_id']!=rev['new_id'],'revision identity mismatch')
         need(isinstance(rev['reason'],str) and rev['reason'].strip(),'revision reason required')
         need((old,new) not in seen,'duplicate revision');seen.add((old,new))
@@ -723,7 +812,7 @@ def check_epistemic_context(context,expression):
     need(isinstance(rec['basis'],str) and bool(rec['basis']),'basis required')
     c=rec['confidence']
     if c is not None:
-        need(isinstance(c,str) and re.fullmatch(r'(?:0(?:\.[0-9]+)?|1(?:\.0+)?)',c) is not None,'confidence must be decimal string in [0,1]')
+        need(_decimal_confidence(c),'confidence must be decimal string in [0,1]')
     if rec['kind']=='conflict':need(len(rec['evidence'])>=2,'conflict needs two sources')
 
 def proof_verdict(explanation, conclusion, proof, defs):
@@ -744,7 +833,8 @@ def validate_quotes(claims,viewpoints,discourse,parser, *, version=VERSION):
     for cid,c in claims.items():
         need(type(cid) is str and re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,63}',cid),'claim ID')
         need(isinstance(c,dict) and set(c)=={'act','expression_index','expression'},'claim fields')
-        a=acts.get(c['act']);need(a is not None,'claim origin absent')
+        need(isinstance(c['act'], str) and c['act'] in acts, 'claim origin absent')
+        a=acts[c['act']]
         i=c['expression_index'];need(type(i) is int and 0<=i<len(a['expressions']),'claim expression index')
         need(c['expression']==a['expressions'][i],'quote must exactly bind existing act expression')
         need(parser.parse(c['expression'])[1] in ('prop','epistemic'),'quoted claim type')
@@ -755,14 +845,15 @@ def validate_quotes(claims,viewpoints,discourse,parser, *, version=VERSION):
         vid=v['id'];need(type(vid) is str and re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,63}',vid) and vid not in seen,'viewpoint identity')
         need(v['relation'] in ('asserts','believes','reports','questions','denies'),'viewpoint relation')
         need(type(v['holder']) is str and bool(v['holder']) and type(v['reported_by']) is str and bool(v['reported_by']),'viewpoint participants')
-        origin=acts.get(v['source_act']);need(origin is not None,'viewpoint source act absent')
+        need(isinstance(v['source_act'], str) and v['source_act'] in acts, 'viewpoint source act absent')
+        origin=acts[v['source_act']]
         need(origin['speaker']==v['reported_by'],'viewpoint reporting speaker must match source')
         t=v['target'];need(isinstance(t,dict) and set(t)=={'kind','id'},'viewpoint target schema')
         if t['kind']=='claim':
-            need(t['id'] in claims,'viewpoint quoted claim absent')
+            need(isinstance(t['id'], str) and t['id'] in claims,'viewpoint quoted claim absent')
             need(positions[claims[t['id']]['act']]<=positions[v['source_act']],'future claim viewpoint')
         elif t['kind']=='viewpoint':
-            need(t['id'] in seen,'viewpoint target must precede parent (no cycle)')
+            need(isinstance(t['id'], str) and t['id'] in seen,'viewpoint target must precede parent (no cycle)')
             need(positions[seen[t['id']]['source_act']]<=positions[v['source_act']],'future viewpoint')
         else:raise ValueError('viewpoint target kind')
         if v['relation']=='asserts':
@@ -783,9 +874,9 @@ def check(p, *, archived=False):
     check_revisions(p['revisions'],defs,version=version)
     x=layers(p['body']);parser=Parser(defs);trees=[parser.parse(s) for s in x[:3]]
     discourse_result=validate_discourse(p['discourse'],defs,parser,version=version,archived=archived)
+    quote_result=validate_quotes(p['claims'],p['viewpoints'],p['discourse'],parser,version=version)
     ack_result=validate_acknowledgements(p['acknowledgements'],p['discourse'],defs,parser,p['claims'],version=version,archived=archived)
     history_result=validate_history(p['history'],p['discourse'],defs)
-    quote_result=validate_quotes(p['claims'],p['viewpoints'],p['discourse'],parser,version=version)
     need(trees[0][1]=='orientation' and trees[1][1]=='prop','body layer types')
     expected=' '.join(sorted(g if g in CORE else g+':'+defs[g]['id'] for g in parser.used))
     need(expected==x[3],'used-symbol declaration mismatch')
@@ -797,9 +888,12 @@ def check(p, *, archived=False):
     result={'message':'valid','intent':role,'proof':{'status':'not-requested'},'model':{'status':'not-requested'}}
     if role=='model-check':
         need(p['model'] is not None,'model-check requires finite interpretation')
-        validate_model(defs,p['domains'],p['model'])
-        need(evaluate(trees[1],defs,p['domains'],p['model']) is True,'premise false in stipulated model')
-        need(evaluate(trees[2],defs,p['domains'],p['model']) is True,'conclusion false in stipulated model')
+        budget = _ModelBudget()
+        validate_model(defs, p['domains'], p['model'], budget=budget)
+        need(evaluate(trees[1], defs, p['domains'], p['model'], budget=budget) is True,
+             'premise false in stipulated model')
+        need(evaluate(trees[2], defs, p['domains'], p['model'], budget=budget) is True,
+             'conclusion false in stipulated model')
         result['model']={'status':'verified-in-one-model'}
     else:
         need(p['model'] is None,'ordinary conversation must not have implicit model check')
@@ -899,7 +993,7 @@ def draft_from_packet(packet, *, archived=False):
 def main(args):
     if len(args)==4 and args[1]=='build':
         draft=read_json_file(args[2])
-        p=build(draft)
+        p=build(draft, version=draft_version(draft))
         Path(args[3]).write_text(dump_json(p,pretty=True),encoding='utf-8')
         print(json.dumps(check(p),indent=2))
     elif len(args)==3 and args[1]=='check':

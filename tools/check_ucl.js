@@ -6,6 +6,70 @@
 const fs=require('fs'), crypto=require('crypto');
 function fail(s){throw Error(s)};
 function assert(x,s){if(!x)fail(s)}
+function parseUclJson(raw){
+ const text=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(raw);
+ const whitespace=/[ \t\r\n]*/y;
+ const scalar=/(?:true|false|null|-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)/y;
+ let offset=0;
+ function skipWhitespace(){
+  whitespace.lastIndex=offset;
+  whitespace.exec(text);
+  offset=whitespace.lastIndex;
+ }
+ function take(char){
+  skipWhitespace();
+  if(text[offset]!==char)return false;
+  offset++;
+  return true;
+ }
+ function stringEnd(){
+  assert(text[offset]==='"','expected JSON string');
+  offset++;
+  while(offset<text.length){
+   const char=text[offset++];
+   if(char==='"')return;
+   if(char==='\\')offset++;
+  }
+  fail('unterminated JSON string');
+ }
+ function value(depth){
+  assert(depth<=128,'canonical nesting');
+  skipWhitespace();
+  if(take('{')){
+   const keys=new Set();
+   if(take('}'))return;
+   do{
+    skipWhitespace();
+    const start=offset;
+    stringEnd();
+    const key=JSON.parse(text.slice(start,offset));
+    assert(!keys.has(key),'duplicate JSON key');
+    keys.add(key);
+    assert(take(':'),'expected JSON colon');
+    value(depth+1);
+   }while(take(','));
+   assert(take('}'),'expected end of JSON object');
+  }else if(take('[')){
+   if(take(']'))return;
+   do{value(depth+1);}while(take(','));
+   assert(take(']'),'expected end of JSON array');
+  }else if(text[offset]==='"'){
+   stringEnd();
+  }else{
+   scalar.lastIndex=offset;
+   const token=scalar.exec(text)?.[0];
+   assert(token,'expected JSON value');
+   if(token!=='true'&&token!=='false'&&token!=='null'){
+    assert(!/[.eE]/.test(token)&&Number.isSafeInteger(Number(token)),'noninteger or unsafe JSON number');
+   }
+   offset=scalar.lastIndex;
+  }
+ }
+ value(0);
+ skipWhitespace();
+ assert(offset===text.length,'trailing JSON data');
+ return JSON.parse(text);
+}
 function asciiEscape(s){
   assert(typeof s==='string','JSON string type');
   for(let i=0;i<s.length;i++){
@@ -235,12 +299,12 @@ function semantic(packet,{archived=false}={}){
  return {valid:true,acts:acts.length,acknowledgements:packet.acknowledgements.length,definitions:Object.keys(defs).length,mode:packet.history.status,claims:Object.keys(claims).length,viewpoints:viewpoints.size};
 }
 if(require.main===module)try{
- const raw=fs.readFileSync(process.argv[2],'utf8'), p=JSON.parse(raw);
+ const raw=fs.readFileSync(process.argv[2]), p=parseUclJson(raw);
  const cb=canonical(p);
- assert(cb===raw,'input must already use exact UCL-CJSON-1 canonical bytes');
+ assert(Buffer.from(cb).equals(raw),'input must already use exact UCL-CJSON-1 canonical bytes');
  if(process.argv[3]==='--canonical'){process.stdout.write(cb);}
  else process.stdout.write(JSON.stringify(semantic(p))+'\n');
 }catch(e){console.error('INVALID:',e.message);process.exit(1)}
 
 // Allow independent offline UCL/2.0 Portable wrappers to reuse this JS checker.
-module.exports={canonical,hash,semantic};
+module.exports={canonical,hash,parseUclJson,semantic};

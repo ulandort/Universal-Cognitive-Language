@@ -45,12 +45,25 @@ def check_portable(envelope):
             'format':envelope['format'],
             'packet':_core.check(packet, archived='archive' in envelope)}
 
-def continue_portable(envelope, contribution):
-    """Append an authored draft to a verified Portable envelope."""
+def _continuation_parent(envelope, expected_packet_sha256):
+    if expected_packet_sha256 is not None:
+        _core.need(isinstance(expected_packet_sha256, str)
+                   and re.fullmatch(r'[A-Za-z0-9_-]{43}', expected_packet_sha256),
+                   'expected packet digest must be a 43-character Base64url SHA-256')
+    parent = decode_portable(envelope)
+    actual = parent['integrity']['sha256']
+    if expected_packet_sha256 is not None and expected_packet_sha256 != actual:
+        raise ValueError(f'packet digest mismatch: expected {expected_packet_sha256}, got {actual}. '
+                         'Refresh the handoff before continuing.')
+    return parent
+
+
+def continue_portable(envelope, contribution, *, expected_packet_sha256=None):
+    """Append a draft, optionally requiring the exact inner packet it was written against."""
     from authoring import author, preflight
     import portable
 
-    parent = decode_portable(envelope)
+    parent = _continuation_parent(envelope, expected_packet_sha256)
     archived = 'archive' in envelope
     preflight(parent, contribution, archived=archived)
     packet = author(parent, contribution, archived=archived)
@@ -111,11 +124,13 @@ def _claim_path(value):
     raise argparse.ArgumentTypeError('use up to 32 dot-separated indices from 0 to 15, or root')
 
 
-def _continue_cli(args):
-    if len(args) != 4:
-        raise ValueError('Usage: python src/ucl.py continue incoming.txt next.txt < contribution.json')
-    source, output = map(Path, args[2:])
-    _write_handoff(source, output, continue_portable(_portable_file(source), _read_contribution()))
+def _authoring_options(command, args):
+    parser = argparse.ArgumentParser(prog=f'python src/ucl.py {command}')
+    parser.add_argument('source', type=Path, metavar='PACKET')
+    if command == 'continue':
+        parser.add_argument('output', type=Path, metavar='OUTPUT')
+    parser.add_argument('--expect-packet-sha256', help='require the source_packet_sha256 from the briefing')
+    return parser.parse_args(args)
 
 def main(args):
     """Dispatch current and archived Portable packets by their version markers."""
@@ -124,7 +139,10 @@ def main(args):
         print(f'UCL CLI {RELEASE_VERSION} ({PORTABLE_FORMAT}, guide {INNER_GRAMMAR_VERSION})')
         return
     if len(args) > 1 and args[1] == 'continue':
-        _continue_cli(args)
+        options = _authoring_options('continue', args[2:])
+        result = continue_portable(_portable_file(options.source), _read_contribution(),
+                                   expected_packet_sha256=options.expect_packet_sha256)
+        _write_handoff(options.source, options.output, result)
         return
     if len(args)<3:
         raise ValueError('Usage: python src/ucl.py check | encode | decode | pack | continue | preflight | template | inspect | diff | upgrade | build/canonicalize/draft ...')
@@ -135,10 +153,12 @@ def main(args):
             print(json.dumps(check_portable(data),indent=2))
         else:
             print(json.dumps(_core.check(data),indent=2))
-    elif command=='preflight' and len(args)==3:
+    elif command=='preflight':
         from authoring import preflight
-        envelope = _portable_file(args[2])
-        preflight(decode_portable(envelope), _read_contribution(), archived='archive' in envelope)
+        options = _authoring_options('preflight', args[2:])
+        envelope = _portable_file(options.source)
+        parent = _continuation_parent(envelope, options.expect_packet_sha256)
+        preflight(parent, _read_contribution(), archived='archive' in envelope)
         print('PREFLIGHT PASSED. Run continue for full validation and handoff.')
     elif command=='template':
         from authoring import reply_template

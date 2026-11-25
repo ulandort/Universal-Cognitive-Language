@@ -22,7 +22,7 @@ Use the standard seven-field ACK shape.
 
 - The target ACK must be retained and authored by an earlier act with the same speaker label. Speaker labels remain unauthenticated.
 - The original action must be `accept`, `reject`, `qualify`, `adopt-for-discussion`, or `withhold-judgment`. Each such ACK can be retracted once. Retractions themselves are permanent records. A participant can take a new stance with a new ACK.
-- Retraction keeps both records and their target claim. `withdraw` still applies to the speaker's own claim.
+- Retraction keeps both records and their target claim. For `withdraw`, the new act’s speaker label must match the target’s origin act.
 - Replay in act order, using the ACK array order within an act. If the original ACK is still the latest stance at its speaker and exact target, mark that stance retracted without restoring any older stance. If a newer stance already exists, preserve it. A later stance can supersede the retraction marker.
 - Gzip packing keeps the original stance ACK, its source, and the retraction readable. No new archive fields are needed.
 

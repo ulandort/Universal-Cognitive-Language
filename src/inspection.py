@@ -359,6 +359,53 @@ def _briefing_ack(record):
     return {labels.get(field, field): value for field, value in record.items()}
 
 
+def _handoff_candidates(packet, state):
+    """Suggest recent named stance scopes, then roots for other named claims."""
+    limit = 6
+    claims = packet['claims']
+    acts = {act['id']: act for act in packet['discourse']['acts']}
+    positions = {act: position for position, act in enumerate(acts)}
+    by_origin = {}
+    for claim, binding in sorted(claims.items()):
+        by_origin.setdefault((binding['act'], binding['expression_index']), claim)
+
+    scoped = {}
+    for stance in reversed(state['latest_stances']):
+        claim = stance['target'].get('claim')
+        if claim is None:
+            claim = by_origin.get((stance['source_act'], stance['expression_index']))
+        if claim is not None:
+            key = (claim, tuple(stance['path']))
+            scoped.setdefault(key, []).append(stance)
+
+    candidates = list(scoped)[:limit]
+    if len(candidates) < limit:
+        covered = {claim for claim, _ in candidates}
+        roots = sorted(claims, key=lambda claim: (-positions[claims[claim]['act']], claim))
+        candidates.extend((claim, ()) for claim in roots if claim not in covered)
+
+    result = []
+    for claim, path in candidates[:limit]:
+        binding = claims[claim]
+        source = acts[binding['act']]
+        stances = scoped.get((claim, path), [])
+        related = [source['id']]
+        for stance in stances:
+            author = acts[stance['author_act']]
+            related.extend([author['id'], *author['references']])
+        related.extend(source['references'])
+        result.append({
+            'claim': claim, 'path': list(path), 'source_act': source['id'],
+            'expression_preview': (stances[0]['expression_preview'] if stances else binding['expression'][:200]),
+            'linked_act_ids': list(dict.fromkeys(related))[:limit],
+            'recorded_stances': [
+                {field: stance[field] for field in ('speaker', 'action', 'status', 'ack_id', 'author_act')}
+                for stance in stances[:3]
+            ],
+        })
+    return result
+
+
 def handoff_briefing(packet, *, wire_format, claim_id=None, path=None, act_ids=(),
                      state=None):
     """Present a read-only briefing with the exact requested records and their definitions."""
@@ -389,6 +436,7 @@ def handoff_briefing(packet, *, wire_format, claim_id=None, path=None, act_ids=(
         } if issues else None,
         'current_state': state,
         'current_act': head['act'],
+        **({'candidate_branches': _handoff_candidates(packet, state)} if claim_id is None else {}),
         'claim': {
             'scope': claim['claim_scope'], 'source_act': claim['act'],
             'acknowledgements': [_briefing_ack(record) for record in claim['acknowledgements']],

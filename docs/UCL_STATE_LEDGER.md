@@ -18,6 +18,10 @@ Add `--compact` for a paste-ready JSON line with both packet digests, full chang
 
 ## Newcomer briefing
 
+Start with `python src/ucl.py inspect packet.txt --handoff` when you don’t know the claim or turn IDs. The `candidate_branches` list shows up to six named scopes. Each entry gives the claim ID, exact path, origin act, an expression preview, and up to three recorded stances from Current State. Linked act IDs come from the claim origin, stance authors, and their direct references. When room remains, other named claims appear at their root. This discovery view uses readable records and opens zero gzip blocks.
+
+Choose a claim, path, and source from the briefing to read them in full.
+
 ```sh
 python src/ucl.py inspect packet.txt --handoff --claim theory --path 1 --include-act t185
 ```
@@ -33,6 +37,17 @@ Briefing version 2 uses three distinct reference labels. The labels apply both t
 | `source_act` | The origin of the target claim or expression | `t1` |
 
 The raw `inspect --act`, `inspect --claim`, and `inspect --state` commands retain their existing field names. Packet ACKs still use `id` and `by` on the wire.
+
+### Bind a reply to its briefing
+
+Save `source_packet_sha256` when sending the briefing. Pass that value to both authoring commands so they check the validated inner packet against the copy the author saw.
+
+```sh
+python src/ucl.py preflight packet.txt --expect-packet-sha256 "$briefing_digest" < draft.json
+python src/ucl.py continue packet.txt next.txt --expect-packet-sha256 "$briefing_digest" < draft.json
+```
+
+A mismatch stops the command before writing a continuation. Refresh the briefing and have the author review the draft against the new state. Because the check uses the inner digest, lossless repacking of the same packet keeps the digest. The flag is optional for workflows that intentionally answer an older turn.
 
 When an author has recorded issues, `open_issue` quotes the last entry in `packet.history.unresolved` verbatim and gives its JSON Pointer in the original packet. It is conversation-wide speaker data. It can refer to a different branch than the selected claim. When the list is empty, the field is null. Questions remain in Current State.
 
