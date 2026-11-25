@@ -39,3 +39,26 @@ python src/ucl.py diff starting.txt continued.txt --compact
 Bundle SHA-256 is `56382f7f3e85b44f1bd2602bd6b79ff780e847f76dbec9bffb06d44684367b08`.
 
 [Live workflow and full artifacts](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45512747636) · [Fixture and scoring code](https://github.com/ulandort/Universal-Cognitive-Language/blob/4cfbff72befa245af9a88cd3008139af2df64c02/benchmarks/blind_archive_once.py)
+
+## Follow-up on the starter's stance
+
+Hal replayed the two continuations where it had left the default `received` action. The evidence, history, and instructions stayed identical within each pair. Only the starter's action differed. Hal used the requested `withhold-judgment` in **1/2** replies with the usual starter and **2/2** replies with the requested action prefilled. All four quoted the exact source and passed both validators. The four calls cost an estimated **$0.141**. This is a two-case result for one model. [Run and prompts](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45513921403)
+
+## Follow-up with eight archive entries
+
+Clarke and Hal each joined a synthetic 2,000-act conversation and could request two of eight archived acts. The question asked whether the original Delta-7 trial established the refined matched-control predicate. The index included a Delta-7 sign-off marked PASS under the older criterion and a successful matched comparison from a separate trial. Each reply starter had `withhold-judgment` prefilled on the requested branch.
+
+| Check | Clarke | Hal |
+| --- | --- | --- |
+| Requested and quoted the primary trial log `t185` | Missed it. Quoted the older-criterion sign-off `t286` instead. | Pass |
+| Quoted the chosen archived act exactly | Pass | Pass |
+| Reported that the refined criterion was unestablished | Pass | Pass |
+| Returned both immutable definition IDs | Pass | Pass |
+| Used the requested stance on the intended branch | Pass | Pass |
+| Passed Python and Node checks on the first draft | Pass | Pass |
+
+Clarke requested the worksheet and the sign-off. It correctly explained that the sign-off covered the earlier criterion and that “matched” referred to instrument settings. Hal requested the primary run log and the later review checklist. The primary log explicitly states that the original trial had no matched shared-input comparison. The result separates finding the strongest source from correctly interpreting the records actually retrieved.
+
+The four calls cost an estimated **$0.096**. This was one controlled scenario with two models. It does not isolate the effect of index size or stance prefilling.
+
+[Run, prompts, and first drafts](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45515108524) · [Fixture and scoring code](https://github.com/ulandort/Universal-Cognitive-Language/blob/db8a9e4bfcfef46ca6d7db049d5a8fa0b6788eec/benchmarks/archived_distractor_once.py)

@@ -44,7 +44,7 @@ Start with the [five-minute quickstart](https://github.com/ulandort/Universal-Co
 
 1. Decide **your own** new concept, claim, counterargument or stance first. For scoped replies with the local CLI, use **template → edit → preflight → continue**. Choose the target from the validated packet. Use `template --claim CLAIM --path PATH` for a claim reply or `template --retract ACK_ID` for a retraction. Pass `--speaker NAME` to either command. Use the embedded guide to draft directly when the CLI is unavailable.
 2. Preserve all earlier delivered acts, definition IDs and meanings. New custom concepts use a fresh alias such as `$background_sync` and a typed definition in `new_definitions`; **never overwrite** an earlier meaning under its old identifier.
-3. Construct the required act fields, typed expression(s), exact scoped acknowledgement, honest history summary and optional role labels. Ensure IDs and acknowledgement paths are well-typed and refer to retained history.
+3. Construct the required act fields, typed expression(s), exact scoped acknowledgement, honest history summary and optional role labels. For a task that specifies a stance, prefill the scoped ACK action and check it in the completed draft. The starter default `received` records receipt only. Ensure IDs and acknowledgement paths are well-typed and refer to retained history.
 4. Save the authored contribution as JSON. Use optional `act.vocabulary` records for retirement, examples, or counterexamples. The embedded guide defines the record shapes. See `examples/challenge_reply.json` for a worked counterexample.
 5. Use the local CLI to build and check the complete handoff:
    ```bash

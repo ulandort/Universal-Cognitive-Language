@@ -4,7 +4,17 @@
 
 **Current release** [UCL 2.4.1](https://github.com/ulandort/Universal-Cognitive-Language/releases/tag/v2.4.1) · [Specification](docs/UCL_2_4_SPECIFICATION.md) · [AI guide](README_AI.md)
 
-[Packed handoff](#join-a-packed-conversation) · [Quickstart](#try-ucl-in-five-minutes) · [Glyphs and functions](#glyphs-and-functions) · [Conversation tools](#conversation-tools) · [Compression](#compress-a-long-conversation) · [Validation](#validation-and-trust) · [Results](#results)
+[Packed handoff](#join-a-packed-conversation) · [Quickstart](#try-ucl-in-five-minutes) · [Glyphs and functions](#glyphs-and-functions) · [Conversation tools](#conversation-tools) · [Compression](#compress-a-long-conversation) · [Validation](#validation-and-trust) · [Evidence](#evidence-from-blind-archive-joins)
+
+## Evidence from blind archive joins
+
+Clarke and Hal each joined three synthetic, 2,000-act packed conversations. Each newcomer saw four archive headings and could request up to two acts before answering.
+
+- **6/6** selected the relevant act, quoted it exactly, and assessed what the evidence established.
+- **6/6** submitted a first draft that passed the Python and Node checks.
+- **4/6** recorded the exact requested stance. Both models preserved the two immutable definition IDs in the refinement case.
+
+The [scorecard and replay](benchmarks/UCL241_BLIND_ARCHIVE_JOIN.md) include all six outcomes, one complete replay, and a follow-up with eight archive entries. See [more experiments](#results) for the missing-source relay and matched grounding comparison.
 
 ## Join a packed conversation
 
@@ -98,7 +108,11 @@ Commands below use `python src/ucl.py` from the repository root.
 | Reissue an older packet | `upgrade older.txt current.txt` |
 | Extract or wrap the inner packet | `decode packet.txt inner.json` or `encode inner.json packet.txt` |
 
-For a scoped reply, use **template → edit → preflight → continue**. Add `--seed-formula` to copy the selected proposition into the two typed fields for editing. Add `--concept '$control_sensitive' --domain D` to start a typed predicate definition. When qualifying a claim, put the typed condition in `qualification.expression` and its prose explanation in `qualification.explanation`.
+For a scoped reply, use **template → edit → preflight → continue**. Add `--seed-formula` to copy the selected proposition into the two typed fields for editing. Add `--concept '$control_sensitive' --domain D` to start a typed predicate definition. If the task requires a specific stance, set `acknowledgements[0].action` in the scoped starter before handing it over and check the returned action. The default `received` records receipt. When qualifying a claim, put the typed condition in `qualification.expression` and its prose explanation in `qualification.explanation`.
+
+For example, hand off a scoped starter with this instruction when the assignment calls for withholding judgment.
+
+> Keep the supplied claim and path. Set the ACK action to `withhold-judgment`. Explain the gap in `act.text` and cite the relevant archived acts in `act.references`.
 
 When inviting a newcomer into a packed conversation, start with `inspect --handoff`. Give them the briefing and make the original Portable packet available for validation and continuation. In the briefing, `ack_id` names the acknowledgement, `author_act` names the turn that wrote it, and `source_act` names the target's origin. See the [packed handoff exercise](docs/UCL_HANDOFF_TRIAL.md) and [state and diff reference](docs/UCL_STATE_LEDGER.md).
 
@@ -141,7 +155,6 @@ Use a source checkout for the Python validator. The skill provides [agent instru
 | **100,000-act storage stress test** | **40.78 MB → 4.02 MB** in one lossless file, a **90.1% reduction**. Python and Node validated a continuation to act 100,001. The synthetic acts were short and repetitive. [Method](docs/UCL_LONG_CONVERSATIONS.md#100000-act-stress-test) |
 | **2.4 live newcomer briefing** | **2,000 → 2,001 acts**. Clarke found the earlier ACK and quoted archived act `t185` exactly. Both validators accepted the first draft. Its prose overread the observation. [Run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45503699604) |
 | **2.4 evidence-grounding follow-up** | In a fresh call, Clarke quoted both sources exactly and concluded the record did not establish that the required control was performed. [Run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45505014140) |
-| **2.4.1 blind archive joins** | Both models chose the relevant act in all **6/6** joins from a four-entry index. Both preserved the old and refined definition IDs. All six continuations validated, and four used the requested stance action. [Scorecard and replay](benchmarks/UCL241_BLIND_ARCHIVE_JOIN.md) |
 | **2.4 missing-source relay** | In two 2,000-act conversations, Clarke and Hal each requested an omitted archived act, used the recovered source in a valid first draft, and handed off to the other model. [Results and replay files](benchmarks/UCL24_MISSING_SOURCE_RELAY.md) |
 | **2.4 matched evidence-grounding comparison** | In 12 calls with matched sources, UCL passed **20/24** exact checks and structured English **19/24**. All six UCL continuations validated. Four UCL replies confused the qualification ACK with its author act. [Results and limits](benchmarks/UCL24_MATCHED_GROUNDING_RESULTS.md) |
 | **2.3 live cold handoff** | **4,096 → 4,098 acts**. After Clarke retracted a stance, Hal joined fresh, identified the surviving stance, quoted archived act `t1850`, and continued the surviving branch. [Run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45451819553) |
@@ -150,7 +163,7 @@ These are controlled tests of storage, reference accuracy, and authoring. See [U
 
 ## Documentation and contribution
 
-- [Portable 2.4 specification](docs/UCL_2_4_SPECIFICATION.md) · [Release notes](RELEASE_NOTES_2_4_1.md) · [Changelog](CHANGELOG.md)
+- [Portable specification](docs/UCL_2_4_SPECIFICATION.md) · [Release notes](RELEASE_NOTES_2_4_1.md) · [Changelog](CHANGELOG.md)
 - [AI reader and author guide](README_AI.md) · [Packet state and diffs](docs/UCL_STATE_LEDGER.md) · [Long conversations](docs/UCL_LONG_CONVERSATIONS.md)
 - [Project rationale](docs/PROJECT.md) · [Successor proposals](docs/UCL_SUCCESSOR_PROFILE_PROPOSAL.md) · [Governance](GOVERNANCE.md) · [Apache-2.0 license](LICENSE)
 
