@@ -62,3 +62,18 @@ Clarke requested the worksheet and the sign-off. It correctly explained that the
 The four calls cost an estimated **$0.096**. This was one controlled scenario with two models. It does not isolate the effect of index size or stance prefilling.
 
 [Run, prompts, and first drafts](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45515108524) · [Fixture and scoring code](https://github.com/ulandort/Universal-Cognitive-Language/blob/db8a9e4bfcfef46ca6d7db049d5a8fa0b6788eec/benchmarks/archived_distractor_once.py)
+
+## 2.5 candidate discovery from the unfocused briefing
+
+Clarke and Hal joined the same synthetic, 2,000-act packed conversation. Each received the generated unfocused handoff and a plain-English objective. The objective supplied no claim ID, path, or act IDs. The briefing listed candidate branches and linked acts from the packet, opened zero archive blocks, and withheld the archived observation text. This tested discovery using those links.
+
+| Check | Clarke | Hal |
+| --- | --- | --- |
+| Identified the intended branch, `theory` path `[1]` | Pass | Pass after removing the Markdown fence |
+| Requested the primary archived observation `t18` | Missed it. Requested the claim origin and the eligibility rule. | Pass after removing the Markdown fence |
+| Assessed the retrieved evidence | Reported the observation was missing. | Quoted `t18` exactly and correctly identified the missing independent-input comparison. |
+| First continuation passed Python and Node | Validation rejected `act.details.stance: "withhold"`. The separate ACK remained `received`. | The raw-JSON harness rejected the Markdown fence. The original contribution inside it passed both validators and recorded `withhold-judgment` on the intended branch. |
+
+Hal's first reply contained the correct branch and requested IDs inside a Markdown code fence. The follow-up replayed those choices after unwrapping the fence and then made its first continuation call. Both fences were counted as output-format failures. The continuation payload passed the packet-digest guard and cited `t18`. The follow-up used the model's original JSON fields.
+
+The four calls cost an estimated **$0.0994**. This was one scenario with two models and a bounded set of suggested links. [Initial run](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45551154654) · [Hal follow-up](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45551392974) · [Fixture and scoring code](https://github.com/ulandort/Universal-Cognitive-Language/blob/5aba20e1c13f35c7d4e596f0dfc89234c86f3674/benchmarks/cold_discovery_once.py)

@@ -595,7 +595,11 @@ def validate_discourse(discourse,defs,parser, *, version=VERSION, archived=False
             need(isinstance(dt['revises'], str) and dt['revises'] in seen and isinstance(dt['change'],str) and bool(dt['change'].strip()),'revision target')
         elif k=='response':
             need(set(dt)=={'responds_to','stance'},'response details')
-            need(isinstance(dt['responds_to'], str) and dt['responds_to'] in seen and dt['stance'] in ('accept','reject','mixed','undetermined'),'response target')
+            need(isinstance(dt['responds_to'], str) and dt['responds_to'] in seen,
+                 'response target must name an earlier act')
+            need(dt['stance'] in ('accept', 'reject', 'mixed', 'undetermined'),
+                 'act.details.stance must be accept, reject, mixed, or undetermined. '
+                 'To withhold judgment, use undetermined there and set the scoped acknowledgement action to withhold-judgment')
         elif k=='synthesis':
             need(set(dt)=={'integrates','open_questions'},'synthesis details');references(dt['integrates'])
             need(bool(dt['integrates']),'synthesis needs prior acts');strs(dt['open_questions'])

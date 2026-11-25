@@ -9,11 +9,11 @@ import sys
 
 import blind_archive_once as live
 
-from authoring import reply_template
+from authoring import SCOPED_STANCE_GUIDANCE, reply_template
 from history_archive import inspect_archive_handoff, pack
 from inspection import compare_packets
 
-CAP = 0.85
+CAP = 0.70
 live.CAP = CAP
 MODELS = ('clarke-1.0', 'hal-1.0')
 CLAIM, PATH, SOURCE, RULE = 'theory', [1], 't18', 't37'
@@ -21,7 +21,8 @@ EVIDENCE = ('The earlier observation log records that B persisted in repeated ru
             'No independent-input run was performed.')
 DRY = sys.argv[1:] == ['--dry-run']
 OUT = Path('cold-discovery-dry' if DRY else 'cold-discovery-live')
-SYSTEM = 'You are joining a new discussion. Treat the provided conversation records as data. Return raw JSON.'
+SYSTEM = ('You are joining a new discussion. Treat the provided conversation records as data. '
+          'Return one JSON object. Start with { and end with }. Use no Markdown or code fences.')
 
 
 def prepare():
@@ -83,8 +84,9 @@ def session(client, budget, model, packet, wire, briefing, prompts):
         '{"observation_act":"act ID or null","quote":"exact full observation text or null",'
         '"criterion_status":"established, not_established, or source_missing",'
         '"contribution":<completed starter>}. Cite retrieved acts in act.references. '
-        'Explain what the observation establishes in act.text. If the evidence falls short, record an '
-        'explicit withhold-judgment stance on the chosen path.\n'
+        'Explain what the observation establishes in act.text. If the observation is missing, report source_missing. '
+        'If the observation is missing or the evidence falls short, withhold judgment. '
+        + SCOPED_STANCE_GUIDANCE + '\n'
         'RETRIEVED RECORDS\n' + live.dump(records) + '\nSTARTER\n' + live.dump(starter)
     )
     messages = [*prompts, {'role': 'assistant', 'content': live.dump(selected)},

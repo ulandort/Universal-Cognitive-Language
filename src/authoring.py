@@ -4,6 +4,12 @@ from collections.abc import Mapping
 
 import core
 
+SCOPED_STANCE_GUIDANCE = (
+    'For a scoped response, put the decision in acknowledgements[0].action and keep its exact claim and path. '
+    'To withhold judgment, keep act.details.stance as "undetermined" and set '
+    'acknowledgements[0].action to "withhold-judgment". The default action "received" records receipt only.'
+)
+
 
 def _checked(field, validator, *args, **kwargs):
     try:

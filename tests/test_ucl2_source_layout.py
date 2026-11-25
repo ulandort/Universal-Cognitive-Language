@@ -320,6 +320,23 @@ class SourceLayoutTests(unittest.TestCase):
             self.assertEqual(ucl.decode_portable(ucl.read_json_file(output))['discourse']['current'],
                              'another-reply')
 
+    def test_preflight_explains_where_to_record_withheld_judgment(self):
+        from authoring import preflight, reply_template
+
+        wire = ucl.read_json_file(ROOT / 'examples/quickstart.txt')
+        parent = ucl.decode_portable(wire)
+        draft = reply_template(parent, 'Reader', 'notes-design', [1], seed_formula=True)
+        draft['act']['text'] = 'The cited evidence leaves background sync undecided.'
+        draft['act']['details']['stance'] = 'withhold'
+        with self.assertRaisesRegex(ValueError, 'act.details.stance.*acknowledgement action to withhold-judgment'):
+            preflight(parent, draft)
+        draft['act']['details']['stance'] = 'undetermined'
+        draft['acknowledgements'][0]['action'] = 'withhold-judgment'
+        preflight(parent, draft)
+        reply = ucl.decode_portable(ucl.continue_portable(wire, draft))
+        self.assertEqual(reply['acknowledgements'][-1]['action'], 'withhold-judgment')
+        self.assertEqual(reply['acknowledgements'][-1]['target'], {'claim': 'notes-design', 'path': [1]})
+
     def test_template_seeds_only_standalone_propositions(self):
         from authoring import reply_template
 

@@ -1,10 +1,10 @@
-name: One-time UCL 2.5 candidate cold discovery
+name: One-time UCL 2.5 candidate scoped stance retest
 
 on:
   push:
-    branches: [ucl25-cold-discovery-once]
+    branches: [ucl25-cold-stance-retest-once]
     paths:
-      - .github/workflows/ucl25-cold-discovery-once.yml
+      - .github/workflows/ucl25-cold-stance-retest-once.yml
 
 permissions:
   contents: read
@@ -35,5 +35,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ucl25-cold-discovery
+          name: ucl25-cold-stance-retest
           path: cold-discovery-live/

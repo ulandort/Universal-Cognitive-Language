@@ -112,7 +112,7 @@ For a scoped reply, use **template → edit → preflight → continue**. Add `-
 
 For example, hand off a scoped starter with this instruction when the assignment calls for withholding judgment.
 
-> Keep the supplied claim and path. Set the ACK action to `withhold-judgment`. Explain the gap in `act.text` and cite the relevant archived acts in `act.references`.
+> Keep the supplied claim and path. Keep `act.details.stance` as `"undetermined"` and set `acknowledgements[0].action` to `"withhold-judgment"`. Explain the gap in `act.text` and cite the relevant archived acts in `act.references`.
 
 When inviting a newcomer into a packed conversation, start with `inspect --handoff`. Give them the briefing and make the original Portable packet available for validation and continuation. In the briefing, `ack_id` names the acknowledgement, `author_act` names the turn that wrote it, and `source_act` names the target's origin. See the [packed handoff exercise](docs/UCL_HANDOFF_TRIAL.md) and [state and diff reference](docs/UCL_STATE_LEDGER.md).
 

@@ -161,8 +161,8 @@ def main(args):
         preflight(parent, _read_contribution(), archived='archive' in envelope)
         print('PREFLIGHT PASSED. Run continue for full validation and handoff.')
     elif command=='template':
-        from authoring import reply_template
-        parser = argparse.ArgumentParser(prog='python src/ucl.py template')
+        from authoring import SCOPED_STANCE_GUIDANCE, reply_template
+        parser = argparse.ArgumentParser(prog='python src/ucl.py template', epilog=SCOPED_STANCE_GUIDANCE)
         parser.add_argument('packet')
         parser.add_argument('--speaker', required=True)
         scope = parser.add_mutually_exclusive_group(required=True)
