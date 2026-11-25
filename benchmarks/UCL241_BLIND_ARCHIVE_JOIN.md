@@ -107,3 +107,9 @@ A single Hal call replayed the observation-present continuation. The evidence, i
 ### Short scoped-decision replay
 
 Hal received the same already-retrieved observation and qualification and returned one explicit ACK action, its reasoning and source references. The CLI assembled the response with `draft-reply --expect-ack-action withhold-judgment` and continued from the briefing's packet digest. On its first attempt Hal quoted `t18` exactly, reported `not_established`, and chose `withhold-judgment`. Python and Node validated the resulting packet and the diff showed exactly one new stance on `theory` path `[1]`. The test covered one scoped continuation with the sources already selected. The single call cost an estimated **$0.0249**. [Live replay and artifacts](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45554727901)
+
+### Cold join with qualifying evidence
+
+Clarke joined a synthetic 2,000-act conversation from an unfocused briefing and a plain-English objective. The task supplied no claim ID, path, source ID, or expected ACK action. Clarke selected `orion-evidence` path `[1]`, requested the eligibility rule `t37` and archived run log `t18` on its first lookup, and quoted the run log exactly. It concluded that Orion met the independent-input criterion and chose `accept` on that branch. The result left the broader speculative claim untouched.
+
+The first short decision passed `draft-reply`. Python and Node validated the continued packet, and the diff showed exactly one changed stance at the intended branch. The test covered one model and one controlled affirmative scenario. The two calls cost an estimated **$0.0171**. [Live run and artifacts](https://github.com/ulandort/Universal-Cognitive-Language/actions/runs/45555174869)
