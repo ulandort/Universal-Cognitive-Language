@@ -361,6 +361,45 @@ class SourceLayoutTests(unittest.TestCase):
         self.assertNotEqual(invalid.returncode, 0)
         self.assertIn('--ack-action requires --claim', invalid.stderr)
 
+    def test_draft_reply_builds_a_scoped_response_and_refuses_a_stance_mismatch(self):
+        source = ROOT / 'examples/quickstart.txt'
+        wire = ucl.read_json_file(source)
+        digest = wire['packet']['integrity']['sha256']
+        cli = [sys.executable, str(ROOT / 'src/ucl.py'), 'draft-reply', str(source),
+               '--speaker', 'Reader', '--expect-packet-sha256', digest]
+        decision = {'claim': 'notes-design', 'path': [1], 'action': 'withhold-judgment',
+                    'text': 'The evidence is insufficient.', 'references': ['t1']}
+
+        def run(value, *flags):
+            return subprocess.run([*cli, *flags], input=json.dumps(value), text=True,
+                                  capture_output=True, timeout=20)
+
+        required = ('--expect-ack-action', 'withhold-judgment')
+        result = run(decision, *required)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        draft = json.loads(result.stdout)
+        self.assertEqual(draft['act']['details']['stance'], 'undetermined')
+        self.assertEqual(draft['act']['text'], decision['text'])
+        self.assertEqual(draft['act']['references'], ['t2', 't1'])
+        final = ucl.decode_portable(ucl.continue_portable(wire, draft, expected_packet_sha256=digest))
+        self.assertEqual(final['acknowledgements'][-1]['action'], 'withhold-judgment')
+        self.assertEqual(final['acknowledgements'][-1]['target'], {'claim': 'notes-design', 'path': [1]})
+
+        other_choice = {**decision, 'action': 'reject'}
+        rejected = run(other_choice, *required)
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertEqual(rejected.stdout, '')
+        self.assertIn("reply.action is 'reject', but this task requires 'withhold-judgment'", rejected.stderr)
+        unguarded = run(other_choice)
+        self.assertEqual(unguarded.returncode, 0, unguarded.stderr)
+        self.assertEqual(json.loads(unguarded.stdout)['acknowledgements'][0]['action'], 'reject')
+        invalid = run({**decision, 'path': [True]})
+        self.assertNotEqual(invalid.returncode, 0)
+        self.assertIn('reply.path', invalid.stderr)
+        unknown_source = run({**decision, 'references': ['missing']})
+        self.assertNotEqual(unknown_source.returncode, 0)
+        self.assertIn('missing or forward act reference', unknown_source.stderr)
+
     def test_template_seeds_only_standalone_propositions(self):
         from authoring import reply_template
 

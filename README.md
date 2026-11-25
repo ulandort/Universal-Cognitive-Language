@@ -102,13 +102,16 @@ Commands below use `python src/ucl.py` from the repository root.
 | Brief a newcomer with selected sources | `inspect packet.txt --handoff --claim theory --path 1 --include-act t185` |
 | Summarize changes since an earlier packet | `diff earlier.txt later.txt --compact` |
 | Generate a reply starter | `template packet.txt --speaker "New participant" --claim theory --path 1` |
+| Build a draft from a chosen ACK action and reasoning | `draft-reply packet.txt --speaker "New participant" < reply.json` |
 | Generate a retraction starter | `template packet.txt --speaker D --retract x4` |
 | Check a draft before writing a packet | `preflight packet.txt < contribution.json` |
 | Validate and write the continuation | `continue packet.txt next.txt < contribution.json` |
 | Reissue an older packet | `upgrade older.txt current.txt` |
 | Extract or wrap the inner packet | `decode packet.txt inner.json` or `encode inner.json packet.txt` |
 
-For a scoped reply, use **template → edit → preflight → continue**. Add `--seed-formula` to copy the selected proposition into the two typed fields for editing. Add `--concept '$control_sensitive' --domain D` to start a typed predicate definition. If the author has already chosen a stance, prefill the scoped ACK with `--ack-action withhold-judgment` (or another action listed by `template --help`) and check the returned action. The default `received` records receipt. When qualifying a claim, put the typed condition in `qualification.expression` and its prose explanation in `qualification.explanation`.
+For a scoped reply about an existing proposition, ask the author for one ACK action, its reasoning, and its source IDs. Use [the short reply form](README_AI.md#draft-from-one-scoped-decision) to build the full contribution. Add `--expect-ack-action withhold-judgment` when the assignment requires that exact action.
+
+For a reply that needs custom expressions or new definitions, use **template → edit → preflight → continue**. Add `--seed-formula` to copy the selected proposition into the two typed fields for editing. Add `--concept '$control_sensitive' --domain D` to start a typed predicate definition. If the author has already chosen a stance, prefill the scoped ACK with `--ack-action withhold-judgment` (or another action listed by `template --help`) and check the returned action. The default `received` records receipt. When qualifying a claim, put the typed condition in `qualification.expression` and its prose explanation in `qualification.explanation`.
 
 For example, hand off a scoped starter with this instruction when the assignment calls for withholding judgment.
 

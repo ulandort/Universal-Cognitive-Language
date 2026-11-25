@@ -151,6 +151,34 @@ def reply_template(parent, speaker, claim, path, *, alias=None, domain=None, ret
     return draft
 
 
+def draft_scoped_reply(parent, speaker, decision, *, expected_ack_action=None, archived=False):
+    """Build a contribution from an author's explicit decision about one proposition."""
+    fields = {'claim', 'path', 'action', 'text', 'references'}
+    core.need(isinstance(decision, dict) and set(decision) == fields,
+              'reply must contain exactly claim, path, action, text, and references')
+    claim, path, action = decision['claim'], decision['path'], decision['action']
+    core.need(isinstance(claim, str), 'reply.claim must be a named claim ID')
+    core.need(isinstance(path, list) and len(path) <= 32
+              and all(type(index) is int and 0 <= index <= 15 for index in path),
+              'reply.path must be an array of up to 32 integer indices from 0 to 15')
+    core.need(isinstance(action, str) and action in TEMPLATE_ACK_ACTIONS,
+              'reply.action must be one of: ' + ', '.join(TEMPLATE_ACK_ACTIONS))
+    core.need(expected_ack_action is None or expected_ack_action in TEMPLATE_ACK_ACTIONS,
+              'unsupported expected acknowledgement action')
+    if expected_ack_action is not None and action != expected_ack_action:
+        raise ValueError(f'reply.action is {action!r}, but this task requires {expected_ack_action!r}. '
+                         'Have the author review its stance and return a revised reply.')
+    text, references = decision['text'], decision['references']
+    core.need(isinstance(text, str) and bool(text.strip()), 'reply.text must explain the decision')
+    core.need(isinstance(references, list) and all(isinstance(act, str) for act in references),
+              'reply.references must be an array of act IDs')
+    draft = reply_template(parent, speaker, claim, path, seed_formula=True, ack_action=action)
+    draft['act']['text'] = text
+    draft['act']['references'] = list(dict.fromkeys([*draft['act']['references'], *references]))
+    preflight(parent, draft, archived=archived)
+    return draft
+
+
 def author(parent, contribution, *, archived=False):
     draft=core.draft_from_packet(parent, archived=archived)
     acts=draft['discourse']['acts']

@@ -129,6 +129,11 @@ def _authoring_options(command, args):
     parser.add_argument('source', type=Path, metavar='PACKET')
     if command == 'continue':
         parser.add_argument('output', type=Path, metavar='OUTPUT')
+    if command == 'draft-reply':
+        from authoring import TEMPLATE_ACK_ACTIONS
+        parser.add_argument('--speaker', required=True)
+        parser.add_argument('--expect-ack-action', choices=TEMPLATE_ACK_ACTIONS,
+                            help='require the author to choose this ACK action')
     parser.add_argument('--expect-packet-sha256', help='require the source_packet_sha256 from the briefing')
     return parser.parse_args(args)
 
@@ -145,7 +150,7 @@ def main(args):
         _write_handoff(options.source, options.output, result)
         return
     if len(args)<3:
-        raise ValueError('Usage: python src/ucl.py check | encode | decode | pack | continue | preflight | template | inspect | diff | upgrade | build/canonicalize/draft ...')
+        raise ValueError('Usage: python src/ucl.py check | encode | decode | pack | continue | preflight | template | draft-reply | inspect | diff | upgrade | build/canonicalize/draft ...')
     command=args[1]
     if command=='check' and len(args)==3:
         data=_core.read_json_file(args[2], limit=MAX_PORTABLE_JSON)
@@ -160,6 +165,14 @@ def main(args):
         parent = _continuation_parent(envelope, options.expect_packet_sha256)
         preflight(parent, _read_contribution(), archived='archive' in envelope)
         print('PREFLIGHT PASSED. Run continue for full validation and handoff.')
+    elif command=='draft-reply':
+        from authoring import draft_scoped_reply
+        options = _authoring_options(command, args[2:])
+        envelope = _portable_file(options.source)
+        parent = _continuation_parent(envelope, options.expect_packet_sha256)
+        draft = draft_scoped_reply(parent, options.speaker, _read_contribution(),
+                                  expected_ack_action=options.expect_ack_action, archived='archive' in envelope)
+        print(json.dumps(draft, indent=2, ensure_ascii=False))
     elif command=='template':
         from authoring import SCOPED_STANCE_GUIDANCE, TEMPLATE_ACK_ACTIONS, reply_template
         parser = argparse.ArgumentParser(prog='python src/ucl.py template', epilog=SCOPED_STANCE_GUIDANCE)

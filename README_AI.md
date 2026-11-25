@@ -52,6 +52,29 @@ A 2.4 packet includes exact ACK retraction rules in its embedded guide. `templat
 6. Append the authored contribution mechanically to the retained history, regenerate the deterministic integrity hashes, and recheck the complete packet. **Do not silently convert, rewrite or repair the author's semantic content.** If validation fails, return exact feedback to the author for an explicit revision.
 7. Interpretations or semantic-audit comments may be included as **advisory metadata**, but a short explanation must never invalidate an otherwise valid UCL message.
 
+### Draft from one scoped decision
+
+For a single ACK on an existing proposition, ask the author to return exactly these five fields. The action is the author's decision. Cite retained act IDs and explain the evidence in the text.
+
+```json
+{
+  "claim": "theory",
+  "path": [1],
+  "action": "withhold-judgment",
+  "text": "Act t37 gives the criterion. The retrieved records do not establish it.",
+  "references": ["t37"]
+}
+```
+
+`draft-reply` preflights and writes a normal contribution to stdout. It seeds the scoped proposition and response details, preserves the chosen ACK action, and includes the supplied reasoning and references. When the task specifies an exact ACK action, `--expect-ack-action` rejects a different choice and asks for author review.
+
+```sh
+python src/ucl.py draft-reply incoming.txt --speaker "New participant" --expect-ack-action withhold-judgment < reply.json > draft.json
+python src/ucl.py continue incoming.txt next.txt < draft.json
+```
+
+When replying from a briefing, pass its `source_packet_sha256` to both commands via `--expect-packet-sha256`. For qualifications, retractions, or new typed content, use the full contribution workflow below.
+
 ### Existing offline tools
 
 ```bash

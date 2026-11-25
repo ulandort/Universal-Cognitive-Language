@@ -183,6 +183,21 @@ class HistoryArchiveTests(unittest.TestCase):
                 subprocess.run(['node', str(ROOT / 'tools/check_ucl_portable.js'), str(outgoing)],
                                check=True, capture_output=True, timeout=30)
 
+    def test_draft_reply_accepts_a_reference_to_an_archived_act(self):
+        with tempfile.TemporaryDirectory() as directory:
+            incoming = Path(directory) / 'archive.txt'
+            incoming.write_bytes(ucl.portable_json_bytes(self.packed))
+            decision = {'claim': 'theory', 'path': [1], 'action': 'withhold-judgment',
+                        'text': 'The hypothetical observation does not establish the condition.',
+                        'references': ['t1850']}
+            self.assertFalse(any(act['id'] == 't1850' for act in self.packed['packet']['discourse']['acts']))
+            result = subprocess.run([sys.executable, str(ROOT / 'src/ucl.py'), 'draft-reply', str(incoming),
+                                     '--speaker', 'Reader', '--expect-ack-action', 'withhold-judgment'],
+                                    input=core.canon(decision), check=True, capture_output=True, timeout=40)
+            draft = json.loads(result.stdout)
+            self.assertIn('t1850', draft['act']['references'])
+            self.assertEqual(draft['acknowledgements'][0]['action'], 'withhold-judgment')
+
 
 if __name__ == '__main__':
     unittest.main()
